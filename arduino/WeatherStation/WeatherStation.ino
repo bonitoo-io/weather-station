@@ -68,6 +68,8 @@ const int SDC_PIN = D5;
 #define DHTPIN D1     // Digital pin connected to the DHT sensor
 DHT dht(DHTPIN, DHTTYPE);
 float tempDHT;
+float humDHT;
+unsigned long timeDHT = 0;
 
 const boolean IS_METRIC = true;
 
@@ -157,7 +159,7 @@ void setup() {
   configTime(TZ_SEC, DST_SEC, "pool.ntp.org");
   
   dht.begin();
-  tempDHT = dht.readTemperature(!IS_METRIC);
+  readDHT();
 
   ui.setTargetFPS(30);
 
@@ -185,7 +187,6 @@ void setup() {
   Serial.println("");
 
   updateData(&display);
-
 }
 
 void loop() {
@@ -258,20 +259,30 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   display->setTextAlignment(TEXT_ALIGN_LEFT);
 }
 
+void readDHT() {
+  unsigned long actualTime = millis();
+  if ( timeDHT > actualTime)
+    timeDHT = actualTime; 
+  if ( actualTime - timeDHT > 2000) {
+    tempDHT = dht.readTemperature(!IS_METRIC);
+    humDHT = dht.readHumidity();
+    timeDHT = millis();
+    Serial.println("dht read");
+  }
+}
+
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(64 + x, 5 + y, "INDOOR");
-  float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  tempDHT = dht.readTemperature(!IS_METRIC);
+  readDHT();
   
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   String s = String(tempDHT, 1) + (IS_METRIC ? "°C" : "°F");
   display->drawString(0 + x, 15 + y, s);
 
-  s = String(h, 0) + "%";
+  s = String(humDHT, 0) + "%";
   display->drawString(80 + x, 15 + y, s);
 
 }
@@ -320,14 +331,14 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   timeInfo = localtime(&now);
   char buff[14];
   sprintf_P(buff, PSTR("%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min);
-
   display->setColor(WHITE);
   display->setFont(ArialMT_Plain_10);
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0, 54, String(buff));
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  display->drawString(118, 54, String(buff));
+
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
   String temp = String(tempDHT, 1) + (IS_METRIC ? "°C" : "°F");
-  display->drawString(118, 54, temp);
+  display->drawString(0, 54, temp);
 
   int8_t quality = getWifiSignal();
   for (int8_t i = 0; i < 4; i++) {
