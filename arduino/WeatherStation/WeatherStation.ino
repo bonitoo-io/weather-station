@@ -1,4 +1,4 @@
-#define VERSION "0.01"
+#define VERSION "0.02"
 
 #include <Arduino.h>
 #include <ESPWiFi.h>
@@ -32,18 +32,12 @@
 #define DST_MN          60      // use 60mn for summer time in some countries
 
 // https://docs.thingpulse.com/how-tos/openweathermap-key/
-#define OPEN_WEATHER_MAP_APP_ID "XXX"
+#define OPEN_WEATHER_MAP_API_KEY "XXX"
 
 #include "mirek.h" //Remove or comment it out
 
-
-/*
-Go to https://openweathermap.org/find?q= and search for a location. Go through the
-result set and select the entry closest to the actual location you want to display 
-data for. It'll be a URL like https://openweathermap.org/city/2657896. The number
-at the end is what you assign to the constant below.
- */
-String OPEN_WEATHER_MAP_LOCATION_ID = "3067696";
+// Go to https://openweathermap.org/find?q= and search for a location
+String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
 
 // Pick a language code from this list:
 // Arabic - ar, Bulgarian - bg, Catalan - ca, Czech - cz, German - de, Greek - el,
@@ -128,7 +122,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-
+  dht.begin();
+  
   // initialize dispaly
   display.init();
   display.clear();
@@ -158,7 +153,6 @@ void setup() {
   // Get time from network time service
   configTime(TZ_SEC, DST_SEC, "pool.ntp.org");
   
-  dht.begin();
   readDHT();
 
   ui.setTargetFPS(30);
@@ -184,13 +178,10 @@ void setup() {
   // Inital UI takes care of initalising the display too.
   ui.init();
 
-  Serial.println("");
-
   updateData(&display);
 }
 
 void loop() {
-
   if (millis() - timeSinceLastWUpdate > (1000L*UPDATE_INTERVAL_SECS)) {
     setReadyForWeatherUpdate();
     timeSinceLastWUpdate = millis();
@@ -208,8 +199,6 @@ void loop() {
     // time budget.
     delay(remainingTimeBudget);
   }
-
-
 }
 
 void drawProgress(OLEDDisplay *display, int percentage, String label) {
@@ -226,13 +215,13 @@ void updateData(OLEDDisplay *display) {
   drawProgress(display, 30, "Updating weather...");
   currentWeatherClient.setMetric(IS_METRIC);
   currentWeatherClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
-  currentWeatherClient.updateCurrentById(&currentWeather, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID);
+  currentWeatherClient.updateCurrent(&currentWeather, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION);
   drawProgress(display, 50, "Updating forecasts...");
   forecastClient.setMetric(IS_METRIC);
   forecastClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
-  forecastClient.updateForecastsById(forecasts, OPEN_WEATHER_MAP_APP_ID, OPEN_WEATHER_MAP_LOCATION_ID, MAX_FORECASTS);
+  forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
 
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done...");
@@ -263,11 +252,10 @@ void readDHT() {
   unsigned long actualTime = millis();
   if ( timeDHT > actualTime)
     timeDHT = actualTime; 
-  if ( actualTime - timeDHT > 2000) {
+  if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise privide "cached" values
     tempDHT = dht.readTemperature(!IS_METRIC);
     humDHT = dht.readHumidity();
     timeDHT = millis();
-    Serial.println("dht read");
   }
 }
 
@@ -275,8 +263,8 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(64 + x, 5 + y, "INDOOR");
+
   readDHT();
-  
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   String s = String(tempDHT, 1) + (IS_METRIC ? "°C" : "°F");
@@ -284,7 +272,6 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
 
   s = String(humDHT, 0) + "%";
   display->drawString(80 + x, 15 + y, s);
-
 }
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -301,7 +288,6 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(32 + x, 0 + y, currentWeather.iconMeteoCon);
 }
-
 
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   drawForecastDetails(display, x, y, 0);
@@ -336,6 +322,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(118, 54, String(buff));
 
+  readDHT();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   String temp = String(tempDHT, 1) + (IS_METRIC ? "°C" : "°F");
   display->drawString(0, 54, temp);
