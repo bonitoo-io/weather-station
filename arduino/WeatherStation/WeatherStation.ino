@@ -27,10 +27,8 @@
 #define WIFI_SSID "yourssid"
 #define WIFI_PWD "yourpassword"
 
-// https://docs.thingpulse.com/how-tos/openweathermap-key/
+//See https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define OPEN_WEATHER_MAP_API_KEY "XXX"
-
-#include "mirek.h" //Remove or comment it out
 
 // Go to https://openweathermap.org/find?q= and search for a location
 String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
@@ -60,6 +58,7 @@ const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Ju
 /***************************
  * End Settings
  **************************/
+#include "mirek.h" //Custom development configuration - remove or comment it out
 
 DHT dht(DHTPIN, DHTTYPE);
 float tempDHT;
@@ -146,6 +145,7 @@ void setup() {
   }
   
   ui.setTargetFPS(30);
+  ui.setTimePerFrame(8000);
 
   ui.setActiveSymbol(activeSymbole);
   ui.setInactiveSymbol(inactiveSymbole);
@@ -165,7 +165,7 @@ void setup() {
 
   ui.setOverlays(overlays, sizeof(overlays) / sizeof(OverlayCallback));
 
-  // Inital UI takes care of initalising the display too.
+  // Inital UI takes care of initalising the display too
   ui.init();
 
   updateData(&display);
@@ -405,12 +405,11 @@ void showConfiguration(OLEDDisplay *display) {
   display->setFont(ArialMT_Plain_10);
 
   display->drawString(0, 0, "WIFI: " + WiFi.SSID());
-  display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())));
-  display->drawString(0, 20, "Signal: " + String(getWifiSignal()) + "%");
+  display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
+  display->drawString(0, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
   display->drawString(0, 40, "URL: http://" + WiFi.localIP().toString());
     
   display->display();
-  delay(100);
 }
 
 void loop() {
@@ -422,15 +421,16 @@ void loop() {
   if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
     updateData(&display);
 
-  while (digitalRead(BUTTONHPIN) == LOW)
+  while (digitalRead(BUTTONHPIN) == LOW) {  //Preset boot button?
     showConfiguration(&display);
+    delay(100);
+  }
 
   int remainingTimeBudget = ui.update();
 
   if (remainingTimeBudget > 0) {
     // You can do some work here
-    // Don't do stuff if you are below your
-    // time budget.
+    // Don't do stuff if you are below your time budget.
     delay(remainingTimeBudget);
   }
 }
