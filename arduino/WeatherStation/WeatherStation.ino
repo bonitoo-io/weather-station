@@ -47,32 +47,36 @@ String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
 // Slovenian - sl, Spanish - es, Turkish - tr, Ukrainian - ua, Vietnamese - vi,
 // Chinese Simplified - zh_cn, Chinese Traditional - zh_tw.
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
-const uint8_t MAX_FORECASTS = 4;
+const uint8_t MAX_FORECASTS = 3;
+
+const boolean IS_METRIC = true;
+#define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
 
 // Weather update
 const int UPDATE_INTERVAL_SECS = 3600; // Update every hour
 
-// Display Settings
+// Display settings
 const int I2C_DISPLAY_ADDRESS = 0x3c;
 const int SDA_PIN = D4;
 const int SDC_PIN = D5;
 
+// Internal sensor settings
 #define DHTTYPE DHT11   // DHT 11
 #define DHTPIN D1     // Digital pin connected to the DHT sensor
+
+#define BUTTONHPIN D3  //Boot button pin
+
+// Adjust according to your language
+const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+/***************************
+ * End Settings
+ **************************/
+
 DHT dht(DHTPIN, DHTTYPE);
 float tempDHT;
 float humDHT;
 unsigned long timeDHT = 0;
-
-const boolean IS_METRIC = true;
-
-// Adjust according to your language
-const String WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-const String MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
-/***************************
- * End Settings
- **************************/
 
 // Initialize the oled display for address 0x3c
 // sda-pin=14 and sdc-pin=12
@@ -108,7 +112,6 @@ void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
 void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
 
-
 // Add frames
 // this array keeps function pointers to all frames
 // frames are the single views that slide from right to left
@@ -116,12 +119,11 @@ FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurren
 //FrameCallback frames[] = { drawDateTimeAnalog};
 OverlayCallback overlays[] = { drawHeaderOverlay };
 
-#define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
-
 void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
+  pinMode(BUTTONHPIN, INPUT);
   dht.begin();
   
   // initialize dispaly
@@ -182,26 +184,6 @@ void setup() {
   ui.init();
 
   updateData(&display);
-}
-
-void loop() {
-  if (millis() - timeSinceLastWUpdate > (1000L*UPDATE_INTERVAL_SECS)) {
-    readyForWeatherUpdate = true;
-    timeSinceLastWUpdate = millis();
-  }
-
-  if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
-    updateData(&display);
-
-
-  int remainingTimeBudget = ui.update();
-
-  if (remainingTimeBudget > 0) {
-    // You can do some work here
-    // Don't do stuff if you are below your
-    // time budget.
-    delay(remainingTimeBudget);
-  }
 }
 
 void drawProgress(OLEDDisplay *display, int percentage, String label) {
@@ -291,7 +273,7 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   char buff[16];
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  sprintf_P(buff, PSTR("%s\n%2d/%2d/%04d"), WDAY_NAMES[t->tm_wday].c_str(), t->tm_mday, t->tm_mon+1, t->tm_year + 1900);
+  sprintf_P(buff, PSTR("%s\n%2d/%2d/%04d"), WDAY_NAMES[t->tm_wday], t->tm_mday, t->tm_mon+1, t->tm_year + 1900);
   display->drawString(64 + x, 10 + y, String(buff));
 }
 
@@ -303,7 +285,7 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday].c_str(), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+  sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
   display->drawString(64 + x, 8 + y, String(buff));
   
   display->setFont(DSEG7_Classic_Bold_21);
@@ -331,7 +313,7 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 10 + y, "Temp");
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(128 + x, 10 + y, "Hum");
+  display->drawString(120 + x, 10 + y, "Hum");
  
   readDHT();
   display->setFont(ArialMT_Plain_24);
@@ -416,4 +398,54 @@ int8_t getWifiSignal() {
   if (q > 100)   
     return 100;
   return q;
+}
+
+const char* wifiStatusStr(wl_status_t status) {
+  switch (status) {
+    case WL_NO_SHIELD: return "No shield";
+    case WL_IDLE_STATUS: return "Idle";
+    case WL_NO_SSID_AVAIL: return "No SSID available";
+    case WL_SCAN_COMPLETED: return "Scan completed";
+    case WL_CONNECTED: return "Connected";
+    case WL_CONNECT_FAILED: return "Connect failed";
+    case WL_CONNECTION_LOST: return "Connection lost";
+    case WL_DISCONNECTED: return "Disconnected";
+    default: return "Unknown";    
+  }
+}
+
+void showConfiguration(OLEDDisplay *display) {
+  display->clear();
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+
+  display->drawString(0, 0, "WIFI: " + WiFi.SSID());
+  display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())));
+  display->drawString(0, 20, "Signal: " + String(getWifiSignal()) + "%");
+  display->drawString(0, 40, "URL: http://" + WiFi.localIP().toString());
+    
+  display->display();
+  delay(100);
+}
+
+void loop() {
+  if (millis() - timeSinceLastWUpdate > (1000L*UPDATE_INTERVAL_SECS)) {
+    readyForWeatherUpdate = true;
+    timeSinceLastWUpdate = millis();
+  }
+
+  if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
+    updateData(&display);
+
+  while (digitalRead(BUTTONHPIN) == LOW)
+    showConfiguration(&display);
+
+  int remainingTimeBudget = ui.update();
+
+  if (remainingTimeBudget > 0) {
+    // You can do some work here
+    // Don't do stuff if you are below your
+    // time budget.
+    delay(remainingTimeBudget);
+  }
 }
