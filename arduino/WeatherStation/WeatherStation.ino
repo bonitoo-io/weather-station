@@ -67,16 +67,17 @@ unsigned long timeDHT = 0;
 const boolean IS_METRIC = true;
 
 // Adjust according to your language
-const String WDAY_NAMES[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
-const String MONTH_NAMES[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+const String WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+const String MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 /***************************
  * End Settings
  **************************/
- // Initialize the oled display for address 0x3c
- // sda-pin=14 and sdc-pin=12
- SSD1306Wire     display(I2C_DISPLAY_ADDRESS, SDA_PIN, SDC_PIN);
- OLEDDisplayUi   ui( &display );
+
+// Initialize the oled display for address 0x3c
+// sda-pin=14 and sdc-pin=12
+SSD1306Wire     display(I2C_DISPLAY_ADDRESS, SDA_PIN, SDC_PIN);
+OLEDDisplayUi   ui( &display );
 
 OpenWeatherMapCurrentData currentWeather;
 OpenWeatherMapCurrent currentWeatherClient;
@@ -100,6 +101,7 @@ long timeSinceLastWUpdate = 0;
 void drawProgress(OLEDDisplay *display, int percentage, String label);
 void updateData(OLEDDisplay *display);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -110,11 +112,10 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
 // Add frames
 // this array keeps function pointers to all frames
 // frames are the single views that slide from right to left
-FrameCallback frames[] = { drawDateTime, drawDHT, drawCurrentWeather, drawForecast };
-int numberOfFrames = sizeof(frames) / sizeof(FrameCallback);
-
+FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurrentWeather, drawForecast};
+//FrameCallback frames[] = { drawDateTimeAnalog};
 OverlayCallback overlays[] = { drawHeaderOverlay };
-int numberOfOverlays = 1;
+
 #define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
 
 void setup() {
@@ -147,10 +148,11 @@ void setup() {
     display.clear();
     display.drawXbm( 0, 0, InfluxData_Logo_width, InfluxData_Logo_height, InfluxData_Logo_bits);
     display.drawString(88, 5, "Connecting WiFi");
-    display.drawXbm(71, 20, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
-    display.drawXbm(85, 20, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
-    display.drawXbm(99, 20, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
-    display.drawString(88, 30, "V" VERSION);
+    display.drawString(88, 15, WIFI_SSID);
+    display.drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
+    display.drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
+    display.drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
+    display.drawString(88, 40, "V" VERSION);
     display.display();
 
     counter++;
@@ -172,9 +174,9 @@ void setup() {
   // SLIDE_LEFT, SLIDE_RIGHT, SLIDE_TOP, SLIDE_DOWN
   ui.setFrameAnimation(SLIDE_LEFT);
 
-  ui.setFrames(frames, numberOfFrames);
+  ui.setFrames(frames, sizeof(frames) / sizeof(FrameCallback));
 
-  ui.setOverlays(overlays, numberOfOverlays);
+  ui.setOverlays(overlays, sizeof(overlays) / sizeof(OverlayCallback));
 
   // Inital UI takes care of initalising the display too.
   ui.init();
@@ -188,9 +190,9 @@ void loop() {
     timeSinceLastWUpdate = millis();
   }
 
-  if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED) {
+  if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
     updateData(&display);
-  }
+
 
   int remainingTimeBudget = ui.update();
 
@@ -226,8 +228,71 @@ void updateData(OLEDDisplay *display) {
   forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
 
   readyForWeatherUpdate = false;
-  drawProgress(display, 100, "Done...");
+  drawProgress(display, 100, "Done");
   delay(1000);
+}
+
+void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  const int clockCenterX=30;
+  const int clockCenterY=30;
+  const int clockSize=20;
+  
+  int i;
+  now = time(nullptr);
+  struct tm* t;
+  t = localtime(&now);
+  
+  // Draw marks for hours
+  for (i=0; i<12; i++) {
+    float f = ((i * 30) + 270) * 0.0175;
+    display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-4+(i%3==0?0:3))*cos(f)+clockCenterX, (clockSize-4+(i%3==0?0:3))*sin(f)+clockCenterY);
+  }
+
+  //draw seconds
+  float s = ((t->tm_sec*6)+270)*0.0175;
+  display->drawLine(clockSize*cos(s)+clockCenterX, clockSize*sin(s)+clockCenterY, cos(s)+clockCenterX, sin(s)+clockCenterY);
+
+  //Draw minutes
+  float x1, y1, x2, y2, x3, y3, x4, y4;
+  int m=(t->tm_min*6)+270;
+ 
+  x1=(clockSize-3)*cos(m*0.0175);
+  y1=(clockSize-3)*sin(m*0.0175);
+  x2=cos(m*0.0175);
+  y2=sin(m*0.0175);
+  x3=10*cos((m+8)*0.0175);
+  y3=10*sin((m+8)*0.0175);
+  x4=10*cos((m-8)*0.0175);
+  y4=10*sin((m-8)*0.0175);
+  
+  display->drawLine(x1+clockCenterX, y1+clockCenterY, x3+clockCenterX, y3+clockCenterY);
+  display->drawLine(x3+clockCenterX, y3+clockCenterY, x2+clockCenterX, y2+clockCenterY);
+  display->drawLine(x2+clockCenterX, y2+clockCenterY, x4+clockCenterX, y4+clockCenterY);
+  display->drawLine(x4+clockCenterX, y4+clockCenterY, x1+clockCenterX, y1+clockCenterY);
+
+  //draw hour
+  int h=(t->tm_hour*30)+(t->tm_min/2)+270;
+  
+  x1=(clockSize-7)*cos(h*0.0175);
+  y1=(clockSize-7)*sin(h*0.0175);
+  x2=cos(h*0.0175);
+  y2=sin(h*0.0175);
+  x3=8*cos((h+12)*0.0175);
+  y3=8*sin((h+12)*0.0175);
+  x4=8*cos((h-12)*0.0175);
+  y4=8*sin((h-12)*0.0175);
+  
+  display->drawLine(x1+clockCenterX, y1+clockCenterY, x3+clockCenterX, y3+clockCenterY);
+  display->drawLine(x3+clockCenterX, y3+clockCenterY, x2+clockCenterX, y2+clockCenterY);
+  display->drawLine(x2+clockCenterX, y2+clockCenterY, x4+clockCenterX, y4+clockCenterY);
+  display->drawLine(x4+clockCenterX, y4+clockCenterY, x1+clockCenterX, y1+clockCenterY);
+  
+  //draw date
+  char buff[16];
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  sprintf_P(buff, PSTR("%s\n%2d/%2d/%04d"), WDAY_NAMES[t->tm_wday].c_str(), t->tm_mday, t->tm_mon+1, t->tm_year + 1900);
+  display->drawString(64 + x, 10 + y, String(buff));
 }
 
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -236,13 +301,10 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   timeInfo = localtime(&now);
   char buff[16];
 
-
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  String date = WDAY_NAMES[timeInfo->tm_wday];
-
   sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday].c_str(), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
-  display->drawString(64 + x, 5 + y, String(buff));
+  display->drawString(64 + x, 8 + y, String(buff));
   
   display->setFont(DSEG7_Classic_Bold_21);
   sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
@@ -265,7 +327,12 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(64 + x, 5 + y, "INDOOR");
-
+  
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(0 + x, 10 + y, "Temp");
+  display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  display->drawString(128 + x, 10 + y, "Hum");
+ 
   readDHT();
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
