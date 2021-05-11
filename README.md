@@ -5,10 +5,14 @@ Weather station with OLED and WiFi (using ESP8266, SSD1306, and DHT11) with Infl
 ## Arduino IDE
 
 * Into "File/Preferences/Additional Boards Manager URLs:" add "http://arduino.esp8266.com/stable/package_esp8266com_index.json"
-* Select Board: NodeMCU 1.0 (ESP-12E Module)
+* Menu Tools/Board:/Boards Manager select esp8266 and Install it
+* Select Tools/Board: NodeMCU 1.0 (ESP-12E Module)
+* Connect weather station via USB
+* Select Tools/Port: the serial port created by the weather station
 * Open WeatherStation.ino file
 * Modify WIFI_SSID and WIFI_PWD
 * Update OPEN_WEATHER_MAP_API_KEY
+* Click the secon icon in the toolbar "Upload"
 
 ## Required Libraries
 
