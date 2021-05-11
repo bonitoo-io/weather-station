@@ -27,9 +27,6 @@
 #define WIFI_SSID "yourssid"
 #define WIFI_PWD "yourpassword"
 
-#define TZ              1       // (utc+) TZ in hours
-#define DST_MN          60      // use 60mn for summer time in some countries
-
 // https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define OPEN_WEATHER_MAP_API_KEY "XXX"
 
@@ -37,15 +34,6 @@
 
 // Go to https://openweathermap.org/find?q= and search for a location
 String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
-
-// Pick a language code from this list:
-// Arabic - ar, Bulgarian - bg, Catalan - ca, Czech - cz, German - de, Greek - el,
-// English - en, Persian (Farsi) - fa, Finnish - fi, French - fr, Galician - gl,
-// Croatian - hr, Hungarian - hu, Italian - it, Japanese - ja, Korean - kr,
-// Latvian - la, Lithuanian - lt, Macedonian - mk, Dutch - nl, Polish - pl,
-// Portuguese - pt, Romanian - ro, Russian - ru, Swedish - se, Slovak - sk,
-// Slovenian - sl, Spanish - es, Turkish - tr, Ukrainian - ua, Vietnamese - vi,
-// Chinese Simplified - zh_cn, Chinese Traditional - zh_tw.
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
 const uint8_t MAX_FORECASTS = 3;
 
@@ -89,9 +77,6 @@ OpenWeatherMapCurrent currentWeatherClient;
 OpenWeatherMapForecastData forecasts[MAX_FORECASTS];
 OpenWeatherMapForecast forecastClient;
 
-#define TZ_MN           ((TZ)*60)
-#define TZ_SEC          ((TZ)*3600)
-#define DST_SEC         ((DST_MN)*60)
 time_t now;
 
 // flag changed in the ticker function every 10 minutes
@@ -215,8 +200,8 @@ void updateData(OLEDDisplay *display) {
 }
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  const int clockCenterX=30;
-  const int clockCenterY=30;
+  int clockCenterX=30+x;
+  int clockCenterY=30+y;
   const int clockSize=20;
   
   int i;
