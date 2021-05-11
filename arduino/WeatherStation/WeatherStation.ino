@@ -1,19 +1,18 @@
-#define VERSION "0.03"
+#define VERSION "0.04"
 
+// Include libraries
 #include <Arduino.h>
 #include <ESPWiFi.h>
 #include <ESPHTTPClient.h>
 #include <JsonListener.h>
-
-// Influxdb
+#include <Wire.h>
+#include <SSD1306Wire.h>
+#include <OLEDDisplayUi.h>
+#include <OpenWeatherMapCurrent.h>
+#include <OpenWeatherMapForecast.h>
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
-#include "SSD1306Wire.h"
-#include "OLEDDisplayUi.h"
-#include "Wire.h"
-#include "OpenWeatherMapCurrent.h"
-#include "OpenWeatherMapForecast.h"
 #include "WeatherStationFonts.h"
 #include "DSEG7Classic-BoldFont.h"
 #include "WeatherStationImages.h"
@@ -48,13 +47,25 @@ const int SDC_PIN = D5;
 
 // Internal sensor settings
 #define DHTTYPE DHT11   // DHT 11
-#define DHTPIN D1     // Digital pin connected to the DHT sensor
+#define DHTPIN D1       // Digital pin connected to the DHT sensor
 
-#define BUTTONHPIN D3  //Boot button pin
+#define BUTTONHPIN D3   //Boot button pin
 
 // Adjust according to your language
 const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+// InfluxDB v2 server url, e.g. https://eu-central-1-1.aws.cloud2.influxdata.com (Use: InfluxDB UI -> Load Data -> Client Libraries)
+#define INFLUXDB_URL "server-url"
+// InfluxDB v2 server or cloud API authentication token (Use: InfluxDB UI -> Load Data -> Tokens -> <select token>)
+#define INFLUXDB_TOKEN "server token"
+// InfluxDB v2 organization id (Use: InfluxDB UI -> Settings -> Profile -> <name under tile> )
+#define INFLUXDB_ORG "org id"
+// InfluxDB v2 bucket name (Use: InfluxDB UI -> Load Data -> Buckets)
+#define INFLUXDB_BUCKET "bucket name"
+// Refresh rate - write temperature and humidity
+#define INFLUXDB_REFRESH_SECS 60  //Once per minute
+
 /***************************
  * End Settings
  **************************/
@@ -84,6 +95,12 @@ bool readyForWeatherUpdate = false;
 String lastUpdate = "--";
 
 long timeSinceLastWUpdate = 0;
+long timeLastInfluxDBUpdate = 0;
+
+// Data point
+Point sensor("environment");
+
+InfluxDBClient influxDBClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 
 //declaring prototypes
 void drawProgress(OLEDDisplay *display, int percentage, String label);
@@ -121,7 +138,7 @@ void setup() {
   display.setContrast(255);
   
   WiFi.begin(WIFI_SSID, WIFI_PWD);
-  display.drawXbm( 0, 0, InfluxData_Logo_width, InfluxData_Logo_height, InfluxData_Logo_bits);
+  display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
   display.drawString(88, 5, "Weather Station\nby InfluxData\nV" VERSION);
   display.display();
   delay(500);
@@ -132,20 +149,20 @@ void setup() {
     delay(500);
     Serial.print(".");
     display.clear();
-    display.drawXbm( 0, 0, InfluxData_Logo_width, InfluxData_Logo_height, InfluxData_Logo_bits);
+    display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
     display.drawString(88, 5, "Connecting WiFi");
     display.drawString(88, 15, WIFI_SSID);
     display.drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
     display.drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
     display.drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
-    display.drawString(88, 40, "V" VERSION);
+    display.drawString(88, 40, wifiStatusStr(WiFi.status()));
     display.display();
 
     counter++;
   }
   
   ui.setTargetFPS(30);
-  ui.setTimePerFrame(8000);
+  ui.setTimePerFrame(10000);
 
   ui.setActiveSymbol(activeSymbole);
   ui.setInactiveSymbol(inactiveSymbole);
@@ -169,6 +186,9 @@ void setup() {
   ui.init();
 
   updateData(&display);
+
+  //Add tags
+  sensor.addTag("DEVICE", "WS-" + WiFi.SSID() + "-" + WiFi.localIP().toString());
 }
 
 void drawProgress(OLEDDisplay *display, int percentage, String label) {
@@ -181,19 +201,28 @@ void drawProgress(OLEDDisplay *display, int percentage, String label) {
 }
 
 void updateData(OLEDDisplay *display) {
-  drawProgress(display, 10, "Updating time...");
+  drawProgress(display, 10, "Updating time");
   timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
-  drawProgress(display, 30, "Updating weather...");
+  drawProgress(display, 30, "Updating weather");
   currentWeatherClient.setMetric(IS_METRIC);
   currentWeatherClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   currentWeatherClient.updateCurrent(&currentWeather, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION);
-  drawProgress(display, 50, "Updating forecasts...");
+  drawProgress(display, 50, "Updating forecasts");
   forecastClient.setMetric(IS_METRIC);
   forecastClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
-
+  
+  drawProgress(display, 80, "InfluxDB connection");
+  // Check server connection
+  if (influxDBClient.validateConnection()) {
+    Serial.print("Connected to InfluxDB: ");
+    Serial.println(influxDBClient.getServerUrl());
+  } else {
+    Serial.print("InfluxDB connection failed: ");
+    Serial.println(influxDBClient.getLastErrorMessage());
+  }
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   delay(1000);
@@ -258,7 +287,7 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   char buff[16];
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  sprintf_P(buff, PSTR("%s\n%2d/%2d/%04d"), WDAY_NAMES[t->tm_wday], t->tm_mday, t->tm_mon+1, t->tm_year + 1900);
+  sprintf_P(buff, PSTR("%s\n%2d/%2d/%04d\n%s"), WDAY_NAMES[t->tm_wday], t->tm_mday, t->tm_mon+1, t->tm_year + 1900, MONTH_NAMES[t->tm_mon]);
   display->drawString(64 + x, 10 + y, String(buff));
 }
 
@@ -276,7 +305,6 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   display->setFont(DSEG7_Classic_Bold_21);
   sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
   display->drawString(64 + x, 20 + y, String(buff));
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
 }
 
 void readDHT() {
@@ -316,9 +344,9 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->drawString(64 + x, 38 + y, currentWeather.description);
 
   display->setFont(ArialMT_Plain_24);
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setTextAlignment(TEXT_ALIGN_RIGHT);
   String temp = String(currentWeather.temp, 1) + (IS_METRIC ? "°C" : "°F");
-  display->drawString(60 + x, 10 + y, temp);
+  display->drawString(128 + x, 10 + y, temp);
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -403,12 +431,12 @@ void showConfiguration(OLEDDisplay *display) {
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-
   display->drawString(0, 0, "WIFI: " + WiFi.SSID());
   display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
   display->drawString(0, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
-  display->drawString(0, 40, "URL: http://" + WiFi.localIP().toString());
-    
+  display->drawString(0, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? influxDBClient.getServerUrl() : influxDBClient.getLastErrorMessage()));
+  display->drawString(0, 40, "Version: " VERSION);
+  display->drawString(0, 50, "URL: http://" + WiFi.localIP().toString());
   display->display();
 }
 
@@ -421,12 +449,33 @@ void loop() {
   if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
     updateData(&display);
 
+  int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Preset boot button?
+    loops++;
     showConfiguration(&display);
     delay(100);
+    if (loops > 200)  //reboot after 20 seconds
+      ESP.restart();    
   }
 
   int remainingTimeBudget = ui.update();
+  
+  if (millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS)) {
+    timeLastInfluxDBUpdate = millis();
+    sensor.clearFields();
+    // Report temperature and humidity
+    sensor.addField("Temperature", tempDHT);
+    sensor.addField("Humidity", humDHT);
+    // Print what are we exactly writing
+    Serial.print("Writing: ");
+    Serial.println(influxDBClient.pointToLineProtocol(sensor));
+
+    // Write point
+    if (!influxDBClient.writePoint(sensor)) {
+      Serial.print("InfluxDB write failed: ");
+      Serial.println(influxDBClient.getLastErrorMessage());
+    }
+  }
 
   if (remainingTimeBudget > 0) {
     // You can do some work here
