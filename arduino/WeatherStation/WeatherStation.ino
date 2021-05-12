@@ -1,4 +1,4 @@
-#define VERSION "0.04"
+#define VERSION "0.06"
 
 // Include libraries
 #include <Arduino.h>
@@ -35,6 +35,7 @@ String OPEN_WEATHER_MAP_LANGUAGE = "en";
 const uint8_t MAX_FORECASTS = 3;
 
 const boolean IS_METRIC = true;
+//https://remotemonitoringsystems.ca/time-zone-abbreviations.php
 #define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
 
 // Weather update
@@ -93,6 +94,7 @@ time_t now;
 bool readyForWeatherUpdate = false;
 
 String lastUpdate = "--";
+String deviceID;
 
 long timeSinceLastWUpdate = 0;
 long timeLastInfluxDBUpdate = 0;
@@ -150,12 +152,12 @@ void setup() {
     Serial.print(".");
     display.clear();
     display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
-    display.drawString(88, 5, "Connecting WiFi");
+    display.drawString(88, 0, "Connecting WiFi");
     display.drawString(88, 15, WIFI_SSID);
     display.drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
     display.drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
     display.drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
-    display.drawString(88, 40, wifiStatusStr(WiFi.status()));
+    display.drawString(88, 40, "V" VERSION);
     display.display();
 
     counter++;
@@ -187,8 +189,18 @@ void setup() {
 
   updateData(&display);
 
+  //Generate Device ID
+  deviceID = "WS-" + WiFi.macAddress() + "-" + WiFi.SSID();
+  deviceID.remove(17, 1);
+  deviceID.remove(14, 1);
+  deviceID.remove(11, 1);
+  deviceID.remove(8, 1);
+  deviceID.remove(5, 1);
+  Serial.println( deviceID);
   //Add tags
-  sensor.addTag("DEVICE", "WS-" + WiFi.SSID() + "-" + WiFi.localIP().toString());
+  sensor.addTag("DEVICE", deviceID);
+  sensor.addTag("TemperatureSensor", "DHT11");
+  sensor.addTag("HumiditySensor", "DHT11");
 }
 
 void drawProgress(OLEDDisplay *display, int percentage, String label) {
@@ -214,7 +226,7 @@ void updateData(OLEDDisplay *display) {
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
   
-  drawProgress(display, 80, "InfluxDB connection");
+  drawProgress(display, 70, "InfluxDB connection");
   // Check server connection
   if (influxDBClient.validateConnection()) {
     Serial.print("Connected to InfluxDB: ");
@@ -225,7 +237,7 @@ void updateData(OLEDDisplay *display) {
   }
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
-  delay(1000);
+  delay(500);
 }
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -284,10 +296,10 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->drawLine(x4+clockCenterX, y4+clockCenterY, x1+clockCenterX, y1+clockCenterY);
   
   //draw date
-  char buff[16];
+  char buff[19];
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  sprintf_P(buff, PSTR("%s\n%2d/%2d/%04d\n%s"), WDAY_NAMES[t->tm_wday], t->tm_mday, t->tm_mon+1, t->tm_year + 1900, MONTH_NAMES[t->tm_mon]);
+  sprintf_P(buff, PSTR("%s, %s\n%2d/%2d/%04d"), WDAY_NAMES[t->tm_wday], MONTH_NAMES[t->tm_mon], t->tm_mday, t->tm_mon+1, t->tm_year + 1900);
   display->drawString(64 + x, 10 + y, String(buff));
 }
 
@@ -434,8 +446,8 @@ void showConfiguration(OLEDDisplay *display) {
   display->drawString(0, 0, "WIFI: " + WiFi.SSID());
   display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
   display->drawString(0, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
-  display->drawString(0, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? influxDBClient.getServerUrl() : influxDBClient.getLastErrorMessage()));
-  display->drawString(0, 40, "Version: " VERSION);
+  display->drawString(0, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
+  display->drawString(0, 40, "V" VERSION);
   display->drawString(0, 50, "URL: http://" + WiFi.localIP().toString());
   display->display();
 }
@@ -452,10 +464,11 @@ void loop() {
   int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Preset boot button?
     loops++;
-    showConfiguration(&display);
-    delay(100);
     if (loops > 200)  //reboot after 20 seconds
       ESP.restart();    
+    
+    showConfiguration(&display);
+    delay(100);
   }
 
   int remainingTimeBudget = ui.update();
