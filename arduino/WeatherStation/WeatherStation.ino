@@ -1,4 +1,4 @@
-#define VERSION "0.07"
+#define VERSION "0.08"
 
 // Include libraries
 #include <Arduino.h>
@@ -106,7 +106,7 @@ InfluxDBClient influxDBClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLU
 
 //declaring prototypes
 void drawProgress(OLEDDisplay *display, int percentage, String label);
-void updateData(OLEDDisplay *display);
+void updateData(OLEDDisplay *display, bool firstStart);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -140,6 +140,7 @@ void setup() {
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setContrast(255);
   
+  WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
   display.drawString(88, 5, "Weather Station\nby InfluxData\nV" VERSION);
@@ -188,7 +189,7 @@ void setup() {
   // Inital UI takes care of initalising the display too
   ui.init();
 
-  updateData(&display);
+  updateData(&display, true);
 
   //Generate Device ID
   deviceID = "WS-" + WiFi.macAddress() + "-" + WiFi.SSID();
@@ -213,10 +214,11 @@ void drawProgress(OLEDDisplay *display, int percentage, String label) {
   display->display();
 }
 
-void updateData(OLEDDisplay *display) {
+void updateData(OLEDDisplay *display, bool firstStart) {
   ESP.wdtFeed();
   drawProgress(display, 10, "Updating time");
-  timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+  if (firstStart)
+    timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
   ESP.wdtFeed();
   drawProgress(display, 30, "Updating weather");
   currentWeatherClient.setMetric(IS_METRIC);
@@ -230,15 +232,16 @@ void updateData(OLEDDisplay *display) {
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
   ESP.wdtFeed();
-  drawProgress(display, 70, "InfluxDB connection");
+  drawProgress(display, 70, "Connecting InfluxDB");
   // Check server connection
-  if (influxDBClient.validateConnection()) {
-    Serial.print("Connected to InfluxDB: ");
-    Serial.println(influxDBClient.getServerUrl());
-  } else {
-    Serial.print("InfluxDB connection failed: ");
-    Serial.println(influxDBClient.getLastErrorMessage());
-  }
+  if (firstStart)
+    if (influxDBClient.validateConnection()) {
+      Serial.print("Connected to InfluxDB: ");
+      Serial.println(influxDBClient.getServerUrl());
+    } else {
+      Serial.print("InfluxDB connection failed: ");
+      Serial.println(influxDBClient.getLastErrorMessage());
+    }
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   ESP.wdtFeed();
@@ -448,12 +451,17 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(0, 0, "WIFI: " + WiFi.SSID());
-  display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
-  display->drawString(0, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
-  display->drawString(0, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
-  display->drawString(0, 40, (secToReset > 5 ? "V" VERSION : "Reseting in " + String(secToReset) + "s!"));
-  display->drawString(0, 50, "http://" + WiFi.localIP().toString());
+  display->drawRect(0, 0, 128, 64);
+  if ( secToReset > 5) {
+    display->drawString(1, 0, "WIFI: " + WiFi.SSID());
+    display->drawString(1, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
+    display->drawString(1, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
+    display->drawString(1, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
+    display->drawString(1, 40, "V" VERSION);
+    display->drawString(1, 50, "http://" + WiFi.localIP().toString());
+  } else
+    display->drawString(0, 30, "RESETING IN " + String(secToReset) + "s !");
+  
   display->display();
 }
 
@@ -464,21 +472,27 @@ void loop() {
   }
 
   if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
-    updateData(&display);
+    updateData(&display,false);
 
   int loops = 0;
-  while (digitalRead(BUTTONHPIN) == LOW) {  //Preset boot button?
+  while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
+    if (loops == 0)
+      ui.nextFrame();   //jump to the next frame 
+    
+    if (loops > 4)
+      showConfiguration(&display, (200 - loops) / 10);  //Show configuration after 0.5s
+    
     loops++;
     if (loops > 200)  //reboot after 20 seconds
       ESP.restart();    
     
-    showConfiguration(&display, (200 - loops) / 10);
     ESP.wdtFeed();
     delay(100);
   }
 
   int remainingTimeBudget = ui.update();
   
+  //Write into InfluxDB
   if (millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS)) {
     timeLastInfluxDBUpdate = millis();
     sensor.clearFields();
