@@ -1,4 +1,4 @@
-#define VERSION "0.08"
+#define VERSION "0.09"
 
 // Include libraries
 #include <Arduino.h>
@@ -102,7 +102,7 @@ long timeLastInfluxDBUpdate = 0;
 // Data point
 Point sensor("environment");
 
-InfluxDBClient influxDBClient(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
+InfluxDBClient influxDBClient;
 
 //declaring prototypes
 void drawProgress(OLEDDisplay *display, int percentage, String label);
@@ -189,8 +189,6 @@ void setup() {
   // Inital UI takes care of initalising the display too
   ui.init();
 
-  updateData(&display, true);
-
   //Generate Device ID
   deviceID = "WS-" + WiFi.macAddress() + "-" + WiFi.SSID();
   deviceID.remove(17, 1);
@@ -199,10 +197,13 @@ void setup() {
   deviceID.remove(8, 1);
   deviceID.remove(5, 1);
 
-  //Add tags for InfluxDB
+  //Configure InfluxDB
+  influxDBClient.setConnectionParams(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
   sensor.addTag("DEVICE", deviceID);
   sensor.addTag("TemperatureSensor", "DHT11");
   sensor.addTag("HumiditySensor", "DHT11");
+  
+  updateData(&display, true);
 }
 
 void drawProgress(OLEDDisplay *display, int percentage, String label) {
@@ -493,7 +494,7 @@ void loop() {
   int remainingTimeBudget = ui.update();
   
   //Write into InfluxDB
-  if (millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS)) {
+  if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS))) {
     timeLastInfluxDBUpdate = millis();
     sensor.clearFields();
     readDHT();
