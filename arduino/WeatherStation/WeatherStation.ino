@@ -1,4 +1,4 @@
-#define VERSION "0.06"
+#define VERSION "0.07"
 
 // Include libraries
 #include <Arduino.h>
@@ -39,7 +39,7 @@ const boolean IS_METRIC = true;
 #define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
 
 // Weather update
-const int UPDATE_INTERVAL_SECS = 3600; // Update every hour
+const int UPDATE_INTERVAL_SECS = 3600; // Update weather every hour
 
 // Display settings
 const int I2C_DISPLAY_ADDRESS = 0x3c;
@@ -126,6 +126,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
+  ESP.wdtEnable(10000); //10 seconds watchdog timeout
   pinMode(BUTTONHPIN, INPUT);
   dht.begin();
   
@@ -196,8 +197,8 @@ void setup() {
   deviceID.remove(11, 1);
   deviceID.remove(8, 1);
   deviceID.remove(5, 1);
-  Serial.println( deviceID);
-  //Add tags
+
+  //Add tags for InfluxDB
   sensor.addTag("DEVICE", deviceID);
   sensor.addTag("TemperatureSensor", "DHT11");
   sensor.addTag("HumiditySensor", "DHT11");
@@ -213,19 +214,22 @@ void drawProgress(OLEDDisplay *display, int percentage, String label) {
 }
 
 void updateData(OLEDDisplay *display) {
+  ESP.wdtFeed();
   drawProgress(display, 10, "Updating time");
   timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+  ESP.wdtFeed();
   drawProgress(display, 30, "Updating weather");
   currentWeatherClient.setMetric(IS_METRIC);
   currentWeatherClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   currentWeatherClient.updateCurrent(&currentWeather, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION);
+  ESP.wdtFeed();
   drawProgress(display, 50, "Updating forecasts");
   forecastClient.setMetric(IS_METRIC);
   forecastClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
-  
+  ESP.wdtFeed();
   drawProgress(display, 70, "InfluxDB connection");
   // Check server connection
   if (influxDBClient.validateConnection()) {
@@ -237,6 +241,7 @@ void updateData(OLEDDisplay *display) {
   }
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
+  ESP.wdtFeed();
   delay(500);
 }
 
@@ -439,7 +444,7 @@ const char* wifiStatusStr(wl_status_t status) {
   }
 }
 
-void showConfiguration(OLEDDisplay *display) {
+void showConfiguration(OLEDDisplay *display, int secToReset) {
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
@@ -447,8 +452,8 @@ void showConfiguration(OLEDDisplay *display) {
   display->drawString(0, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
   display->drawString(0, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
   display->drawString(0, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
-  display->drawString(0, 40, "V" VERSION);
-  display->drawString(0, 50, "URL: http://" + WiFi.localIP().toString());
+  display->drawString(0, 40, (secToReset > 5 ? "V" VERSION : "Reseting in " + String(secToReset) + "s!"));
+  display->drawString(0, 50, "http://" + WiFi.localIP().toString());
   display->display();
 }
 
@@ -467,7 +472,8 @@ void loop() {
     if (loops > 200)  //reboot after 20 seconds
       ESP.restart();    
     
-    showConfiguration(&display);
+    showConfiguration(&display, (200 - loops) / 10);
+    ESP.wdtFeed();
     delay(100);
   }
 
@@ -476,6 +482,7 @@ void loop() {
   if (millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS)) {
     timeLastInfluxDBUpdate = millis();
     sensor.clearFields();
+    readDHT();
     // Report temperature and humidity
     sensor.addField("Temperature", tempDHT);
     sensor.addField("Humidity", humDHT);
@@ -489,10 +496,11 @@ void loop() {
       Serial.println(influxDBClient.getLastErrorMessage());
     }
   }
-
+  
+  ESP.wdtFeed();
   if (remainingTimeBudget > 0) {
     // You can do some work here
     // Don't do stuff if you are below your time budget.
     delay(remainingTimeBudget);
-  }
+  }  
 }
