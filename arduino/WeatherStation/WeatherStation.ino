@@ -1,4 +1,4 @@
-#define VERSION "0.09"
+#define VERSION "0.10"
 
 // Include libraries
 #include <Arduino.h>
@@ -199,7 +199,8 @@ void setup() {
 
   //Configure InfluxDB
   influxDBClient.setConnectionParams(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
-  sensor.addTag("DEVICE", deviceID);
+  sensor.addTag("clientId", deviceID);
+  sensor.addTag("Device", "WS-ESP8266");
   sensor.addTag("TemperatureSensor", "DHT11");
   sensor.addTag("HumiditySensor", "DHT11");
   
@@ -454,10 +455,10 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
   display->setFont(ArialMT_Plain_10);
   display->drawRect(0, 0, 128, 64);
   if ( secToReset > 5) {
-    display->drawString(1, 0, "WIFI: " + WiFi.SSID());
-    display->drawString(1, 10, "Status: " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
+    display->drawString(1, 0, "WIFI " + WiFi.SSID());
+    display->drawString(1, 10, "Status " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
     display->drawString(1, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
-    display->drawString(1, 30, "InfluxDB: " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
+    display->drawString(1, 30, "InfluxDB " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
     display->drawString(1, 40, "V" VERSION);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());
   } else
