@@ -31,6 +31,7 @@
 
 // Go to https://openweathermap.org/find?q= and search for a location
 String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
+int utc_offset = 0;
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
 const uint8_t MAX_FORECASTS = 3;
 
@@ -114,6 +115,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
+void detectLocationFromIP( String& location, int& utc_offset);
 
 // Add frames
 // this array keeps function pointers to all frames
@@ -218,7 +220,11 @@ void drawProgress(OLEDDisplay *display, int percentage, String label) {
 
 void updateData(OLEDDisplay *display, bool firstStart) {
   ESP.wdtFeed();
-  drawProgress(display, 10, "Updating time");
+  drawProgress(display, 10, "Detecting location");
+  if (firstStart)
+   detectLocationFromIP( OPEN_WEATHER_MAP_LOCATION, utc_offset);
+  ESP.wdtFeed();
+  drawProgress(display, 20, "Updating time");
   if (firstStart)
     timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
   ESP.wdtFeed();
@@ -333,7 +339,7 @@ void readDHT() {
   unsigned long actualTime = millis();
   if ( timeDHT > actualTime)
     timeDHT = actualTime; 
-  if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise privide "cached" values
+  if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise provide "cached" values
     tempDHT = dht.readTemperature(!IS_METRIC);
     humDHT = dht.readHumidity();
     timeDHT = millis();
@@ -367,8 +373,8 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  String temp = String(currentWeather.temp, 1) + (IS_METRIC ? "°C" : "°F");
-  display->drawString(128 + x, 10 + y, temp);
+  String temp = String(currentWeather.temp, 0) + (IS_METRIC ? "°C" : "°F");
+  display->drawString(display->getWidth() + x, 10 + y, temp);
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -422,7 +428,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     }
   }
   
-  display->drawHorizontalLine(0, 52, 128);
+  display->drawHorizontalLine(0, 52, display->getWidth());
 }
 
 // convert the wifi dbm to %
@@ -453,13 +459,13 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  display->drawRect(0, 0, 128, 64);
+  display->drawRect(0, 0, display->getWidth(), display->getHeight());
   if ( secToReset > 5) {
     display->drawString(1, 0, "WIFI " + WiFi.SSID());
     display->drawString(1, 10, "Status " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
     display->drawString(1, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
     display->drawString(1, 30, "InfluxDB " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
-    display->drawString(1, 40, "V" VERSION);
+    display->drawString(1, 40, String("V" VERSION) + ", " + OPEN_WEATHER_MAP_LOCATION);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, "RESETING IN " + String(secToReset) + "s !");
