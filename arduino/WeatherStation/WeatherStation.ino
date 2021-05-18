@@ -1,4 +1,4 @@
-#define VERSION "0.10"
+#define VERSION "0.20"
 
 // Include libraries
 #include <Arduino.h>
@@ -33,9 +33,11 @@
 String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
 int utc_offset = 0;
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
+String country;
 const uint8_t MAX_FORECASTS = 3;
 
-const boolean IS_METRIC = true;
+bool bMetric = true;
+bool b24hour = true;
 //https://remotemonitoringsystems.ca/time-zone-abbreviations.php
 #define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
 
@@ -115,11 +117,11 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-void detectLocationFromIP( String& location, int& utc_offset);
+void detectLocationFromIP( String& location, int& utc_offset, String& country, String& lang, bool& b24h, bool& metric);
+String utf8ascii(const String s);
+void testutf8();
 
-// Add frames
-// this array keeps function pointers to all frames
-// frames are the single views that slide from right to left
+// This array keeps function pointers to all frames, frames are the single views that slide from right to left
 FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurrentWeather, drawForecast};
 //FrameCallback frames[] = { drawDateTimeAnalog};
 OverlayCallback overlays[] = { drawHeaderOverlay };
@@ -131,7 +133,7 @@ void setup() {
   ESP.wdtEnable(10000); //10 seconds watchdog timeout
   pinMode(BUTTONHPIN, INPUT);
   dht.begin();
-  
+
   // initialize dispaly
   display.init();
   display.clear();
@@ -141,7 +143,7 @@ void setup() {
   display.setFont(ArialMT_Plain_10);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setContrast(255);
-  
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
@@ -151,8 +153,8 @@ void setup() {
   readDHT();
 
   int counter = 0;
+  Serial.print("Wifi " WIFI_SSID);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
     Serial.print(".");
     display.clear();
     display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
@@ -163,10 +165,11 @@ void setup() {
     display.drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
     display.drawString(88, 40, "V" VERSION);
     display.display();
-
     counter++;
+    delay(500);
   }
-  
+  Serial.println();
+
   ui.setTargetFPS(30);
   ui.setTimePerFrame(10000);
 
@@ -205,7 +208,7 @@ void setup() {
   sensor.addTag("Device", "WS-ESP8266");
   sensor.addTag("TemperatureSensor", "DHT11");
   sensor.addTag("HumiditySensor", "DHT11");
-  
+
   updateData(&display, true);
 }
 
@@ -221,26 +224,27 @@ void drawProgress(OLEDDisplay *display, int percentage, String label) {
 void updateData(OLEDDisplay *display, bool firstStart) {
   ESP.wdtFeed();
   drawProgress(display, 10, "Detecting location");
-  if (firstStart)
-   detectLocationFromIP( OPEN_WEATHER_MAP_LOCATION, utc_offset);
+
+  detectLocationFromIP( OPEN_WEATHER_MAP_LOCATION, utc_offset, country, OPEN_WEATHER_MAP_LANGUAGE, b24hour, bMetric); //Load location data from IP
+
   ESP.wdtFeed();
   drawProgress(display, 20, "Updating time");
   if (firstStart)
     timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
   ESP.wdtFeed();
-  drawProgress(display, 30, "Updating weather");
-  currentWeatherClient.setMetric(IS_METRIC);
+  drawProgress(display, 40, "Updating weather");
+  currentWeatherClient.setMetric(bMetric);
   currentWeatherClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   currentWeatherClient.updateCurrent(&currentWeather, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION);
   ESP.wdtFeed();
-  drawProgress(display, 50, "Updating forecasts");
-  forecastClient.setMetric(IS_METRIC);
+  drawProgress(display, 60, "Updating forecasts");
+  forecastClient.setMetric(bMetric);
   forecastClient.setLanguage(OPEN_WEATHER_MAP_LANGUAGE);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(forecasts, OPEN_WEATHER_MAP_API_KEY, OPEN_WEATHER_MAP_LOCATION, MAX_FORECASTS);
   ESP.wdtFeed();
-  drawProgress(display, 70, "Connecting InfluxDB");
+  drawProgress(display, 80, "Connecting InfluxDB");
   // Check server connection
   if (firstStart)
     if (influxDBClient.validateConnection()) {
@@ -260,12 +264,12 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   int clockCenterX=30+x;
   int clockCenterY=30+y;
   const int clockSize=20;
-  
+
   int i;
   now = time(nullptr);
   struct tm* t;
   t = localtime(&now);
-  
+
   // Draw marks for hours
   for (i=0; i<12; i++) {
     float f = ((i * 30) + 270) * 0.0175;
@@ -279,7 +283,7 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   //Draw minutes
   float x1, y1, x2, y2, x3, y3, x4, y4;
   int m=(t->tm_min*6)+270;
- 
+
   x1=(clockSize-3)*cos(m*0.0175);
   y1=(clockSize-3)*sin(m*0.0175);
   x2=cos(m*0.0175);
@@ -288,7 +292,7 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   y3=10*sin((m+8)*0.0175);
   x4=10*cos((m-8)*0.0175);
   y4=10*sin((m-8)*0.0175);
-  
+
   display->drawLine(x1+clockCenterX, y1+clockCenterY, x3+clockCenterX, y3+clockCenterY);
   display->drawLine(x3+clockCenterX, y3+clockCenterY, x2+clockCenterX, y2+clockCenterY);
   display->drawLine(x2+clockCenterX, y2+clockCenterY, x4+clockCenterX, y4+clockCenterY);
@@ -296,7 +300,7 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 
   //draw hour
   int h=(t->tm_hour*30)+(t->tm_min/2)+270;
-  
+
   x1=(clockSize-7)*cos(h*0.0175);
   y1=(clockSize-7)*sin(h*0.0175);
   x2=cos(h*0.0175);
@@ -305,12 +309,12 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   y3=8*sin((h+12)*0.0175);
   x4=8*cos((h-12)*0.0175);
   y4=8*sin((h-12)*0.0175);
-  
+
   display->drawLine(x1+clockCenterX, y1+clockCenterY, x3+clockCenterX, y3+clockCenterY);
   display->drawLine(x3+clockCenterX, y3+clockCenterY, x2+clockCenterX, y2+clockCenterY);
   display->drawLine(x2+clockCenterX, y2+clockCenterY, x4+clockCenterX, y4+clockCenterY);
   display->drawLine(x4+clockCenterX, y4+clockCenterY, x1+clockCenterX, y1+clockCenterY);
-  
+
   //draw date
   char buff[19];
   display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -329,18 +333,24 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   display->setFont(ArialMT_Plain_10);
   sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
   display->drawString(64 + x, 8 + y, String(buff));
-  
+
   display->setFont(DSEG7_Classic_Bold_21);
-  sprintf_P(buff, PSTR("%02d:%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
-  display->drawString(64 + x, 20 + y, String(buff));
+  sprintf_P(buff, PSTR("%02d:%02d:%02d"), b24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
+  display->drawString(64 + x - (b24hour ? 0 : 4), 20 + y, String(buff));
+
+  if (!b24hour) {
+    display->setTextAlignment(TEXT_ALIGN_RIGHT);
+    display->setFont(ArialMT_Plain_10);
+    display->drawString(display->getWidth() + x, 18 + y, timeInfo->tm_hour>=12?"pm":"am");
+  }
 }
 
 void readDHT() {
   unsigned long actualTime = millis();
   if ( timeDHT > actualTime)
-    timeDHT = actualTime; 
+    timeDHT = actualTime;
   if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise provide "cached" values
-    tempDHT = dht.readTemperature(!IS_METRIC);
+    tempDHT = dht.readTemperature(!bMetric);
     humDHT = dht.readHumidity();
     timeDHT = millis();
   }
@@ -350,31 +360,27 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(64 + x, 5 + y, "INDOOR");
-  
+
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 10 + y, "Temp");
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(120 + x, 10 + y, "Hum");
- 
-  readDHT();
+
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  String s = String(tempDHT, 1) + (IS_METRIC ? "°C" : "°F");
-  display->drawString(0 + x, 20 + y, s);
-
-  s = String(humDHT, 0) + "%";
-  display->drawString(80 + x, 20 + y, s);
+  readDHT();
+  display->drawString(0 + x, 20 + y, String(tempDHT, 1) + (bMetric ? "°C" : "°F"));
+  display->drawString(80 + x, 20 + y, String(humDHT, 0) + "%");
 }
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 + x, 38 + y, currentWeather.description);
+  display->drawString(64 + x, 38 + y, utf8ascii(currentWeather.description));
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  String temp = String(currentWeather.temp, 0) + (IS_METRIC ? "°C" : "°F");
-  display->drawString(display->getWidth() + x, 10 + y, temp);
+  display->drawString(display->getWidth() + x, 10 + y, String(currentWeather.temp, 0) + (bMetric ? "°C" : "°F"));
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -391,43 +397,44 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   time_t observationTimestamp = forecasts[dayIndex].observationTime;
   struct tm* timeInfo;
   timeInfo = localtime(&observationTimestamp);
+
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
   display->drawString(x + 20, y + 5, WDAY_NAMES[timeInfo->tm_wday]);
 
   display->setFont(Meteocons_Plain_21);
   display->drawString(x + 20, y + 17, forecasts[dayIndex].iconMeteoCon);
-  String temp = String(forecasts[dayIndex].temp, 0) + (IS_METRIC ? "°C" : "°F");
+
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x + 20, y + 39, temp);
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(x + 20, y + 39, String(forecasts[dayIndex].temp, 0) + (bMetric ? "°C" : "°F"));
 }
 
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   now = time(nullptr);
   struct tm* timeInfo;
   timeInfo = localtime(&now);
-  char buff[14];
-  sprintf_P(buff, PSTR("%02d:%02d"), timeInfo->tm_hour, timeInfo->tm_min);
-  display->setColor(WHITE);
+  char buff[8];
+  sprintf_P(buff, PSTR("%2d:%02d"), b24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0, 54, String(buff));
 
+  if (!b24hour)
+    display->drawString(display->getStringWidth(String(buff)), 52, timeInfo->tm_hour>=12?"pm":"am");
+
   readDHT();
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  String temp = String(tempDHT, 1) + (IS_METRIC ? "°C" : "°F");
-  display->drawString(118, 54, temp);
+  display->drawString(display->getWidth(), 54, "In:" + String(tempDHT, 0) + (bMetric ? "°C" : "°F") + " Out:" + String(currentWeather.temp, 0) + (bMetric ? "°C" : "°F"));
 
   int8_t quality = getWifiSignal();
   for (int8_t i = 0; i < 4; i++) {
     for (int8_t j = 0; j < 2 * (i + 1); j++) {
       if (quality > i * 25 || j == 0) {
-        display->setPixel(120 + 2 * i, 64 - j);
+        display->setPixel(120 + 2 * i, 6 - j);
       }
     }
   }
-  
+
   display->drawHorizontalLine(0, 52, display->getWidth());
 }
 
@@ -436,7 +443,7 @@ int8_t getWifiSignal() {
   int32_t q = 2 * (WiFi.RSSI() + 100);
   if (q < 0)
     return 0;
-  if (q > 100)   
+  if (q > 100)
     return 100;
   return q;
 }
@@ -451,7 +458,7 @@ const char* wifiStatusStr(wl_status_t status) {
     case WL_CONNECT_FAILED: return "Connect failed";
     case WL_CONNECTION_LOST: return "Connection lost";
     case WL_DISCONNECTED: return "Disconnected";
-    default: return "Unknown";    
+    default: return "Unknown";
   }
 }
 
@@ -465,11 +472,11 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
     display->drawString(1, 10, "Status " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
     display->drawString(1, 20, "Weather update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
     display->drawString(1, 30, "InfluxDB " + (influxDBClient.getLastErrorMessage() == "" ? deviceID : influxDBClient.getLastErrorMessage()));
-    display->drawString(1, 40, String("V" VERSION) + ", " + OPEN_WEATHER_MAP_LOCATION);
+    display->drawString(1, 40, String("V" VERSION) + ", " + utf8ascii(OPEN_WEATHER_MAP_LOCATION) + ";" + String(utc_offset) + " " + OPEN_WEATHER_MAP_LANGUAGE);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, "RESETING IN " + String(secToReset) + "s !");
-  
+
   display->display();
 }
 
@@ -484,22 +491,22 @@ void loop() {
 
   int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
-    if (loops == 0)
-      ui.nextFrame();   //jump to the next frame 
-    
+    if (loops == 0) {
+      ui.nextFrame();   //jump to the next frame
+    }
     if (loops > 4)
       showConfiguration(&display, (200 - loops) / 10);  //Show configuration after 0.5s
-    
+
     loops++;
     if (loops > 200)  //reboot after 20 seconds
-      ESP.restart();    
-    
+      ESP.restart();
+
     ESP.wdtFeed();
     delay(100);
   }
 
   int remainingTimeBudget = ui.update();
-  
+
   //Write into InfluxDB
   if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS))) {
     timeLastInfluxDBUpdate = millis();
@@ -518,11 +525,11 @@ void loop() {
       Serial.println(influxDBClient.getLastErrorMessage());
     }
   }
-  
+
   ESP.wdtFeed();
   if (remainingTimeBudget > 0) {
     // You can do some work here
     // Don't do stuff if you are below your time budget.
     delay(remainingTimeBudget);
-  }  
+  }
 }

@@ -9,8 +9,9 @@ class IPListener: public JsonListener {
   public:
     String city;
     String country;
-    int utc_offset = 0;
-  
+    String utc_offset;
+    String lang;
+
     virtual void whitespace(char c) {};
     virtual void startDocument() {};
     virtual void key(String key) {_key = key;};
@@ -19,35 +20,42 @@ class IPListener: public JsonListener {
     virtual void endObject() {};
     virtual void startArray() {};
     virtual void startObject() {};
-    virtual void endDocument() {};   
+    virtual void endDocument() {};
 } ipListener;
 
 
 void IPListener::value(String value) {
   //Serial.println("key: " +_key + " value: " + value);
+  if ( _key == "ip")
+    Serial.println( "External IP: " + value);
   if ( _key == "city")
-    city = value; 
+    city = value;
   if ( _key == "country")
-    country = value; 
+    country = value;
   if ( _key == "utc_offset")
-    utc_offset = value.toInt(); 
+    utc_offset = value;
+  if ( _key == "languages")
+    lang = value.substring(0, 2);
 }
 
-void detectLocationFromIP( String& location, int& utc_offset) {
+const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
+const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
+
+void detectLocationFromIP( String& location, int& utc_offset, String& country, String& lang, bool& b24h, bool& metric) {
   BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
   HTTPClient http;
- 
+
   client->setInsecure();  //Ignore certificate
   JsonStreamingParser parser;
   parser.setListener(&ipListener);
-  
+
   http.begin(*client, "https://ipapi.co/json");
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
   Serial.printf("Detect IP code: %d\n", httpCode);
-  
+
   if (httpCode == HTTP_CODE_OK) {
-    int c = 1; 
+    int c = 1;
     while (http.connected() && c) {
       uint8_t payload;
       c = client->read(&payload, sizeof(payload));
@@ -55,15 +63,54 @@ void detectLocationFromIP( String& location, int& utc_offset) {
     }
   }
   http.end();
-  location = ipListener.city + "," + ipListener.country;
-  utc_offset = ipListener.utc_offset;
+
+  if (httpCode != HTTP_CODE_OK)
+    return;
+
+  //Process utc_offset
+  bool minus = ipListener.utc_offset.charAt(0) == '-';
+  if (minus || (ipListener.utc_offset.charAt(0) == '+'))  //remove sign
+    ipListener.utc_offset.remove(0,1);
+  //minutes - the last two characters;
+  utc_offset = ipListener.utc_offset.substring( ipListener.utc_offset.length() - 2).toInt() * 60;
+  ipListener.utc_offset.remove(ipListener.utc_offset.length() - 2, 2);
+  //hours
+  utc_offset += ipListener.utc_offset.toInt() * 60 * 60;
+  if (minus)
+    utc_offset = -utc_offset;
+
+  //Return other detected location values
+  country = ipListener.country;
+  country.toUpperCase();
+
+  location = ipListener.city + "," + country;
+
+  lang = ipListener.lang;
+  if ( lang = "cs")    //fix cz code for weather
+    lang = "cz";
+
+  //24-hours vs 12-hours clock detection
+  b24h = true;
+  for (int i = 0; i < sizeof(Countries_12h) / sizeof(Countries_12h[0]); i++) {
+    if (country == Countries_12h[i]) {
+      b24h = false;
+      break;
+    }
+  }
+
+  //Celsius vs Fahrenheit
+  metric = true;
+  for (int i = 0; i < sizeof(Countries_Fahrenheit) / sizeof(Countries_Fahrenheit[0]); i++) {
+    if (country == Countries_Fahrenheit[i]) {
+      metric = false;
+      break;
+    }
+  }
 }
-
-
 
 /*
  * {
-  "ip": "213.220.204.235",
+  "ip": "213.220.204.236",
   "version": "IPv4",
   "city": "Prague",
   "region": "Hlavni mesto Praha",
@@ -92,9 +139,9 @@ void detectLocationFromIP( String& location, int& utc_offset) {
 }
 
 {
-  "ip": "91.103.160.29",
+  "ip": "46.33.117.177",
   "version": "IPv4",
-  "city": "Olomouc",
+  "city": "Prostějov",
   "region": "Olomoucky kraj",
   "region_code": "71",
   "country": "CZ",
@@ -105,9 +152,9 @@ void detectLocationFromIP( String& location, int& utc_offset) {
   "country_tld": ".cz",
   "continent_code": "EU",
   "in_eu": true,
-  "postal": "783 16",
-  "latitude": 49.6474,
-  "longitude": 17.3285,
+  "postal": "796 01",
+  "latitude": 49.4333,
+  "longitude": 17.1167,
   "timezone": "Europe/Prague",
   "utc_offset": "+0200",
   "country_calling_code": "+420",
@@ -116,7 +163,8 @@ void detectLocationFromIP( String& location, int& utc_offset) {
   "languages": "cs,sk",
   "country_area": 78866.0,
   "country_population": 10625695.0,
-  "asn": "AS42000",
-  "org": "Futruy s.r.o."
+  "asn": "AS29208",
+  "org": "Dial Telecom, a.s."
 }
+
  */
