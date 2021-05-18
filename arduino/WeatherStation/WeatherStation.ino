@@ -1,4 +1,4 @@
-#define VERSION "0.20"
+#define VERSION "0.21"
 
 // Include libraries
 #include <Arduino.h>
@@ -33,13 +33,10 @@
 String OPEN_WEATHER_MAP_LOCATION = "Prague,CZ";
 int utc_offset = 0;
 String OPEN_WEATHER_MAP_LANGUAGE = "en";
-String country;
 const uint8_t MAX_FORECASTS = 3;
 
 bool bMetric = true;
 bool b24hour = true;
-//https://remotemonitoringsystems.ca/time-zone-abbreviations.php
-#define TZ_INFO "CET-1CEST,M3.5.0,M10.5.0/3"
 
 // Weather update
 const int UPDATE_INTERVAL_SECS = 3600; // Update weather every hour
@@ -117,7 +114,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-void detectLocationFromIP( String& location, int& utc_offset, String& country, String& lang, bool& b24h, bool& metric);
+void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool& b24h, bool& metric);
 String utf8ascii(const String s);
 void testutf8();
 
@@ -225,12 +222,28 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   ESP.wdtFeed();
   drawProgress(display, 10, "Detecting location");
 
-  detectLocationFromIP( OPEN_WEATHER_MAP_LOCATION, utc_offset, country, OPEN_WEATHER_MAP_LANGUAGE, b24hour, bMetric); //Load location data from IP
+  detectLocationFromIP( OPEN_WEATHER_MAP_LOCATION, utc_offset, OPEN_WEATHER_MAP_LANGUAGE, b24hour, bMetric); //Load location data from IP
 
   ESP.wdtFeed();
   drawProgress(display, 20, "Updating time");
-  if (firstStart)
-    timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+  if (firstStart) {
+    configTime(utc_offset, 0 , "pool.ntp.org", "time.nis.gov");
+
+    // Wait till time is synced
+    Serial.print("Syncing time");
+    int i = 0;
+    while (time(nullptr) < 1000000000ul && i < 40) {
+      Serial.print(".");
+      delay(500);
+      i++;
+    }
+    Serial.println();
+  
+    // Show time
+    time_t tnow = time(nullptr);
+    Serial.print("Synchronized time: ");
+    Serial.println(ctime(&tnow));
+  }
   ESP.wdtFeed();
   drawProgress(display, 40, "Updating weather");
   currentWeatherClient.setMetric(bMetric);

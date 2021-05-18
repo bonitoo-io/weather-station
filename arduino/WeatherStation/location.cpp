@@ -41,7 +41,7 @@ void IPListener::value(String value) {
 const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
 const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
 
-void detectLocationFromIP( String& location, int& utc_offset, String& country, String& lang, bool& b24h, bool& metric) {
+void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool& b24h, bool& metric) {
   BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
   HTTPClient http;
 
@@ -80,6 +80,7 @@ void detectLocationFromIP( String& location, int& utc_offset, String& country, S
     utc_offset = -utc_offset;
 
   //Return other detected location values
+  String country;
   country = ipListener.country;
   country.toUpperCase();
 
