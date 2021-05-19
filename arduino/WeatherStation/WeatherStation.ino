@@ -1,4 +1,4 @@
-#define VERSION "0.21"
+#define VERSION "0.22"
 
 // Include libraries
 #include <Arduino.h>
@@ -51,6 +51,7 @@ const int SDC_PIN = D5;
 #define DHTPIN D1       // Digital pin connected to the DHT sensor
 
 #define BUTTONHPIN D3   //Boot button pin
+#define LED        D2   //LED pin
 
 // Adjust according to your language
 const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
@@ -129,6 +130,9 @@ void setup() {
   Serial.println();
   ESP.wdtEnable(10000); //10 seconds watchdog timeout
   pinMode(BUTTONHPIN, INPUT);
+  pinMode(LED, OUTPUT);
+  digitalWrite( LED, HIGH);
+
   dht.begin();
 
   // initialize dispaly
@@ -166,7 +170,6 @@ void setup() {
     delay(500);
   }
   Serial.println();
-
   ui.setTargetFPS(30);
   ui.setTimePerFrame(10000);
 
@@ -219,6 +222,7 @@ void drawProgress(OLEDDisplay *display, int percentage, String label) {
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
+  digitalWrite( LED, LOW);
   ESP.wdtFeed();
   drawProgress(display, 10, "Detecting location");
 
@@ -270,6 +274,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   ESP.wdtFeed();
+  digitalWrite( LED, HIGH);
   delay(500);
 }
 
@@ -448,6 +453,10 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     }
   }
 
+  //Draw InfluxDB write mark
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(5, 0, ((INFLUXDB_URL != "") && (influxDBClient.getLastErrorMessage() == "")) ? "" : "!");
+
   display->drawHorizontalLine(0, 52, display->getWidth());
 }
 
@@ -522,6 +531,7 @@ void loop() {
 
   //Write into InfluxDB
   if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS))) {
+    digitalWrite( LED, LOW);
     timeLastInfluxDBUpdate = millis();
     sensor.clearFields();
     readDHT();
@@ -537,6 +547,7 @@ void loop() {
       Serial.print("InfluxDB write failed: ");
       Serial.println(influxDBClient.getLastErrorMessage());
     }
+    digitalWrite( LED, HIGH);
   }
 
   ESP.wdtFeed();
