@@ -11,7 +11,8 @@ class IPListener: public JsonListener {
     String country;
     String utc_offset;
     String lang;
-
+    float latitude;
+    float longitude;
     virtual void whitespace(char c) {};
     virtual void startDocument() {};
     virtual void key(String key) {_key = key;};
@@ -25,7 +26,7 @@ class IPListener: public JsonListener {
 
 
 void IPListener::value(String value) {
-  //Serial.println("key: " +_key + " value: " + value);
+  Serial.println("key: " + _key + " value: " + value);
   if ( _key == "ip")
     Serial.println( "External IP: " + value);
   if ( _key == "city")
@@ -36,12 +37,16 @@ void IPListener::value(String value) {
     utc_offset = value;
   if ( _key == "languages")
     lang = value.substring(0, 2);
+  if ( _key == "latitude")
+    latitude = value.toFloat();
+  if ( _key == "longitude")
+    longitude = value.toFloat();
 }
 
 const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
 const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
 
-void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool& b24h, bool& metric) {
+void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude) {
   BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
   HTTPClient http;
 
@@ -83,7 +88,8 @@ void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool
   String country;
   country = ipListener.country;
   country.toUpperCase();
-
+  latitude = ipListener.latitude;
+  longitude = ipListener.longitude;
   location = ipListener.city + "," + country;
 
   lang = ipListener.lang;
