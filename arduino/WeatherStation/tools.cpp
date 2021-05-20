@@ -1,11 +1,47 @@
+#include "tools.h"
+
+// Adjust according to your language
+const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+const char* const MOON_PHASES[] = {"New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Third quarter", "Waning Crescent"};
+
+
+
+String strTime(time_t timestamp, bool shortTime) {
+  //TODO use for all conversions
+  //TODO add am/pm support
+  //TODO add multiple time/date formats support - country
+  //TODO move to util.cpp
+  //TODO add strDate
+  time_t time = timestamp;
+  struct tm *timeInfo = localtime(&time);
+
+  char buf[6];
+  sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
+  return String(buf);
+}
+
+
 #include <Arduino.h>
 
-// Convert UTF8-string to extended ASCII using
+// Convert UTF8-string to extended ASCII
 
-static uint8_t c1;  // Last character buffer
+const String sTranslitFrom = "ŠŒŽšœžŸ¥µÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿřťčůňúďěŘŤČŮŇÚĎĚżąłśćęźńığışŻĄŁŚĆĘŹŃĞŞбвгдежзийклмнпрстуфхцчшщъьюяыэёоаБВГДЕЖЗИЙКЛМНПРСТУФХЦЧШЩЪЬЮЯЫЭЁОАΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩωόλάήΌΛΆΉ";
+const String sTranslitTo   = "SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyyrtcunudeRTCUNUDEzalsceznigisZALSCEZNGSbvgdejziyklmnprstufhccsswxyyweyoaBVGDEJZIYKLMNPRSTUFHCCSSWXYYWEYOAAaVvGgDdEeZzIiTtIiKkMmNnXxOoPpRrSssTtIiPpKkPpOoolaiOLAI";
+
+char replaceChar( char c1, char c2) {
+  //Replace 2-bytes UTF8 characters
+  for (int i=0; i < sTranslitFrom.length() - 1; i+=2) { //try to find character in the translation table
+    if ((c1 == sTranslitFrom.charAt(i)) && (c2 == sTranslitFrom.charAt(i+1)))
+      return sTranslitTo.charAt(i/2);
+  }
+  Serial.println( String(c1) + String(c2) + " -> ?");
+  return '?';
+}
 
 // Convert a single Character from UTF8 to Extended ASCII
 // Return "0" if a byte has to be ignored
+static uint8_t c1;  // Last character buffer
 uint8_t utf8ascii(uint8_t ascii) {
   if (ascii < 128) {   // Standard ASCII-set 0..0x7F handling
     c1 = 0;
@@ -22,20 +58,7 @@ uint8_t utf8ascii(uint8_t ascii) {
     case 0x82: if(ascii==0xAC) return(0x80);       // special case Euro-symbol
   }
 
-  return  (0);                                     // otherwise: return zero, if character has to be ignored
-}
-
-const String sTranslitFrom = "ŠŒŽšœžŸ¥µÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿřťčůňúďěŘŤČŮŇÚĎĚżąłśćęźńığışŻĄŁŚĆĘŹŃĞŞбвгдежзийклмнпрстуфхцчшщъьюяыэёоаБВГДЕЖЗИЙКЛМНПРСТУФХЦЧШЩЪЬЮЯЫЭЁОАΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩωόλάήΌΛΆΉ";
-const String sTranslitTo   = "SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyyrtcunudeRTCUNUDEzalsceznigisZALSCEZNGSbvgdejziyklmnprstufhccsswxyyweyoaBVGDEJZIYKLMNPRSTUFHCCSSWXYYWEYOAAaVvGgDdEeZzIiTtIiKkMmNnXxOoPpRrSssTtIiPpKkPpOoolaiOLAI";
-
-char replaceChar( char c1, char c2) {
-  //Replace 2-bytes UTF8 characters
-  for (int i=0; i < sTranslitFrom.length() - 1; i+=2) { //try to find character in the translation table
-    if ((c1 == sTranslitFrom.charAt(i)) && (c2 == sTranslitFrom.charAt(i+1)))
-      return sTranslitTo.charAt(i/2);
-  }
-  Serial.println( String(c1) + String(c2) + " -> ?");
-  return '?';
+  return '?';                                     // otherwise: return ?, if character is uknown
 }
 
 // convert String object from UTF8 String to Extended ASCII
