@@ -1,4 +1,4 @@
-#define VERSION "0.24"
+#define VERSION "0.25"
 #pragma GCC diagnostic warning "-Wall"
 #pragma GCC diagnostic warning "-Wparentheses"
 #pragma GCC optimize ("Os")
@@ -88,11 +88,11 @@ void updateCurrentWeather( const bool metric, const String lang, const String lo
 float getCurrentWeatherTemperature();
 void updateForecast( const bool metric, const String lang, const String location, const String APIKey);
 
-void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken, const String deviceID);
-void updateInfluxDB( bool firstStart);
+void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken);
+void updateInfluxDB( bool firstStart, const String deviceID, const String location);
 bool errorInfluxDB();
 String errorInfluxDBMsg();
-void writeInfluxDB( float temp, float hum);
+void writeInfluxDB( float temp, float hum, const float lat, const float lon);
 
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 
@@ -186,7 +186,7 @@ void setup() {
 
   //Configure InfluxDB
   deviceID += "-" + WiFi.SSID();  //Add connected Wifi network
-  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, deviceID);
+  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN);
 
   //Load all data
   updateData(&display, true);
@@ -222,7 +222,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   
   ESP.wdtFeed();
   drawProgress(display, 80, "Connecting InfluxDB");
-  updateInfluxDB( firstStart);
+  updateInfluxDB( firstStart, deviceID, g_location);
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   ESP.wdtFeed();
@@ -296,7 +296,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
     display->drawString(1, 10, "Status " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
     display->drawString(1, 20, "Data update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
     display->drawString(1, 30, "InfluxDB " + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
-    display->drawString(1, 40, String("V" VERSION) + ", " + String(g_utc_offset) + " " + g_language);
+    display->drawString(1, 40, String("V" VERSION) + ", " + String( ESP.getFreeHeap()) + "; " + String(g_utc_offset) + " " + g_language);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, "RESETING IN " + String(secToReset) + "s !");
@@ -310,9 +310,20 @@ void loop() {
     timeSinceLastWUpdate = millis();
   }
 
+  // Update data?
   if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
     updateData(&display,false);
 
+  //Write into InfluxDB
+  if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS)) && (ui.getUiState()->frameState == FIXED)) {
+    digitalWrite( LED, LOW);
+    timeLastInfluxDBUpdate = millis();
+    ESP.wdtFeed();
+    writeInfluxDB( getDHTTemp( g_bMetric), getDHTHum(), g_latitude, g_longitude);
+    digitalWrite( LED, HIGH);
+  }
+
+  //Handle button
   int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
     if (loops == 0) {
@@ -330,16 +341,6 @@ void loop() {
   }
 
   int remainingTimeBudget = ui.update();
-
-  //Write into InfluxDB
-  if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS))) {
-    digitalWrite( LED, LOW);
-    timeLastInfluxDBUpdate = millis();
-    writeInfluxDB( getDHTTemp( g_bMetric), getDHTHum());
-    digitalWrite( LED, HIGH);
-    remainingTimeBudget = remainingTimeBudget - (millis() - timeLastInfluxDBUpdate);
-  }
-
   ESP.wdtFeed();
   if (remainingTimeBudget > 0) {
     // You can do some work here
