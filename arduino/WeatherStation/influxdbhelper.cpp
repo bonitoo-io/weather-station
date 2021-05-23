@@ -9,14 +9,19 @@ void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, 
 }
 
 
-void updateInfluxDB( bool firstStart, const String deviceID, const String location) {
+void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location, int refresh_sec) {
   // Check server connection
   if (firstStart) {
     sensor.addTag("clientId", deviceID);
     sensor.addTag("Device", "WS-ESP8266");
+    sensor.addTag("Version", version);
     sensor.addTag("Location", location);
     sensor.addTag("TemperatureSensor", "DHT11");
     sensor.addTag("HumiditySensor", "DHT11");
+
+    HTTPOptions htOpt;
+    htOpt.connectionReuse(refresh_sec <= 60);
+    influxDBClient.setHTTPOptions(htOpt);
 
     if (influxDBClient.validateConnection()) {
       Serial.print("Connected to InfluxDB: ");

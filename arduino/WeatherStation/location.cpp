@@ -76,6 +76,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
     return;
 
   //Process utc_offset
+  int utc_offset_old = utc_offset;
   bool minus = ipListener.utc_offset.charAt(0) == '-';
   if (minus || (ipListener.utc_offset.charAt(0) == '+'))  //remove sign
     ipListener.utc_offset.remove(0,1);
@@ -86,6 +87,9 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
   utc_offset += ipListener.utc_offset.toInt() * 60 * 60;
   if (minus)
     utc_offset = -utc_offset;
+  
+  if (!firstStart && (utc_offset_old != utc_offset))  //if utc offset is changed during refresh
+    Serial.println( "UTC offset changed from " + String(utc_offset_old) + " to " + String(utc_offset));
 
   //Return other detected location values
   String country;

@@ -1,4 +1,4 @@
-#define VERSION "0.26"
+#define VERSION "0.27"
 #pragma GCC diagnostic warning "-Wall"
 #pragma GCC diagnostic warning "-Wparentheses"
 
@@ -78,7 +78,7 @@ long timeLastInfluxDBUpdate = 0;
 
 //declaring prototypes
 void updateClock( int utc_offset, bool firstStart);
-void updateAstronomy(OLEDDisplay *display, bool firstStart);
+void updateAstronomy(bool firstStart, const float lat, const float lon);
 void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void setupDHT();
 float getDHTTemp(bool metric);
@@ -88,7 +88,7 @@ float getCurrentWeatherTemperature();
 void updateForecast( const bool metric, const String lang, const String location, const String APIKey);
 
 void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken);
-void updateInfluxDB( bool firstStart, const String deviceID, const String location);
+void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location, int refresh_sec);
 bool errorInfluxDB();
 String errorInfluxDBMsg();
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
@@ -209,11 +209,11 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   ESP.wdtFeed();
   drawProgress(display, 20, "Updating time");
   updateClock( g_utc_offset, firstStart);
-  updateAstronomy( display, firstStart); //requires time and g_latitude, g_longitude
 
   ESP.wdtFeed();
   drawProgress(display, 40, "Updating weather");
   updateCurrentWeather( g_bMetric, g_language, g_location, OPEN_WEATHER_MAP_API_KEY);
+  updateAstronomy( firstStart, g_latitude, g_longitude);
   
   ESP.wdtFeed();
   drawProgress(display, 60, "Updating forecasts");
@@ -221,7 +221,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   
   ESP.wdtFeed();
   drawProgress(display, 80, "Connecting InfluxDB");
-  updateInfluxDB( firstStart, deviceID, g_location);
+  updateInfluxDB( firstStart, deviceID, VERSION, g_location, INFLUXDB_REFRESH_SECS);
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   ESP.wdtFeed();
@@ -322,7 +322,7 @@ void loop() {
     ESP.wdtFeed();
     writeInfluxDB( getDHTTemp( g_bMetric), getDHTHum(), g_latitude, g_longitude);
     ESP.wdtFeed();
-    Serial.println("InfluxDB write: " + String( (millis() - timeLastInfluxDBUpdate) / 1000) + "s");
+    Serial.println("InfluxDB write " + String(millis() - timeLastInfluxDBUpdate) + "ms");
     digitalWrite( LED, HIGH);
   }
 
