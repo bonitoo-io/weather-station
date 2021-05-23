@@ -20,7 +20,7 @@ void updateAstronomy(bool firstStart, const float lat, const float lon) {
   moonRise = sunMoonData.moon.rise;
   moonSet = sunMoonData.moon.set;
   moonPhase = sunMoonData.moon.phase.index;
-  moonAgeImage = (char) (65 + ((uint8_t) ((uint8_t)(26 * sunMoonData.moon.age / 30) % 26)));
+  moonAgeImage = (char) (65 + 26 * (((uint8_t)(15 + sunMoonData.moon.age) % 30) / 30.0));
 }
 
 

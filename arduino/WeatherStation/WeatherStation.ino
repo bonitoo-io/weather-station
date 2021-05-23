@@ -1,4 +1,4 @@
-#define VERSION "0.27"
+#define VERSION "0.28"
 #pragma GCC diagnostic warning "-Wall"
 #pragma GCC diagnostic warning "-Wparentheses"
 
