@@ -6,6 +6,9 @@
 #include "tools.h"
 #include "WeatherStationFonts.h"
 
+//TODO Use "SunMoonCalc.h" instead of <Astronomy.h>
+//TODO add moon rise/set
+
 extern OpenWeatherMapCurrentData currentWeather;
 
 Astronomy::MoonData moonData;

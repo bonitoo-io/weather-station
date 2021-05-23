@@ -46,15 +46,18 @@ void IPListener::value(String value) {
 const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
 const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
 
-void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude) {
-  BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
+
+
+void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude) {
+  BearSSL::WiFiClientSecure client;
+  //BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
   HTTPClient http;
 
-  client->setInsecure();  //Ignore certificate
+  client.setInsecure();  //Ignore certificate
   JsonStreamingParser parser;
   parser.setListener(&ipListener);
 
-  http.begin(*client, "https://ipapi.co/json");
+  http.begin(client, "https://ipapi.co/json");
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
   Serial.printf("Detect IP code: %d\n", httpCode);
@@ -63,7 +66,7 @@ void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool
     int c = 1;
     while (http.connected() && c) {
       uint8_t payload;
-      c = client->read(&payload, sizeof(payload));
+      c = client.read(&payload, sizeof(payload));
       parser.parse(payload);
     }
   }
@@ -105,7 +108,7 @@ void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool
     }
   }
 
-  //Celsius vs Fahrenheit
+  //Celsius vs Fahrenheit detection
   metric = true;
   for (int i = 0; i < sizeof(Countries_Fahrenheit) / sizeof(Countries_Fahrenheit[0]); i++) {
     if (country == Countries_Fahrenheit[i]) {

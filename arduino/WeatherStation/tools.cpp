@@ -5,8 +5,6 @@ const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat
 const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const char* const MOON_PHASES[] = {"New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Third quarter", "Waning Crescent"};
 
-
-
 String strTime(time_t timestamp, bool shortTime) {
   //TODO use for all conversions
   //TODO add am/pm support
@@ -21,8 +19,14 @@ String strTime(time_t timestamp, bool shortTime) {
   return String(buf);
 }
 
+String strDate(time_t timestamp, bool shortDate) {
+  struct tm* t = localtime(&timestamp);
+  //TODO: support formats
+  char buff[16];
+  //sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+  return String(buff);
+}
 
-#include <Arduino.h>
 
 // Convert UTF8-string to extended ASCII
 

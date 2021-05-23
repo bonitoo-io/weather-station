@@ -1,7 +1,6 @@
-#define VERSION "0.25"
+#define VERSION "0.26"
 #pragma GCC diagnostic warning "-Wall"
 #pragma GCC diagnostic warning "-Wparentheses"
-#pragma GCC optimize ("Os")
 
 // Include libraries
 #include <Arduino.h>
@@ -106,7 +105,7 @@ void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
 void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex);
 
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-void detectLocationFromIP( String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude);
+void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude);
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
 FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurrentWeather, drawForecast, drawAstronomy};
@@ -118,7 +117,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-  ESP.wdtEnable(10000); //10 seconds watchdog timeout
+  ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
 
   // Configure pins
   pinMode(BUTTONHPIN, INPUT);
@@ -205,7 +204,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
   ESP.wdtFeed();
   drawProgress(display, 10, "Detecting location");
-  detectLocationFromIP( g_location, g_utc_offset, g_language, g_b24hour, g_bMetric, g_latitude, g_longitude); //Load location data from IP
+  detectLocationFromIP( firstStart, g_location, g_utc_offset, g_language, g_b24hour, g_bMetric, g_latitude, g_longitude); //Load location data from IP
 
   ESP.wdtFeed();
   drawProgress(display, 20, "Updating time");
@@ -264,6 +263,8 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
 
 // convert the wifi dbm to %
 int8_t getWifiSignal() {
+  if (WiFi.status() != WL_CONNECTED)
+    return 0;
   int32_t q = 2 * (WiFi.RSSI() + 100);
   if (q < 0)
     return 0;
@@ -292,11 +293,11 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
   display->setFont(ArialMT_Plain_10);
   display->drawRect(0, 0, display->getWidth(), display->getHeight());
   if ( secToReset > 5) {
-    display->drawString(1, 0, "WIFI " + WiFi.SSID() + " " + String(millis()/1000) + "s");
-    display->drawString(1, 10, "Status " + String(wifiStatusStr(WiFi.status())) + " - " + String(getWifiSignal()) + "%");
-    display->drawString(1, 20, "Data update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
+    display->drawString(1,  0, "Wifi " + WiFi.SSID() + " " + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + "%" : wifiStatusStr(WiFi.status())));
+    display->drawString(1, 10, "Up: " + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + "s RAM: " + String( ESP.getFreeHeap()));
+    display->drawString(1, 20, "Update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
     display->drawString(1, 30, "InfluxDB " + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
-    display->drawString(1, 40, String("V" VERSION) + ", " + String( ESP.getFreeHeap()) + "; " + String(g_utc_offset) + " " + g_language);
+    display->drawString(1, 40, String("V" VERSION) + "; tz: " + String(g_utc_offset) + " " + g_language);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, "RESETING IN " + String(secToReset) + "s !");
@@ -320,6 +321,8 @@ void loop() {
     timeLastInfluxDBUpdate = millis();
     ESP.wdtFeed();
     writeInfluxDB( getDHTTemp( g_bMetric), getDHTHum(), g_latitude, g_longitude);
+    ESP.wdtFeed();
+    Serial.println("InfluxDB write: " + String( (millis() - timeLastInfluxDBUpdate) / 1000) + "s");
     digitalWrite( LED, HIGH);
   }
 
