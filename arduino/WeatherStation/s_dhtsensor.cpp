@@ -14,6 +14,7 @@ extern bool g_bMetric;
 DHT dht(DHTPIN, DHTTYPE);
 float tempDHT;
 float humDHT;
+float hicDHT;
 unsigned long timeDHT = 0;
 
 
@@ -28,6 +29,7 @@ void _readDHT( bool metric) {
   if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise provide "cached" values
     tempDHT = dht.readTemperature(!metric);
     humDHT = dht.readHumidity();
+    hicDHT = dht.computeHeatIndex(tempDHT, humDHT, !metric);
     timeDHT = millis();
   }
 }
@@ -48,13 +50,17 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->drawString(64 + x, 5 + y, "INDOOR");
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 10 + y, "Temp");
+  display->drawString(8 + x, 38 + y, "feel: " + String(hicDHT,0) + (g_bMetric ? "°C" : "°F"));
+
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(120 + x, 10 + y, "Hum");
+  display->drawString(120 + x, 38 + y, "hum");
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   
-  display->drawString(0 + x, 20 + y, String(getDHTTemp(g_bMetric), 1) + (g_bMetric ? "°C" : "°F"));
-  display->drawString(80 + x, 20 + y, String(getDHTHum(), 0) + "%");
+  display->drawString(8 + x, 15 + y, String(getDHTTemp(g_bMetric), 0) + (g_bMetric ? "°C" : "°F"));
+  display->drawString(80 + x, 15 + y, String(getDHTHum(), 0) + "%");
+
+  display->setFont(Meteocons_Plain_21);
+  display->drawString(-7 + x, 19 + y, "'"); //show thermomether symbol
 }

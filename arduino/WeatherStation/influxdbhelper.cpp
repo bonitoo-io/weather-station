@@ -4,12 +4,15 @@
 Point sensor("environment"); // Data point
 InfluxDBClient influxDBClient;
 
-void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken) {
+void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken, int refresh_sec) {
   influxDBClient.setConnectionParams(serverUrl, org, bucket, authToken, InfluxDbCloud2CACert);
+  HTTPOptions htOpt;
+  htOpt.connectionReuse(refresh_sec <= 60);
+  influxDBClient.setHTTPOptions(htOpt);  
 }
 
 
-void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location, int refresh_sec) {
+void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location) {
   // Check server connection
   if (firstStart) {
     sensor.addTag("clientId", deviceID);
@@ -18,10 +21,6 @@ void updateInfluxDB( bool firstStart, const String deviceID, const String versio
     sensor.addTag("Location", location);
     sensor.addTag("TemperatureSensor", "DHT11");
     sensor.addTag("HumiditySensor", "DHT11");
-
-    HTTPOptions htOpt;
-    htOpt.connectionReuse(refresh_sec <= 60);
-    influxDBClient.setHTTPOptions(htOpt);
 
     if (influxDBClient.validateConnection()) {
       Serial.print("Connected to InfluxDB: ");

@@ -87,8 +87,8 @@ void updateCurrentWeather( const bool metric, const String lang, const String lo
 float getCurrentWeatherTemperature();
 void updateForecast( const bool metric, const String lang, const String location, const String APIKey);
 
-void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken);
-void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location, int refresh_sec);
+void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken, int refresh_sec);
+void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location);
 bool errorInfluxDB();
 String errorInfluxDBMsg();
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
@@ -102,13 +102,13 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex);
+void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude);
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
-FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurrentWeather, drawForecast, drawAstronomy};
+FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy};
 //FrameCallback frames[] = { drawDateTimeAnalog};
 OverlayCallback overlays[] = { drawHeaderOverlay };
 
@@ -185,7 +185,7 @@ void setup() {
 
   //Configure InfluxDB
   deviceID += "-" + WiFi.SSID();  //Add connected Wifi network
-  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN);
+  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, INFLUXDB_REFRESH_SECS);
 
   //Load all data
   updateData(&display, true);
@@ -221,7 +221,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   
   ESP.wdtFeed();
   drawProgress(display, 80, "Connecting InfluxDB");
-  updateInfluxDB( firstStart, deviceID, VERSION, g_location, INFLUXDB_REFRESH_SECS);
+  updateInfluxDB( firstStart, deviceID, VERSION, g_location);
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   ESP.wdtFeed();

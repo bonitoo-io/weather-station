@@ -3,7 +3,8 @@
 // Adjust according to your language
 const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-const char* const MOON_PHASES[] = {"New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Third quarter", "Waning Crescent"};
+const char* const MOON_PHASES[] = {"new moon", "waxing crescent", "first quarter", "waxing gibbous", "full moon", "waning gibbous", "third quarter", "waning crescent"};
+extern bool g_b24hour;
 
 String strTime(time_t timestamp, bool shortTime) {
   //TODO use for all conversions
@@ -15,7 +16,7 @@ String strTime(time_t timestamp, bool shortTime) {
   struct tm *timeInfo = localtime(&time);
 
   char buf[6];
-  sprintf(buf, "%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min);
+  sprintf(buf, "%02d:%02d%s", g_b24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, g_b24hour ? "" : (timeInfo->tm_hour>=12?"pm":"am"));
   return String(buf);
 }
 
