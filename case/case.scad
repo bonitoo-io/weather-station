@@ -7,7 +7,7 @@
 
 s = 58.5; // width
 d = 58.5; // length
-v = 30;   // height
+
 
 module case()
 
@@ -72,26 +72,32 @@ difference() {
         linear_extrude(2)//thickness
         scale([.35,.35,0])//velikost
         text("SET", font="Arial:style=Regular",valign="center", halign="center");
-          
+        /*
         translate([-22,8,-1.2])//offset
         linear_extrude(2)//thickness
         scale([.35,.35,0])//size
         text("RS", font="Arial:style=Regular",valign="center", halign="center");
+        */
       }
     }
 
     //pillars for boot and reset
+    
     translate([11.5,18,1])
     cylinder(r=2.5,h=20,$fn=20);
+/*
     translate([11.5,8,1])
     cylinder(r=2.5,h=20,$fn=20);
+ */
   }
   
   // holes boot reset
   translate([11.5,18,-1])
   cylinder(r=1.5,h=25,$fn=20);
+  /*
   translate([11.5,8,-1])
   cylinder(r=1.5,h=25,$fn=20);
+  */
 }
  
 //pillars board
@@ -108,6 +114,7 @@ pillar1();
 // harden pillars
 translate([-30,-30,0])
 cube([4,4,15]);
+
 translate([-30,26,0])
 cube([4,4,15]);
 
