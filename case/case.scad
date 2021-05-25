@@ -7,7 +7,7 @@
 
 s = 58.5; // width
 d = 58.5; // length
-
+v = 30;
 
 module case()
 
