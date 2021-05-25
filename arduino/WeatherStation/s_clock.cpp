@@ -2,10 +2,20 @@
 #include "tools.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
-extern bool g_b24hour;
 
-void updateClock( int utc_offset, bool firstStart) {
-  configTime( utc_offset, 0 , "pool.ntp.org", "time.nis.gov");
+extern tConfig conf;
+
+void updateClock( bool firstStart, int utc_offset, const String ntp) {
+  //Convert ntp comma separated list to array
+  char ntpbuff[50];
+  char *ntparr[3];
+  strncpy(ntpbuff, ntp.c_str(), sizeof( ntpbuff));
+  ntparr[0] = strtok( ntpbuff, ",");
+  for (int i = 1; i < sizeof( ntparr)/sizeof(char*); i++)
+    ntparr[i] = strtok( NULL, ",");
+
+  //Set TZ and NTP
+  configTime( utc_offset, 0, ntparr[0], ntparr[1], ntparr[2]);
   if (firstStart) {
     // Wait till time is synced
     Serial.print("Syncing time");
@@ -23,7 +33,6 @@ void updateClock( int utc_offset, bool firstStart) {
     Serial.println(ctime(&now));
   }
 }
-
 
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -100,10 +109,10 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   display->drawString(64 + x, 8 + y, String(buff));
 
   display->setFont(DSEG7_Classic_Bold_21);
-  sprintf_P(buff, PSTR("%02d:%02d:%02d"), g_b24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
-  display->drawString(64 + x - (g_b24hour ? 0 : 4), 20 + y, String(buff));
+  sprintf_P(buff, PSTR("%02d:%02d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
+  display->drawString(64 + x - (conf.use24hour ? 0 : 4), 20 + y, String(buff));
 
-  if (!g_b24hour) {
+  if (!conf.use24hour) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
     display->drawString(display->getWidth() + x, 18 + y, timeInfo->tm_hour>=12?"pm":"am");

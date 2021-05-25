@@ -4,19 +4,17 @@
 const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const char* const MOON_PHASES[] = {"new moon", "waxing crescent", "first quarter", "waxing gibbous", "full moon", "waning gibbous", "third quarter", "waning crescent"};
-extern bool g_b24hour;
+extern tConfig conf;
 
 String strTime(time_t timestamp, bool shortTime) {
   //TODO use for all conversions
-  //TODO add am/pm support
   //TODO add multiple time/date formats support - country
-  //TODO move to util.cpp
   //TODO add strDate
   time_t time = timestamp;
   struct tm *timeInfo = localtime(&time);
 
   char buf[6];
-  sprintf(buf, "%02d:%02d%s", g_b24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, g_b24hour ? "" : (timeInfo->tm_hour>=12?"pm":"am"));
+  sprintf(buf, "%02d:%02d%s", conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, conf.use24hour ? "" : (timeInfo->tm_hour>=12?"pm":"am"));
   return String(buf);
 }
 

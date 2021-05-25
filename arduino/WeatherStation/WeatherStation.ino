@@ -1,4 +1,4 @@
-#define VERSION "0.28"
+#define VERSION "0.29"
 #pragma GCC diagnostic warning "-Wall"
 #pragma GCC diagnostic warning "-Wparentheses"
 
@@ -16,7 +16,6 @@
 /***************************
  * Begin Settings
  **************************/
-
 // WIFI
 #define WIFI_SSID "yourssid"
 #define WIFI_PWD "yourpassword"
@@ -24,47 +23,51 @@
 //See https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define OPEN_WEATHER_MAP_API_KEY "XXX"
 
-// Go to https://openweathermap.org/find?q= and search for a location
-String g_location = "Prague,CZ";
-int g_utc_offset = 0;
-String g_language = "en";
-float g_latitude;
-float g_longitude;
-
-bool g_bMetric = true;
-bool g_b24hour = true;
-
-// Weather update
-const int UPDATE_INTERVAL_SECS = 3600; // Update weather every hour
-
-// Display settings
-const int I2C_DISPLAY_ADDRESS = 0x3c;
-const int SDA_PIN = D4;
-const int SDC_PIN = D5;
-
-
-#define BUTTONHPIN D3   //Boot button pin
-#define LED        D2   //LED pin
-
 // InfluxDB v2 server url, e.g. https://eu-central-1-1.aws.cloud2.influxdata.com (Use: InfluxDB UI -> Load Data -> Client Libraries)
 #define INFLUXDB_URL "server-url"
 // InfluxDB v2 server or cloud API authentication token (Use: InfluxDB UI -> Load Data -> Tokens -> <select token>)
 #define INFLUXDB_TOKEN "server token"
 // InfluxDB v2 organization id (Use: InfluxDB UI -> Settings -> Profile -> <name under tile> )
 #define INFLUXDB_ORG "org id"
-// InfluxDB v2 bucket name (Use: InfluxDB UI -> Load Data -> Buckets)
-#define INFLUXDB_BUCKET "bucket name"
-// Refresh rate - write temperature and humidity
-#define INFLUXDB_REFRESH_SECS 60  //Once per minute
-
 /***************************
  * End Settings
  **************************/
-#include "mirek.h" //Custom development configuration - remove or comment it out
 
-// Initialize the oled display for address 0x3c
-// sda-pin=14 and sdc-pin=12
-SSD1306Wire     display(I2C_DISPLAY_ADDRESS, SDA_PIN, SDC_PIN);
+// Display settings
+#define I2C_OLED_ADDRESS 0x3c
+#define SDA_PIN D4
+#define SDC_PIN D5
+// Button and LED
+#define BUTTONHPIN D3   //Boot button pin
+#define LED        D2   //LED pin
+
+#include "mirek.h" //Custom development configuration - remove or comment it out 
+
+tConfig conf = {
+  WIFI_SSID,  //wifi_ssid
+  WIFI_PWD, //wifi_pwd
+
+  true, //detectLocationIP
+  60,   //update_data_min
+  OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
+  "San Francisco, US", //location
+  "en", //language
+  0, //utcOffset
+  37.7749,   //latitude
+  122.4194,    //longitude
+  false, //useMetric
+  false, //use24hour
+  "pool.ntp.org,time.nis.gov",
+
+  INFLUXDB_URL,   //influxdbUrl;
+  INFLUXDB_TOKEN, //influxdbToken;
+  INFLUXDB_ORG,   //influxdbOrg;
+  "iot_center",   //influxdbBucket;
+  1 //influxdbRefreshMin;
+};
+
+// Initialize the oled display
+SSD1306Wire     display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi   ui( &display );
 
 // flag changed in the ticker function every 10 minutes
@@ -77,7 +80,7 @@ long timeSinceLastWUpdate = 0;
 long timeLastInfluxDBUpdate = 0;
 
 //declaring prototypes
-void updateClock( int utc_offset, bool firstStart);
+void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
 void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void setupDHT();
@@ -146,7 +149,7 @@ void setup() {
   //Initialize Wifi
   WiFi.mode(WIFI_STA);
   WiFi.hostname(deviceID);
-  WiFi.begin(WIFI_SSID, WIFI_PWD);
+  WiFi.begin(conf.wifi_ssid, conf.wifi_pwd);
   display.drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
   display.drawString(88, 5, "Weather Station\nby InfluxData\nV" VERSION);
   display.display();
@@ -185,7 +188,7 @@ void setup() {
 
   //Configure InfluxDB
   deviceID += "-" + WiFi.SSID();  //Add connected Wifi network
-  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, INFLUXDB_REFRESH_SECS);
+  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, conf.influxdbRefreshMin * 60);
 
   //Load all data
   updateData(&display, true);
@@ -204,24 +207,25 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
   ESP.wdtFeed();
   drawProgress(display, 10, "Detecting location");
-  detectLocationFromIP( firstStart, g_location, g_utc_offset, g_language, g_b24hour, g_bMetric, g_latitude, g_longitude); //Load location data from IP
+  if (conf.detectLocationIP)
+    detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
 
   ESP.wdtFeed();
   drawProgress(display, 20, "Updating time");
-  updateClock( g_utc_offset, firstStart);
+  updateClock( firstStart, conf.utcOffset, conf.ntp);
 
   ESP.wdtFeed();
   drawProgress(display, 40, "Updating weather");
-  updateCurrentWeather( g_bMetric, g_language, g_location, OPEN_WEATHER_MAP_API_KEY);
-  updateAstronomy( firstStart, g_latitude, g_longitude);
+  updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
+  updateAstronomy( firstStart, conf.latitude, conf.longitude);
   
   ESP.wdtFeed();
   drawProgress(display, 60, "Updating forecasts");
-  updateForecast( g_bMetric, g_language, g_location, OPEN_WEATHER_MAP_API_KEY);
+  updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   ESP.wdtFeed();
   drawProgress(display, 80, "Connecting InfluxDB");
-  updateInfluxDB( firstStart, deviceID, VERSION, g_location);
+  updateInfluxDB( firstStart, deviceID, VERSION, conf.location);
   readyForWeatherUpdate = false;
   drawProgress(display, 100, "Done");
   ESP.wdtFeed();
@@ -234,16 +238,16 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   struct tm* timeInfo;
   timeInfo = localtime(&now);
   char buff[8];
-  sprintf_P(buff, PSTR("%2d:%02d"), g_b24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
+  sprintf_P(buff, PSTR("%2d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0, 54, String(buff));
 
-  if (!g_b24hour)
+  if (!conf.use24hour)
     display->drawString(display->getStringWidth(String(buff)), 52, timeInfo->tm_hour>=12?"pm":"am");
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth(), 54, "In:" + String(getDHTTemp( g_bMetric), 0) + (g_bMetric ? "°C" : "°F") + " Out:" + String(getCurrentWeatherTemperature(), 0) + (g_bMetric ? "°C" : "°F"));
+  display->drawString(display->getWidth(), 54, "In:" + String(getDHTTemp( conf.useMetric), 0) + (conf.useMetric ? "°C" : "°F") + " Out:" + String(getCurrentWeatherTemperature(), 0) + (conf.useMetric ? "°C" : "°F"));
 
   int8_t quality = getWifiSignal();
   for (int8_t i = 0; i < 4; i++) {
@@ -295,9 +299,9 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
   if ( secToReset > 5) {
     display->drawString(1,  0, "Wifi " + WiFi.SSID() + " " + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + "%" : wifiStatusStr(WiFi.status())));
     display->drawString(1, 10, "Up: " + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + "s RAM: " + String( ESP.getFreeHeap()));
-    display->drawString(1, 20, "Update in " + String((UPDATE_INTERVAL_SECS*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
+    display->drawString(1, 20, "Update in " + String((conf.update_data_min*60*1000 - (millis() - timeSinceLastWUpdate))/1000) + " s");
     display->drawString(1, 30, "InfluxDB " + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
-    display->drawString(1, 40, String("V" VERSION) + "; tz: " + String(g_utc_offset) + " " + g_language);
+    display->drawString(1, 40, String("V" VERSION) + "; tz: " + String(conf.utcOffset) + " " + conf.language);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, "RESETING IN " + String(secToReset) + "s !");
@@ -306,7 +310,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset) {
 }
 
 void loop() {
-  if (millis() - timeSinceLastWUpdate > (1000L*UPDATE_INTERVAL_SECS)) {
+  if (millis() - timeSinceLastWUpdate > (1000L*conf.update_data_min*60)) {
     readyForWeatherUpdate = true;
     timeSinceLastWUpdate = millis();
   }
@@ -316,11 +320,11 @@ void loop() {
     updateData(&display,false);
 
   //Write into InfluxDB
-  if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*INFLUXDB_REFRESH_SECS)) && (ui.getUiState()->frameState == FIXED)) {
+  if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*conf.influxdbRefreshMin * 60)) && (ui.getUiState()->frameState == FIXED)) {
     digitalWrite( LED, LOW);
     timeLastInfluxDBUpdate = millis();
     ESP.wdtFeed();
-    writeInfluxDB( getDHTTemp( g_bMetric), getDHTHum(), g_latitude, g_longitude);
+    writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
     ESP.wdtFeed();
     Serial.println("InfluxDB write " + String(millis() - timeLastInfluxDBUpdate) + "ms");
     digitalWrite( LED, HIGH);
