@@ -79,7 +79,7 @@ long timeLastInfluxDBUpdate = 0;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
-void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken, int refresh_sec);
+void setupInfluxDB( const String &serverUrl, const String &org, const String &bucket, const String &authToken, int refresh_sec);
 void setupDHT();
 float getDHTTemp(bool metric);
 float getDHTHum();
@@ -94,7 +94,7 @@ void updateAstronomy(bool firstStart, const float lat, const float lon);
 void updateCurrentWeather( const bool metric, const String lang, const String location, const String APIKey);
 void updateForecast( const bool metric, const String lang, const String location, const String APIKey);
 
-void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location);
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location);
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate);
 
@@ -139,7 +139,7 @@ void setup() {
 
   //Configure InfluxDB
   deviceID += "-" + WiFi.SSID();  //Add connected Wifi network
-  setupInfluxDB( INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, conf.influxdbRefreshMin * 60);
+  setupInfluxDB( conf.influxdbUrl, conf.influxdbOrg, conf.influxdbBucket, conf.influxdbToken, conf.influxdbRefreshMin * 60);
 
   //Load all data
   updateData(&display, true);

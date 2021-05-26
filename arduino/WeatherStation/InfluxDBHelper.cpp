@@ -4,15 +4,15 @@
 Point sensor("environment"); // Data point
 InfluxDBClient influxDBClient;
 
-void setupInfluxDB( const char *serverUrl, const char *org, const char *bucket, const char *authToken, int refresh_sec) {
-  influxDBClient.setConnectionParams(serverUrl, org, bucket, authToken, InfluxDbCloud2CACert);
+void setupInfluxDB( const String &serverUrl, const String &org, const String &bucket, const String &authToken, int refresh_sec) {
+  influxDBClient.setConnectionParams(serverUrl.c_str(), org.c_str(), bucket.c_str(), authToken.c_str(), InfluxDbCloud2CACert);
   HTTPOptions htOpt;
   htOpt.connectionReuse(refresh_sec <= 60);
   influxDBClient.setHTTPOptions(htOpt);  
 }
 
 
-void updateInfluxDB( bool firstStart, const String deviceID, const String version, const String location) {
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location) {
   // Check server connection
   if (firstStart) {
     sensor.addTag("clientId", deviceID);
