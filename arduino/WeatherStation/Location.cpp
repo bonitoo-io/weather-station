@@ -46,11 +46,8 @@ void IPListener::value(String value) {
 const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
 const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
 
-
-
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude) {
   BearSSL::WiFiClientSecure client;
-  //BearSSL::WiFiClientSecure *client = new BearSSL::WiFiClientSecure;
   HTTPClient http;
 
   client.setInsecure();  //Ignore certificate
@@ -121,64 +118,3 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
     }
   }
 }
-
-/*
- * {
-  "ip": "213.220.204.236",
-  "version": "IPv4",
-  "city": "Prague",
-  "region": "Hlavni mesto Praha",
-  "region_code": "10",
-  "country": "CZ",
-  "country_name": "Czechia",
-  "country_code": "CZ",
-  "country_code_iso3": "CZE",
-  "country_capital": "Prague",
-  "country_tld": ".cz",
-  "continent_code": "EU",
-  "in_eu": true,
-  "postal": "130 00",
-  "latitude": 50.0804,
-  "longitude": 14.5045,
-  "timezone": "Europe/Prague",
-  "utc_offset": "+0200",
-  "country_calling_code": "+420",
-  "currency": "CZK",
-  "currency_name": "Koruna",
-  "languages": "cs,sk",
-  "country_area": 78866.0,
-  "country_population": 10625695.0,
-  "asn": "AS16019",
-  "org": "Vodafone Czech Republic a.s."
-}
-
-{
-  "ip": "46.33.117.177",
-  "version": "IPv4",
-  "city": "Prostějov",
-  "region": "Olomoucky kraj",
-  "region_code": "71",
-  "country": "CZ",
-  "country_name": "Czechia",
-  "country_code": "CZ",
-  "country_code_iso3": "CZE",
-  "country_capital": "Prague",
-  "country_tld": ".cz",
-  "continent_code": "EU",
-  "in_eu": true,
-  "postal": "796 01",
-  "latitude": 49.4333,
-  "longitude": 17.1167,
-  "timezone": "Europe/Prague",
-  "utc_offset": "+0200",
-  "country_calling_code": "+420",
-  "currency": "CZK",
-  "currency_name": "Koruna",
-  "languages": "cs,sk",
-  "country_area": 78866.0,
-  "country_population": 10625695.0,
-  "asn": "AS29208",
-  "org": "Dial Telecom, a.s."
-}
-
- */
