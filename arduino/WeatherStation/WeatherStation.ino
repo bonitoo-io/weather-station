@@ -1,6 +1,4 @@
-#define VERSION "0.30"
-#pragma GCC diagnostic warning "-Wall"
-#pragma GCC diagnostic warning "-Wparentheses"
+#define VERSION "0.31"
 
 // Include libraries
 #include <Arduino.h>
@@ -188,7 +186,6 @@ void loop() {
     timeLastInfluxDBUpdate = millis();
     ESP.wdtFeed();
     writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
-    ESP.wdtFeed();
     Serial.println("InfluxDB write " + String(millis() - timeLastInfluxDBUpdate) + "ms");
     digitalWrite( LED, HIGH);
   }
@@ -211,7 +208,6 @@ void loop() {
   }
 
   int remainingTimeBudget = ui.update();
-  ESP.wdtFeed();
   if (remainingTimeBudget > 0) {
     // You can do some work here
     // Don't do stuff if you are below your time budget.

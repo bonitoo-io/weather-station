@@ -106,17 +106,3 @@ void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x
   drawWindForecastDetails(display, x + 44, y, 1);
   drawWindForecastDetails(display, x + 88, y, 2);
 }
-
-void showFont(OLEDDisplay *display) {
-  while (true)
-  for (char i=0; i<225; i++) {
-    display->clear();
-    display->setFont(Meteocons_Plain_21);
-    display->setTextAlignment(TEXT_ALIGN_LEFT);
-    display->drawString(0, 0, String((char)(i+32)));
-    display->setFont(ArialMT_Plain_10);
-    display->drawString(0, 32, String((int)(i+32)) + " " + String((char)(i+32)));
-    display->display();
-    delay( 1000);
-  }
-}
