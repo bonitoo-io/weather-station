@@ -1,4 +1,4 @@
-#define VERSION "0.31"
+#define VERSION "0.32"
 
 // Include libraries
 #include <Arduino.h>
@@ -53,7 +53,7 @@ tConfig conf = {
   122.4194,    //longitude
   false, //useMetric
   false, //use24hour
-  "pool.ntp.org,time.nis.gov",
+  "pool.ntp.org,time.nis.gov,time.google.com",
 
   INFLUXDB_URL,   //influxdbUrl;
   INFLUXDB_TOKEN, //influxdbToken;

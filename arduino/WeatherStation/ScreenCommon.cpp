@@ -91,19 +91,14 @@ int8_t getWifiSignal() {
 
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   time_t now = time(nullptr);
-  struct tm* timeInfo;
-  timeInfo = localtime(&now);
-  char buff[8];
-  sprintf_P(buff, PSTR("%2d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
+
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0, 54, String(buff));
-
-  if (!conf.use24hour)
-    display->drawString(display->getStringWidth(String(buff)), 52, timeInfo->tm_hour>=12?"pm":"am");
+  display->drawString(0, 54, strTime(now,true));
+  display->drawString(display->getStringWidth("00:00"), 52, strTimeSuffix(now));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth(), 54, "In:" + String(getDHTTemp( conf.useMetric), 0) + (conf.useMetric ? "°C" : "°F") + " Out:" + String(getCurrentWeatherTemperature(), 0) + (conf.useMetric ? "°C" : "°F"));
+  display->drawString(display->getWidth(), 54, "In:" + strTemp(getDHTTemp( conf.useMetric)) + " Out:" + strTemp(getCurrentWeatherTemperature()));
 
   int8_t quality = getWifiSignal();
   for (int8_t i = 0; i < 4; i++) {
@@ -171,7 +166,7 @@ void showFont(OLEDDisplay *display, const uint8_t *fontData) {
     display->drawString(0, 40, String((int)(i)) + " " + String((char)(i)) + "\n " + String(from) + "-" + String(to));
     display->display();
     delay( 1000);
-    while (digitalRead(D3) == LOW)
+    while (digitalRead(D3) == LOW) //wait if the button is pressed
       delay( 200);
   }
 }

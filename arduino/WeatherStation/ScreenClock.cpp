@@ -90,31 +90,25 @@ void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->drawLine(x4+clockCenterX, y4+clockCenterY, x1+clockCenterX, y1+clockCenterY);
 
   //draw date
-  char buff[19];
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  sprintf_P(buff, PSTR("%s, %s\n%2d/%2d/%04d"), WDAY_NAMES[t->tm_wday], MONTH_NAMES[t->tm_mon], t->tm_mday, t->tm_mon+1, t->tm_year + 1900);
-  display->drawString(64 + x, 10 + y, String(buff));
+  display->drawString(64 + x, 10 + y, strDate(now, false));
 }
 
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   time_t now = time(nullptr);
-  struct tm* timeInfo;
-  timeInfo = localtime(&now);
-  char buff[16];
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
-  display->drawString(64 + x, 8 + y, String(buff));
+
+  display->drawString(64 + x, 8 + y, strDate(now, true));
 
   display->setFont(DSEG7_Classic_Bold_21);
-  sprintf_P(buff, PSTR("%02d:%02d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
-  display->drawString(64 + x - (conf.use24hour ? 0 : 4), 20 + y, String(buff));
+  display->drawString(64 + x - (conf.use24hour ? 0 : 4), 20 + y, strTime(now, false));
 
   if (!conf.use24hour) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
-    display->drawString(display->getWidth() + x, 18 + y, timeInfo->tm_hour>=12?"pm":"am");
+    display->drawString(display->getWidth() + x, 18 + y, strTimeSuffix(now));
   }
 }

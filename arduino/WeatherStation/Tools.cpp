@@ -7,25 +7,43 @@ const char* const MOON_PHASES[] = {"new moon", "waxing crescent", "first quarter
 extern tConfig conf;
 
 String strTime(time_t timestamp, bool shortTime) {
-  //TODO use for all conversions
-  //TODO add multiple time/date formats support - country
-  //TODO add strDate
-  time_t time = timestamp;
-  struct tm *timeInfo = localtime(&time);
-
-  char buf[6];
-  sprintf(buf, "%02d:%02d%s", conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, conf.use24hour ? "" : (timeInfo->tm_hour>=12?"pm":"am"));
+  struct tm *timeInfo = localtime(&timestamp);
+  char buf[9];
+  //TODO add multiple time/date formats support - country  
+  if (shortTime)
+    sprintf_P(buf, PSTR("%2d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
+  else  
+    sprintf_P(buf, PSTR("%02d:%02d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
   return String(buf);
 }
 
+String strTimeSuffix(time_t timestamp) {
+  struct tm *timeInfo = localtime(&timestamp);  
+  return conf.use24hour ? "" : (timeInfo->tm_hour>=12?"pm":"am");
+}
+
 String strDate(time_t timestamp, bool shortDate) {
-  struct tm* t = localtime(&timestamp);
-  //TODO: support formats
-  char buff[16];
-  //sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+  struct tm* timeInfo = localtime(&timestamp);
+  char buff[20];
+  //TODO: support multiple formats  
+  if (shortDate)
+    sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+  else  
+    sprintf_P(buff, PSTR("%s, %s\n%02d/%02d/%04d"), WDAY_NAMES[timeInfo->tm_wday], MONTH_NAMES[timeInfo->tm_mon], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
   return String(buff);
 }
 
+String strTemp( float t) {
+  return String(t, 0) + (conf.useMetric ? "°C" : "°F");
+}
+
+String strHum( float h) {
+  return String(h, 0) + "%";
+}
+
+String strWind( float w) {
+  return String(w, 0) + (conf.useMetric ? "m/s" : "mph");  
+}
 
 // Convert UTF8-string to extended ASCII
 
@@ -87,13 +105,12 @@ String utf8ascii(const String s) {
   return r;
 }
 
-
-void testutf8() {
+/*void testutf8() {
   //Serial.println( sTranslitFrom);
   if (sTranslitFrom.length() != (sTranslitTo.length()*2))
     Serial.println("ERROR - utf8 translit table");
 
-/*  Serial.println( sTranslitFrom.length());
+  Serial.println( sTranslitFrom.length());
   for (int i=0; i < sTranslitFrom.length() - 1; i+=2) {
     if (( sTranslitFrom.charAt(i) & 0b11100000) == 0b11000000) {
       Serial.print( String(sTranslitFrom.charAt(i)) + String(sTranslitFrom.charAt(i+1)) + " ");
@@ -103,7 +120,7 @@ void testutf8() {
     }
   }
   Serial.println( sTranslitTo);
-  Serial.println( sTranslitTo.length()*2);*/
+  Serial.println( sTranslitTo.length()*2);
 
   Serial.println( utf8ascii("Příliš žluťoučký kůň úpěl ďábelské ódy."));
   Serial.println( utf8ascii("PŘÍLIŠ ŽLUŤOUČKÝ KŮŇ ÚPĚL ĎÁBELSKÉ ÓDY."));
@@ -115,4 +132,4 @@ void testutf8() {
   Serial.println( utf8ascii("Høj bly gom vandt fræk sexquiz på wc"));
   Serial.println( utf8ascii("Любя, съешь щипцы, — вздохнёт мэр, — кайф жгуч."));
   Serial.println( utf8ascii("Γκόλφω, βάδιζε μπροστά ξανθή ψυχή!"));
-}
+}*/

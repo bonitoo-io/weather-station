@@ -38,15 +38,15 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(conf.location));
-  display->drawString(display->getWidth() + x, 38 + y, "(" + String(currentWeather.tempMin, 0) + "-" + String(currentWeather.tempMax, 0) + (conf.useMetric ? "°C" : "°F") + ")");
+  display->drawString(display->getWidth() + x, 38 + y, "(" + String(currentWeather.tempMin, 0) + "-" + strTemp(currentWeather.tempMax) + ")");
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 38 + y, utf8ascii(currentWeather.description));
-  display->drawString(38 + x, 17 + y, " wind");
-  display->drawString(38 + x, 27 + y, String(currentWeather.windSpeed, 0) + (conf.useMetric ? "m/s" : "mph"));
+  display->drawString(38 + x, 17 + y, "wind");
+  display->drawString(38 + x, 27 + y, strWind(currentWeather.windSpeed));
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth() + x, 16 + y, String(currentWeather.temp, 0) + (conf.useMetric ? "°C" : "°F"));
+  display->drawString(display->getWidth() + x, 16 + y, strTemp(currentWeather.temp));
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -62,7 +62,7 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
   display->drawString(x + 20, y + 5, WDAY_NAMES[timeInfo->tm_wday]);
-  display->drawString(x + 20, y + 39, String(forecasts[dayIndex].temp, 0) + (conf.useMetric ? "°C" : "°F"));
+  display->drawString(x + 20, y + 39, strTemp(forecasts[dayIndex].temp));
   
   display->setFont(Meteocons_Plain_21);
   display->drawString(x + 20, y + 17, forecasts[dayIndex].iconMeteoCon);
@@ -98,7 +98,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   
   display->setFont(ArialMT_Plain_10);
   //display->drawString(x + 20, y + 29, String(forecasts[dayIndex].windDeg, 0) + "°");
-  display->drawString(x + 20, y + 39, String(forecasts[dayIndex].windSpeed, 0) + (conf.useMetric ? "m/s" : "mph"));
+  display->drawString(x + 20, y + 39, strWind(forecasts[dayIndex].windSpeed));
 }
 
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
