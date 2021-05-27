@@ -46,7 +46,7 @@ void IPListener::value(String value) {
 const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
 const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
 
-void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude) {
+void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude) {
   BearSSL::WiFiClientSecure client;
   HTTPClient http;
 
@@ -97,7 +97,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
   location = ipListener.city + "," + country;
 
   lang = ipListener.lang;
-  if ( lang = "cs")    //fix cz code for weather
+  if ( lang == "cs")    //fix cz code for weather
     lang = "cz";
 
   //24-hours vs 12-hours clock detection
@@ -117,4 +117,9 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
       break;
     }
   }
+  
+  //TODO: support multiple formats  https://en.wikipedia.org/wiki/Date_format_by_country
+  bYMD = false;
+  if (country == "US")
+    bYMD = true;
 }

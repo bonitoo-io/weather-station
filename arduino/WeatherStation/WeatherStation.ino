@@ -1,4 +1,4 @@
-#define VERSION "0.33"
+#define VERSION "0.34"
 
 // Include libraries
 #include <Arduino.h>
@@ -53,6 +53,7 @@ tConfig conf = {
   122.4194,    //longitude
   false, //useMetric
   false, //use24hour
+  true, //useYMDdate
   "pool.ntp.org,time.nis.gov,time.google.com",
 
   INFLUXDB_URL,   //influxdbUrl;
@@ -86,7 +87,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const char* label);
 
 void updateData(OLEDDisplay *display, bool firstStart);
-void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& metric, float& latitude, float& longitude);
+void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
 void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
 void updateCurrentWeather( const bool metric, const String lang, const String location, const String APIKey);
@@ -148,7 +149,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 
   drawUpdateProgress(display, 10, "Detecting location");
   if (conf.detectLocationIP)
-    detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
+    detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
   
   drawUpdateProgress(display, 20, "Updating time");
   updateClock( firstStart, conf.utcOffset, conf.ntp);

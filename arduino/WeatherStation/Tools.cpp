@@ -9,7 +9,6 @@ extern tConfig conf;
 String strTime(time_t timestamp, bool shortTime) {
   struct tm *timeInfo = localtime(&timestamp);
   char buf[9];
-  //TODO add multiple time/date formats support - country  
   if (shortTime)
     sprintf_P(buf, PSTR("%2d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
   else  
@@ -25,11 +24,18 @@ String strTimeSuffix(time_t timestamp) {
 String strDate(time_t timestamp, bool shortDate) {
   struct tm* timeInfo = localtime(&timestamp);
   char buff[20];
-  //TODO: support multiple formats  
-  if (shortDate)
-    sprintf_P(buff, PSTR("%s %2d/%2d/%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
-  else  
-    sprintf_P(buff, PSTR("%s, %s\n%02d/%02d/%04d"), WDAY_NAMES[timeInfo->tm_wday], MONTH_NAMES[timeInfo->tm_mon], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+ 
+  if (conf.useYMDdate) {
+    if (shortDate)
+      sprintf_P(buff, PSTR("%s %04d/%2d/%2d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
+    else  
+      sprintf_P(buff, PSTR("%s, %s\n%04d/%02d/%02d"), WDAY_NAMES[timeInfo->tm_wday], MONTH_NAMES[timeInfo->tm_mon], timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
+  } else {
+    if (shortDate)
+      sprintf_P(buff, PSTR("%s %2d.%2d.%04d"), WDAY_NAMES[timeInfo->tm_wday], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+    else  
+      sprintf_P(buff, PSTR("%s, %s\n%02d.%02d.%04d"), WDAY_NAMES[timeInfo->tm_wday], MONTH_NAMES[timeInfo->tm_mon], timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+  }
   return String(buff);
 }
 

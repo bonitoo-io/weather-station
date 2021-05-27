@@ -29,6 +29,7 @@ struct tConfig {
   float longitude;
   bool useMetric;
   bool use24hour;
+  bool useYMDdate;
   String ntp;
 
   String influxdbUrl;
