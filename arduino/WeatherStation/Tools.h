@@ -19,7 +19,7 @@ struct tConfig {
   String wifi_pwd;
 
   bool detectLocationIP;
-  int update_data_min;
+  unsigned int updateDataMin;
   String openweatherApiKey;
 // Go to https://openweathermap.org/find?q= and search for a location  
   String location;
@@ -35,5 +35,5 @@ struct tConfig {
   String influxdbToken;
   String influxdbOrg;
   String influxdbBucket;
-  int influxdbRefreshMin;
+  unsigned int influxdbRefreshMin;
 };

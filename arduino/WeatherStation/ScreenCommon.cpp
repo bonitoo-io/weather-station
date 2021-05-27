@@ -138,7 +138,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   if ( secToReset > 5) {
     display->drawString(1,  0, "Wifi " + WiFi.SSID() + " " + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + "%" : wifiStatusStr(WiFi.status())));
     display->drawString(1, 10, "Up: " + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + "s RAM: " + String( ESP.getFreeHeap()));
-    display->drawString(1, 20, "Update in " + String((conf.update_data_min*60*1000 - (millis() - lastUpdate))/1000) + " s");
+    display->drawString(1, 20, "Update in " + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + " s");
     display->drawString(1, 30, "InfluxDB " + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
     display->drawString(1, 40, String("V") + version + "; tz: " + String(conf.utcOffset) + " " + conf.language);
     display->drawString(1, 50, "http://" + WiFi.localIP().toString());

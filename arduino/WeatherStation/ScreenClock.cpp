@@ -11,7 +11,7 @@ void updateClock( bool firstStart, int utc_offset, const String ntp) {
   char *ntparr[3];
   strncpy(ntpbuff, ntp.c_str(), sizeof( ntpbuff));
   ntparr[0] = strtok( ntpbuff, ",");
-  for (int i = 1; i < sizeof( ntparr)/sizeof(char*); i++)
+  for (unsigned int i = 1; i < sizeof( ntparr)/sizeof(char*); i++)
     ntparr[i] = strtok( NULL, ",");
 
   //Set TZ and NTP

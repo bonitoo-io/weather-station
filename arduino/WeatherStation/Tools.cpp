@@ -52,7 +52,7 @@ const String sTranslitTo   = "SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceee
 
 char replaceChar( char c1, char c2) {
   //Replace 2-bytes UTF8 characters
-  for (int i=0; i < sTranslitFrom.length() - 1; i+=2) { //try to find character in the translation table
+  for (unsigned int i=0; i < sTranslitFrom.length() - 1; i+=2) { //try to find character in the translation table
     if ((c1 == sTranslitFrom.charAt(i)) && (c2 == sTranslitFrom.charAt(i+1)))
       return sTranslitTo.charAt(i/2);
   }
@@ -87,7 +87,7 @@ String utf8ascii(const String s) {
   String r = "";
   char c;
   char c1 = 0;
-  for (int i=0; i < s.length(); i++) {
+  for (unsigned int i=0; i < s.length(); i++) {
     c = s.charAt(i);
     if (c1 != 0) {  //already utf8 char?
       r += replaceChar( c1, c);

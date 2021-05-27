@@ -102,7 +102,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
 
   //24-hours vs 12-hours clock detection
   b24h = true;
-  for (int i = 0; i < sizeof(Countries_12h) / sizeof(Countries_12h[0]); i++) {
+  for (unsigned int i = 0; i < sizeof(Countries_12h) / sizeof(Countries_12h[0]); i++) {
     if (country == Countries_12h[i]) {
       b24h = false;
       break;
@@ -111,7 +111,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
 
   //Celsius vs Fahrenheit detection
   metric = true;
-  for (int i = 0; i < sizeof(Countries_Fahrenheit) / sizeof(Countries_Fahrenheit[0]); i++) {
+  for (unsigned int i = 0; i < sizeof(Countries_Fahrenheit) / sizeof(Countries_Fahrenheit[0]); i++) {
     if (country == Countries_Fahrenheit[i]) {
       metric = false;
       break;

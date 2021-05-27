@@ -1,9 +1,9 @@
-#define VERSION "0.32"
+#define VERSION "0.33"
 
 // Include libraries
 #include <Arduino.h>
 #include <ESPWiFi.h>
-#include <Wire.h>
+//#include <Wire.h>
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
 
@@ -44,7 +44,7 @@ tConfig conf = {
   WIFI_PWD, //wifi_pwd
 
   true, //detectLocationIP
-  60,   //update_data_min
+  60,   //updateDataMin
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
   "San Francisco, US", //location
   "en", //language
@@ -72,8 +72,8 @@ bool readyForWeatherUpdate = false;
 String lastUpdate = "--";
 String deviceID;
 
-long timeSinceLastWUpdate = 0;
-long timeLastInfluxDBUpdate = 0;
+unsigned long timeSinceLastWUpdate = 0;
+unsigned long timeLastInfluxDBUpdate = 0;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
@@ -171,25 +171,27 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 }
 
 void loop() {
-  if (millis() - timeSinceLastWUpdate > (1000L*conf.update_data_min*60)) {
+  if (millis() - timeSinceLastWUpdate > (1000L*conf.updateDataMin*60)) {
     readyForWeatherUpdate = true;
     timeSinceLastWUpdate = millis();
   }
 
   // Update data?
-  if (readyForWeatherUpdate && ui.getUiState()->frameState == FIXED)
-    updateData(&display,false);
+  if (ui.getUiState()->frameState == FIXED) {
+    if (readyForWeatherUpdate)
+      updateData(&display,false);
 
-  //Write into InfluxDB
-  if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*conf.influxdbRefreshMin * 60)) && (ui.getUiState()->frameState == FIXED)) {
-    digitalWrite( LED, LOW);
-    timeLastInfluxDBUpdate = millis();
-    ESP.wdtFeed();
-    writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
-    Serial.println("InfluxDB write " + String(millis() - timeLastInfluxDBUpdate) + "ms");
-    digitalWrite( LED, HIGH);
+    //Write into InfluxDB
+    if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*conf.influxdbRefreshMin * 60))) {
+      digitalWrite( LED, LOW);
+      timeLastInfluxDBUpdate = millis();
+      ESP.wdtFeed();
+      writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
+      Serial.println("InfluxDB write " + String(millis() - timeLastInfluxDBUpdate) + "ms");
+      digitalWrite( LED, HIGH);
+    }
   }
-
+  
   //Handle button
   int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
