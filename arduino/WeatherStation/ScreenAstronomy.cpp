@@ -1,11 +1,10 @@
 #include <OLEDDisplayUi.h>
-#include <OpenWeatherMapCurrent.h>
 #include <SunMoonCalc.h>
 
 #include "tools.h"
 #include "WeatherStationFonts.h"
 
-extern OpenWeatherMapCurrentData currentWeather;
+extern tCurrentWeather currentWeather;
 
 time_t moonRise;
 time_t moonSet;

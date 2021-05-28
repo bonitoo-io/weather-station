@@ -34,6 +34,25 @@ struct tConfig {
   unsigned int influxdbRefreshMin;
 };
 
+struct tForecast {
+  uint32_t observationTime;
+  int temp;
+  char iconMeteoCon;
+  int windSpeed;
+  int windDeg;
+};
+
+struct tCurrentWeather {
+  int temp;
+  int tempMin;
+  int tempMax;
+  String description;
+  int windSpeed;
+  char iconMeteoCon;
+  uint32_t sunrise;
+  uint32_t sunset;
+};
+
 extern tConfig conf;
 
 // Adjust according to your language
