@@ -4,8 +4,6 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
-extern tConfig conf;
-
 // Internal sensor settings
 #define DHTTYPE DHT11   // DHT 11
 #define DHTPIN D1       // Digital pin connected to the DHT sensor

@@ -4,8 +4,6 @@
 #include "WeatherStationImages.h"
 #include "tools.h"
 
-extern tConfig conf;
-extern String deviceID;
 float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();
 bool errorInfluxDB();
@@ -130,7 +128,7 @@ const char* wifiStatusStr(wl_status_t status) {
   }
 }
 
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate) {
+void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID) {
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);

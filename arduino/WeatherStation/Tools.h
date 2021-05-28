@@ -1,11 +1,6 @@
 #pragma once
 #include <Arduino.h>
 
-// Adjust according to your language
-extern const char* const WDAY_NAMES[];
-extern const char* const MONTH_NAMES[];
-extern const char* const MOON_PHASES[];
-
 String strTime(time_t timestamp, bool shortTime);
 String strTimeSuffix(time_t timestamp);
 String strDate(time_t timestamp, bool shortDate);
@@ -38,3 +33,10 @@ struct tConfig {
   String influxdbBucket;
   unsigned int influxdbRefreshMin;
 };
+
+extern tConfig conf;
+
+// Adjust according to your language
+extern const char* const WDAY_NAMES[];
+extern const char* const MONTH_NAMES[];
+extern const char* const MOON_PHASES[];

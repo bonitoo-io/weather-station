@@ -1,4 +1,4 @@
-#define VERSION "0.34"
+#define VERSION "0.35"
 
 // Include libraries
 #include <Arduino.h>
@@ -67,10 +67,7 @@ tConfig conf = {
 SSD1306Wire     display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi   ui( &display );
 
-// flag changed in the ticker function every 10 minutes
-bool readyForWeatherUpdate = false;
-
-String lastUpdate = "--";
+bool readyForWeatherUpdate = false; // flag changed in the ticker function
 String deviceID;
 
 unsigned long timeSinceLastWUpdate = 0;
@@ -95,7 +92,7 @@ void updateForecast( const bool metric, const String lang, const String location
 
 void updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location);
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate);
+void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID);
 
 void setup() {
   // Prepare serial port
@@ -115,7 +112,7 @@ void setup() {
   display.clear();
   display.display();
   //display.flipScreenVertically();
-  display.setContrast(255);
+  //display.setContrast(100);
 
   //Generate Device ID
   deviceID = "WS-" + WiFi.macAddress();
@@ -200,7 +197,7 @@ void loop() {
       ui.nextFrame();   //jump to the next frame
     }
     if (loops > 4)
-      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastWUpdate);  //Show configuration after 0.5s
+      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastWUpdate, deviceID);  //Show configuration after 0.5s
 
     loops++;
     if (loops > 200)  //reboot after 20 seconds

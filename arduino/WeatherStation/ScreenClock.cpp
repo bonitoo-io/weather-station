@@ -3,8 +3,6 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
-extern tConfig conf;
-
 void updateClock( bool firstStart, int utc_offset, const String ntp) {
   //Convert ntp comma separated list to array
   char ntpbuff[50];

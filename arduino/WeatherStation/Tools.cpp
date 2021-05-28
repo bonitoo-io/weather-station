@@ -4,7 +4,6 @@
 const char* const WDAY_NAMES[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char* const MONTH_NAMES[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const char* const MOON_PHASES[] = {"new moon", "waxing crescent", "first quarter", "waxing gibbous", "full moon", "waning gibbous", "third quarter", "waning crescent"};
-extern tConfig conf;
 
 String strTime(time_t timestamp, bool shortTime) {
   struct tm *timeInfo = localtime(&timestamp);

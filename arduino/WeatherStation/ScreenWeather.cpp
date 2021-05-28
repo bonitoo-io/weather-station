@@ -6,8 +6,6 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
-extern tConfig conf;
-
 #define MAX_FORECASTS 3
 
 OpenWeatherMapCurrentData currentWeather;
