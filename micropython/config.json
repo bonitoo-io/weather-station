@@ -1,0 +1,36 @@
+{
+  "known_networks": [
+    {
+      "ssid": "",
+      "password": "",
+      "enables_webrepl": false
+    },
+    {
+      "ssid": "",
+      "password": "",
+      "enables_webrepl": false
+    }
+  ],
+  "access_point": {
+    "config": {
+      "essid": "Micropython-WS",
+      "channel": 11,
+      "hidden": false,
+      "password": "P@55W0rd"
+    },
+    "enables_webrepl": true,
+    "start_policy": "fallback"
+  },
+  "influxdb2": {
+    "url": "",
+    "org": "",
+    "bucket": "",
+    "token": "",
+    "username": "",
+    "password": ""
+  },
+  "config": {
+    "interval": 10,
+    "ntp_interval": 60
+  }
+}

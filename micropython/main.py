@@ -1,53 +1,66 @@
-import logging
-import dht
-import machine
+from influxdb2 import Point, Client, WritePrecision
+from wm import WifiManager
+from machine import Pin, I2C, reset
 from ssd1306 import SSD1306_I2C
-
-log = logging.getLogger("main")
-log.setLevel(logging.DEBUG)
-interval_ms = 5000
-oled_width = 128
-oled_height = 64
-text_size = {"x": 8, "y": 10}
-yspacing = 6
+from dht import DHT11
+from micropython import const
+import ntp
+import gc
 
 try:
-    import usocket as socket
-    import uselect as select
-    import uasyncio as asyncio
+    from urandom import getrandbits
     import utime as time
-    import urandom as random
+    import uasyncio as asyncio
 except:
-    import socket
-    import select
-    import asyncio
+    from random import getrandbits
     import time
-    import random
+    import asyncio
 
-# init interfaces
-i2c = machine.I2C(scl=machine.Pin(14), sda=machine.Pin(2), freq=400000)
-log.info('Scan i2c bus...')
-devices = i2c.scan()
 
-if len(devices) == 0:
-    log.error("No i2c device !")
-else:
-    for device in devices:
-        log.info("i2c device found: {0}".format(hex(device)))
 
-led2 = machine.Pin(4, machine.Pin.OUT)
+INTERVAL_MS = CFG["config"]["interval"]
+NTP_INTERVAL = CFG["config"]["ntp_interval"]
+OLED_WIDTH = const(128)
+OLED_HEIGHT = const(64)
+TEXT_SIZE = {"x": const(8), "y": const(8)}
+Y_SPACING = const(6)
+oled = None
+i2c = None
+dht11 = None
+led2 = None
+loop = None
 
-# init devices
-try:
-    dht11 = dht.DHT11(machine.Pin(5))
-    oled = SSD1306_I2C(oled_width, oled_height, i2c, addr=0x3c)
-    oled.fill(1)
-    oled.fill_rect(10, 10, 108, 44, 0)
-    oled.text("InfluxData", 20, 20, 1)
+
+def show_text_line(x, y, text, c=1, timeout=0):
+    if c == 0:
+        fill_c = 1
+    else:
+        fill_c = 0
+    oled.text(text, x, y, c)
     oled.show()
-    time.sleep(2)
-except Exception as e:
-    log.error("Init of devices failed: {0}".format(e))
+    if timeout > 0:
+        time.sleep(timeout)
+        oled.fill_rect(x, y, (TEXT_SIZE["x"] * len(text)), TEXT_SIZE["y"], fill_c)
+    else:
+        return (x, y, TEXT_SIZE["x"] * len(text), TEXT_SIZE["y"], fill_c)
+
+
+def clear_text_line(rect):
+    oled.fill_rect(*rect)
+
+
+def init():
+    global i2c, oled, led2, dht11
+    # init buses
+    i2c = I2C(scl=Pin(14), sda=Pin(2), freq=400000)
+    oled = SSD1306_I2C(OLED_WIDTH, OLED_HEIGHT, i2c, addr=0x3c)
+    show_text_line(12, 30, "InfluxData WS", 1, 3)
+    # init devices
+    line = show_text_line(5, 30, "Initialize", 1)
+    led2 = Pin(4, Pin.OUT)
+    dht11 = DHT11(Pin(5))
+    clear_text_line(line)
+    show_text_line(5, 30, "Connecting WiFi", 1)
 
 
 def randrange(start, stop=None):
@@ -61,14 +74,16 @@ def randrange(start, stop=None):
         pwr2 <<= 1
         bits += 1
     while True:
-        r = random.getrandbits(bits)
+        r = getrandbits(bits)
         if r < upper:
             break
     return r + start
 
 
 def restart():
-    machine.reset()
+    oled.fill(0)
+    show_text_line(5, 30, "OSError, rebooting", 1, 3)
+    reset()
 
 
 def get_t_rh():
@@ -79,23 +94,22 @@ def get_t_rh():
 
 
 async def show_data(screens):
-    paging_ms = interval_ms // len(screens) - 1000
+    global x_random, y_random
+    paging_ms = INTERVAL_MS // len(screens) - 1000
     oled.fill(0)
     for screen, lines in screens.items():
-        y_max = oled_height - ((yspacing * (len(lines) - 1)) + (text_size["y"] * len(lines)))
-        log.debug(y_max)
-        xrandom = randrange(0, (oled_width) - len(screens[screen][0]) * text_size["x"])
-        yrandom = randrange(0, y_max)
+        y_max = OLED_HEIGHT - ((Y_SPACING * (len(lines) - 1)) + (TEXT_SIZE["y"] * len(lines)))
+        x_random = randrange(0, OLED_WIDTH - len(screens[screen][0]) * TEXT_SIZE["x"])
+        y_random = randrange(0, y_max)
         if y_max < 0:
-            raise ValueError("More llines than display can handle")
+            raise ValueError("More lines than display can handle")
         else:
             for num, line in enumerate(lines, start=0):
-                x = xrandom
-                y = yrandom + (yspacing * num) + (text_size["y"] * num)
-                log.debug("line_text: {0}, x: {1}, y: {2}".format(line, x, y))
+                x = x_random
+                y = y_random + (Y_SPACING * num) + (TEXT_SIZE["y"] * num)
                 oled.text(line, x, y)
             oled.show()
-            if paging_ms < interval_ms:
+            if paging_ms < INTERVAL_MS:
                 await asyncio.sleep_ms(paging_ms)
 
 
@@ -105,49 +119,79 @@ def define_screens(data):
     screen1_line1 = 'Temp: {0} C'.format(data["t"])
     screen1_line2 = 'RH: {0} %'.format(data["rh"])
     screens["screen1"] = [screen1_line1, screen1_line2]
-    log.debug(screens)
     return screens
 
 
-async def run(interval):
-    t0 = time.ticks_ms()
-    while True:
-        data = {}
-        led2.value(0)
-        data["t"], data["rh"] = get_t_rh()
-        log.debug(data)
-        led2.value(1)
-        await show_data(define_screens(data))
+def publish(data, client):
+    point = Point("dht11") \
+        .field("temperature", data["t"]) \
+        .field("humidity", data["rh"]) \
+        .tag("location", "office") \
+        .time(time.time_ns() + WritePrecision.DELTA_NS)
+    res = client.write(point)
+    if res:
+        print("Writing data failed: {0}".format(res))
 
-        # sleep
-        iv = interval
+
+async def run(interval, client):
+    ntp.set_rtc()
+    t0 = time.ticks_ms()
+    try:
         while True:
-            t1 = time.ticks_ms()
-            dt = time.ticks_diff(t1, t0)
-            if dt >= iv:
-                break
-            await asyncio.sleep_ms(min(iv - dt, 500))
-        if iv <= dt < iv * 3 / 2:
-            t0 = time.ticks_add(t0, iv)
-        else:
-            t0 = time.ticks_ms()
+            data = {}
+            oled.fill(0)
+            show_text_line(5, 30, "Loading data", 1)
+            gc.collect()
+            print(gc.mem_free())
+            led2.value(0)
+            data["t"], data["rh"] = get_t_rh()
+            oled.fill(0)
+            show_text_line(5, 30, "Publishing data", 1)
+            publish(data, client)
+            await show_data(define_screens(data))
+            led2.value(1)
+
+            # sleep
+            iv = interval * 1000
+            while True:
+                t1 = time.ticks_ms()
+                dt = time.ticks_diff(t1, t0)
+                if dt >= iv:
+                    break
+                await asyncio.sleep_ms(min(iv - dt, 500))
+            if iv <= dt < iv * 3 / 2:
+                t0 = time.ticks_add(t0, iv)
+            else:
+                t0 = time.ticks_ms()
+    except OSError as e:
+        print("OSError: {0}".format(e))
+        restart()
+    finally:
+        oled.poweroff()
+
+
+async def schedule(cbk, t, *args, **kwargs):
+    while True:
+        await asyncio.sleep(t)
+        cbk(*args, **kwargs)
 
 
 def main():
     global loop
-    try:
-        loop = asyncio.get_event_loop()
-        loop.create_task(run(interval_ms))
-        loop.run_forever()
-    except OSError:
-        loop.stop()
-        oled.poweroff()
-        restart()
-    except KeyboardInterrupt:
-        loop.stop()
-        oled.poweroff()
+    loop = asyncio.get_event_loop()
+    influxdb_client = Client(CFG["influxdb2"]["url"],
+                             CFG["influxdb2"]["bucket"],
+                             CFG["influxdb2"]["org"],
+                             precision=WritePrecision.NS,
+                             token=CFG["influxdb2"]["token"])
+
+    init()
+    loop.create_task(WifiManager(CFG).manage())
+    loop.create_task(schedule(ntp.set_rtc, NTP_INTERVAL))
+    loop.create_task(run(INTERVAL_MS, influxdb_client))
+    loop.run_forever()
 
 
 if __name__ == "__main__":
-    log.info("Running main.py on Bonitoo WS")
+    print("Welcome on InfluxData WeatherStation!")
     main()

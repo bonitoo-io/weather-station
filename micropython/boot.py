@@ -1,29 +1,24 @@
-import logging
-import wifi_mgr as wifimgr
+from json import load
 
-def gc():
+try:
+    with open('config.json', 'r') as json_file:
+        CFG = load(json_file)
+except Exception as e:
+    print("Failed to load config file, no known networks selected")
+
+
+def collect_gc():
     import gc
     gc.collect()
     gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
 
-log = logging.getLogger("boot")
+def debug(value):
+    # value=None - turn off vendor O/S debugging messages
+    # value=0 - redirect vendor O/S debugging messages to UART(0)
+    import esp
+    esp.osdebug(value)
 
-# wlan_ap = network.WLAN(network.AP_IF)
-# wlan_sta = network.WLAN(network.STA_IF)
-#
-# if wlan_sta.isconnected():
-#     wlan_sta.disconnect()
-# wlan_ap.active(False)
-# wlan_sta.active(False)
-
-wlan = wifimgr.get_connection()
-if wlan is None:
-    log.info("Could not initialize the network connection.")
-    while True:
-        pass  # you shall not pass :D
-
-gc()
-
-
+collect_gc()
+debug(None)
 
 
