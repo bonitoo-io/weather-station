@@ -2,7 +2,7 @@
 #include <ESPWiFi.h>
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
-#include "tools.h"
+#include "Tools.h"
 
 float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();

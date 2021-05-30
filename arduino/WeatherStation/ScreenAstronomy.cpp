@@ -1,7 +1,7 @@
 #include <OLEDDisplayUi.h>
 #include <SunMoonCalc.h>
 
-#include "tools.h"
+#include "Tools.h"
 #include "WeatherStationFonts.h"
 
 extern tCurrentWeather currentWeather;
