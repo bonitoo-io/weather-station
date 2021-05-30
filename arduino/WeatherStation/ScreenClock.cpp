@@ -1,5 +1,5 @@
 #include <OLEDDisplayUi.h>
-#include "tools.h"
+#include "Tools.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 

@@ -7,7 +7,7 @@
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
 
-#include "tools.h"
+#include "Tools.h"
 
 /***************************
  * Begin Settings
@@ -37,7 +37,7 @@
 #define BUTTONHPIN D3   //Boot button pin
 #define LED        D2   //LED pin
 
-#include "custom_dev.h" //Custom development configuration - remove or comment it out 
+//#include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
 tConfig conf = {
   WIFI_SSID,  //wifi_ssid
