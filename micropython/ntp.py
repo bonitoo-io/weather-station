@@ -6,15 +6,14 @@ except:
     import time
 
 
-def set_rtc():
+def set_rtc(host):
     # if needed, overwrite default time server
-    ntptime.host = "1.europe.pool.ntp.org"
+    ntptime.host = host
 
     try:
-        print("Local time before sync：{0}".format(time.localtime()))
+        print('UTC time before sync：{0}'.format(time.gmtime()))
         # make sure to have internet connection
         ntptime.settime()
-        print("Local time after sync：{0}".format(time.localtime()))
+        print('UTC time after sync：{0}'.format(time.gmtime()))
     except:
-        print("Error syncing time.")
-
+        print('Error syncing time.')

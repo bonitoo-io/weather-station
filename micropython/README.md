@@ -2,25 +2,52 @@
 
 ## Description
 
-TBD
+This is PoC Weather Station project written in Micropython language for ESP8266 device. 
+It is designed to show possibilities and limits of current Micropython firmware 
+and implement a simple InfluxDB2 Client with timestamp support. DHT11 sensor data are displayed on OLED display 
+(using included micropython SSD1306 driver) with random coordinates to avoid screen burn-in. 
+
+It consists of several python files:
+- `config.json` - json objects with necessary configuration
+- `ntp.py` - provides periodic NTP time synchronization, period is configurable via `config.json`. 
+This function is mandatory in order to have relatively accurate timestamps.
+- `boot.py` - micropython boot file
+- `main.py` - micropython main code
+- `wm.py` - Wi-Fi Manager to allow automatic wi-fi connections according to _known_networks_ entries in `config.json`. 
+  In case of no _known_networks_ available it is also capable of running an private access point with webrepl.
+
+## 
 
 ## How to run the Micropython WeatherStation
 
 1) Flash the firmware
 2) Install python shell
 3) update `config.json`:
-    - add your wifi AP details (with Internet connection)
-    - add your influxdb2 instance details
+    - configure wi-fi connection details (With Internet connection for NTP routine)
+    - add your influxdb2 connection details
     - adjust intervals
-3) Connect to the device
-4) put `boot.py`, `main.py`, `influxdb2.py`, `ntp.py`, `wm.py`, `config.json` into device
-5) restart WeatherStation device
+4) adjust Point object parameters to reflect your infrastructure:
+   ```python
+   def publish(data, client):
+    point = Point("dht11") \
+        .field("temperature", data["t"]) \
+        .field("humidity", data["rh"]) \
+        .tag("location", "office") \
+        .time(time.time(), WritePrecision.S)
+   ...
+   ```
+   - Available functions for getting time:
+     https://docs.micropython.org/en/latest/library/utime.html#module-utime
+     
+5) Connect to the device
+6) put files into device
+7) restart WeatherStation device
 
 ## Firmware
 
 Before execution of any micropython code each ESP device must be erased and flashed with latest micropython firmware.
 
-Guide: https://micropython-docs-esp32.readthedocs.io/en/esp32_doc/esp8266/tutorial/intro.html#intro
+How-To Guide: https://micropython-docs-esp32.readthedocs.io/en/esp32_doc/esp8266/tutorial/intro.html#intro
 Download page: https://micropython.org/download/esp8266/
 
 ## Remote shells
@@ -35,11 +62,27 @@ Mpfshell: https://github.com/wendlers/mpfshell
 
 Rshell: https://github.com/dhylands/rshell
 
-## Notice about ssl error (OSError -40):
 
-With current Micropython version 1.15 the https post to cloud2.influxdata.com fails with OSError -40. 
+## Caveats
+
+### SSL error (OSError -40):
+
+With Micropython version < 1.15 the https post to cloud2.influxdata.com fails with OSError -40. 
 The issue seems to be that certain certificate types are not supported in axtls of underlining ESP-SDK.
 Only solution seems to be wait until micropython will be supporting newer ESP-SDK with mbedtls, 
-or compile your own micropython firmware with a hack described in: https://github.com/micropython/micropython-lib/issues/400
+or compile your own micropython firmware with a hack described in:  
+https://github.com/micropython/micropython-lib/issues/400
 
+More details: https://docs.micropython.org/en/latest/esp8266/general.html#ssl-tls-limitations
+
+### NTP time in UTC only:
+There's currently no timezone support in MicroPython, and the RTC is set in UTC time.
+
+### Internal Real-time Clock limits:
+RTC in ESP8266 has very bad accuracy, drift may be seconds per minute. 
+As a workaround, to measure short enough intervals you can use utime.time(), etc. 
+and/or synchronise time via ntp regularly. 
+Due to limitations of the ESP8266 chip the internal real-time clock (RTC) will overflow every 7:45h. 
+If a long-term working RTC time is required then time() or localtime() must be called at least once within 7 hours. 
+MicroPython will then handle the overflow.
 
