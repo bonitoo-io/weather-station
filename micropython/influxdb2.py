@@ -1,5 +1,6 @@
 from math import isfinite
 from micropython import const
+
 try:
     from utime import mktime
     import ubinascii as binascii
@@ -11,23 +12,20 @@ except:
 
 
 class WritePrecision(object):
-    """
-    allowed enum values
-    """
-    MS = "ms"
-    S = "s"
-    US = "us"
-    NS = "ns"
-    DELTA_NS = const(946684800000000000)
+    MS = 'ms'
+    S = 's'
+    US = 'us'
+    NS = 'ns'
 
 
-DEFAULT_WRITE_PRECISION = WritePrecision.NS
+DELTA_S = const(946684800)
+DEFAULT_WRITE_PRECISION = WritePrecision.S
+
 
 class Point(object):
 
     @staticmethod
     def measurement(measurement):
-        """Create a new Point with specified measurement name."""
         p = Point(measurement)
         return p
 
@@ -51,7 +49,6 @@ class Point(object):
         self._write_precision = DEFAULT_WRITE_PRECISION
         pass
 
-
     def time(self, time, write_precision=DEFAULT_WRITE_PRECISION):
         self._write_precision = write_precision
         self._time = time
@@ -70,10 +67,10 @@ class Point(object):
         _tags = _append_tags(self._tags)
         _fields = _append_fields(self._fields)
         if not _fields:
-            return ""
+            return ''
         _time = _append_time(self._time, self._write_precision)
 
-        return "{0}{1}{2}{3}".format(_measurement, _tags, _fields, _time)
+        return '{0}{1}{2}{3}'.format(_measurement, _tags, _fields, _time)
 
     @property
     def write_precision(self):
@@ -127,79 +124,87 @@ def _append_fields(fields):
 def _append_time(time, write_precision):
     if time is None:
         return ''
-    return " {0}".format(int(_convert_timestamp(time, write_precision)))
+    return ' {0}'.format(int(_convert_timestamp(time, write_precision)))
 
 
 def _convert_timestamp(timestamp, precision=DEFAULT_WRITE_PRECISION):
     if isinstance(timestamp, int):
-        # If nanosecond precision is needed use timestamp=utime.time_ns() + WritePrecision.DELTA_NS.
-        return timestamp  # assume precision is correct if timestamp is int
-
-    elif isinstance(timestamp, str):
-        raise NotImplementedError("String is not supported timestamp format")
-
-    elif isinstance(timestamp, tuple):
-        # Micropython's utime.localtime() and utime.gmtime() returns
-        # tuples with calendar date format with second precision.
-        timestamp = mktime(timestamp)
-        ns = (timestamp + WritePrecision.DELTA_NS)
-
-        if precision is None or precision == WritePrecision.NS:
-            return ns
-
-        elif precision == WritePrecision.US:
-            return ns / 1e3
+        if precision is None or precision == WritePrecision.S:
+            return timestamp + DELTA_S
 
         elif precision == WritePrecision.MS:
-            return ns / 1e6
+            return timestamp + DELTA_S * const(1000)
 
-        elif precision == WritePrecision.S:
-            return ns / 1e9
+        elif precision == WritePrecision.US:
+            return timestamp + DELTA_S * const(1000000)
+
+        # If nanosecond precision is needed use timestamp=utime.time_ns().
+        elif precision == WritePrecision.NS:
+            return timestamp + DELTA_S * const(1000000000)
+
+    elif isinstance(timestamp, str):
+        raise NotImplementedError('String is not supported timestamp format')
 
     else:
         raise ValueError(timestamp)
 
 
 class Client(object):
-    def __init__(self, endpoint, bucket, org, precision=WritePrecision.NS, user=None, password=None, token=None):
-        self.tcp_socket = None
+    def __init__(self, endpoint, bucket, org, user=None, password=None, token=None):
         self.endpoint = endpoint
         self.token = token
         self.org = org
         self.bucket = bucket
-        self.precision = precision
-        if user and password:
-            self.user_and_pass = str(binascii.b2a_base64("{0}:{1}".format(user, password).encode())[:-1], 'utf-8')
+        self.precision = WritePrecision.S
+        if (user and len(user) > 0) and (password and len(password) > 0):
+            self.user_and_pass = str(binascii.b2a_base64('{0}:{1}'.format(user, password).encode())[:-1], 'utf-8')
         else:
             self.user_and_pass = None
 
-    def write(self, point):
-        text = None
+    def _convert_point(self, point):
         if isinstance(point, Point):
             lp = point.to_line_protocol()
+            self.precision = point.write_precision
         elif isinstance(point, str):
             lp = bytes(point, 'utf-8')
         elif isinstance(point, bytes):
             lp = point
         else:
-            return ValueError("Type: {0} is not supported.".format(type(point)))
-        print(lp)
+            raise ValueError('Type: {0} is not supported'.format(type(point)))
+        return lp
+
+    @staticmethod
+    def _post(url, headers, lp):
+        response = requests.post(url, data=lp, headers=headers)
+        return response
+
+    @property
+    def url(self):
         write_path = '/api/v2/write?org={0}&bucket={1}&precision={2}'.format(self.org, self.bucket, self.precision)
-        headers = {'Accept': 'application/json',
-                   'Content-type': 'text/plain'
-                   }
+        return '{0}{1}'.format(self.endpoint, write_path)
 
-        if self.user_and_pass:
-            headers["Authorization"] = "Basic {0}".format(self.user_and_pass)
-        elif self.token:
-            headers["Authorization"] = "Token {0}".format(self.token)
+    @property
+    def headers(self):
+        headers = {
+            'Accept': 'application/json',
+            'Content-type': 'text/plain'
+            }
+
+        if self.user_and_pass and not self.token:
+            headers['Authorization'] = 'Basic {0}'.format(self.user_and_pass)
+        elif self.token and not self.user_and_pass:
+            headers['Authorization'] = 'Token {0}'.format(self.token)
         else:
-            pass
+            print('Use Token OR User/Password authentication')
+            raise ValueError('Use Token OR User/Password')
+        return headers
 
-        response = requests.post("{0}{1}".format(self.endpoint, write_path),
-                                 data=lp,
-                                 headers=headers)
-        if response.status_code != 204:
-            text = response.reason.decode("utf-8")
-        response.close()
+    def write(self, point):
+        text = None
+        data = self._convert_point(point)
+        resp = Client._post(self.url, self.headers, data)
+        if resp.status_code != 204:
+            text = resp.reason.decode('utf-8')
+        resp.close()
         return text
+

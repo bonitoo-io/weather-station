@@ -30,7 +30,8 @@
     "password": ""
   },
   "config": {
-    "interval": 10,
-    "ntp_interval": 60
+    "interval": 60,
+    "ntp_interval": 600,
+    "ntp_host": "1.europe.pool.ntp.org"
   }
 }
