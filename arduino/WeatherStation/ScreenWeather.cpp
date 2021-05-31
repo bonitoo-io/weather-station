@@ -22,6 +22,7 @@ void updateCurrentWeather( const bool metric, const String lang, const String lo
   currentWeatherClient.setMetric(metric);
   currentWeatherClient.setLanguage(lang);
   currentWeatherClient.updateCurrent(&_currentWeather, APIKey, location);
+
   currentWeather.temp = round( _currentWeather.temp);
   currentWeather.tempMin = round( _currentWeather.tempMin);
   currentWeather.tempMax = round( _currentWeather.tempMax);
@@ -41,6 +42,7 @@ void updateForecast( const bool metric, const String lang, const String location
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(_forecasts, APIKey, location, MAX_FORECASTS);
+
   for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
     forecasts[i].observationTime = _forecasts[i].observationTime;
     forecasts[i].temp = round( _forecasts[i].temp);

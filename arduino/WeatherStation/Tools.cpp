@@ -61,7 +61,7 @@ char replaceChar( char c1, char c2) {
     if ((c1 == sTranslitFrom.charAt(i)) && (c2 == sTranslitFrom.charAt(i+1)))
       return sTranslitTo.charAt(i/2);
   }
-  Serial.println( String(c1) + String(c2) + " -> ?");
+  //Serial.println( String(c1) + String(c2) + " -> ?");
   return '?';
 }
 

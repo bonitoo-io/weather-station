@@ -44,7 +44,8 @@ void IPListener::value(String value) {
 }
 
 const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
-const char* const Countries_Fahrenheit [] = { "US", "BZ", "PW", "BS", "KY"};
+const char* const Countries_Fahrenheit[] = { "US", "BZ", "PW", "BS", "KY"};
+const char* const Countries_DateYMD[] = { "BT", "CN", "HU", "JP", "KP", "KR", "LT", "MN", "TW", "US"};
 
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude) {
   BearSSL::WiFiClientSecure client;
@@ -97,7 +98,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
   location = ipListener.city + "," + country;
 
   lang = ipListener.lang;
-  if ( lang == "cs")    //fix cz code for weather
+  if ( lang == "cs")    //replace cs->cz code for weather
     lang = "cz";
 
   //24-hours vs 12-hours clock detection
@@ -118,8 +119,11 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
     }
   }
   
-  //TODO: support multiple formats  https://en.wikipedia.org/wiki/Date_format_by_country
   bYMD = false;
-  if (country == "US")
-    bYMD = true;
+  for (unsigned int i = 0; i < sizeof(Countries_DateYMD) / sizeof(Countries_DateYMD[0]); i++) {
+    if (country == Countries_DateYMD[i]) {
+      bYMD = true;
+      break;
+    }
+  }
 }

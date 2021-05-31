@@ -3,7 +3,6 @@
 // Include libraries
 #include <Arduino.h>
 #include <ESPWiFi.h>
-//#include <Wire.h>
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
 
@@ -37,7 +36,7 @@
 #define BUTTONHPIN D3   //Boot button pin
 #define LED        D2   //LED pin
 
-//#include "custom_dev.h" //Custom development configuration - remove or comment it out 
+#include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
 tConfig conf = {
   WIFI_SSID,  //wifi_ssid
@@ -65,7 +64,7 @@ tConfig conf = {
 
 // Initialize the oled display
 SSD1306Wire     display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
-OLEDDisplayUi   ui( &display );
+OLEDDisplayUi   ui( &display);
 
 bool readyForWeatherUpdate = false; // flag changed in the ticker function
 String deviceID;
@@ -144,15 +143,17 @@ void setup() {
 void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
 
-  drawUpdateProgress(display, 10, "Detecting location");
+  drawUpdateProgress(display, 0, "Detecting location");
   if (conf.detectLocationIP)
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
   
-  drawUpdateProgress(display, 20, "Updating time");
+  drawUpdateProgress(display, 10, "Updating time");
   updateClock( firstStart, conf.utcOffset, conf.ntp);
 
-  drawUpdateProgress(display, 40, "Updating weather");
+  drawUpdateProgress(display, 30, "Updating weather");
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
+  
+  drawUpdateProgress(display, 50, "Calculate moon phase");  
   updateAstronomy( firstStart, conf.latitude, conf.longitude);
   
   drawUpdateProgress(display, 60, "Updating forecasts");
@@ -190,7 +191,7 @@ void loop() {
     }
   }
   
-  //Handle button
+  //Handle BOOT button
   int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
     if (loops == 0) {
@@ -207,6 +208,7 @@ void loop() {
     delay(100);
   }
 
+  //Handle OLED UI
   int remainingTimeBudget = ui.update();
   if (remainingTimeBudget > 0) {
     // You can do some work here
