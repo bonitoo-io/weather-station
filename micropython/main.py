@@ -4,7 +4,7 @@ from machine import Pin, I2C, reset
 from ssd1306 import SSD1306_I2C
 from dht import DHT11
 from micropython import const
-import ntp
+import ntptime
 import gc
 
 try:
@@ -41,6 +41,19 @@ def show_text_line(x, y, text, c=1, timeout=0):
         oled.fill_rect(x, y, (TEXT_SIZE['x'] * len(text)), TEXT_SIZE['y'], fill_c)
     else:
         return (x, y, TEXT_SIZE['x'] * len(text), TEXT_SIZE['y'], fill_c)
+
+
+def set_rtc(host):
+    # if needed, overwrite default time server
+    ntptime.host = host
+
+    try:
+        print('UTC time before sync：{0}'.format(time.gmtime()))
+        # make sure to have internet connection
+        ntptime.settime()
+        print('UTC time after sync：{0}'.format(time.gmtime()))
+    except:
+        print('Error syncing time.')
 
 
 def clear_text_line(rect):
@@ -129,7 +142,7 @@ def publish(data, client):
 
 
 async def run(interval, client):
-    ntp.set_rtc(CFG['config']['ntp_host'])
+    set_rtc(CFG['config']['ntp_host'])
     t0 = time.ticks_ms()
     try:
         while True:
@@ -137,7 +150,7 @@ async def run(interval, client):
             oled.fill(0)
             show_text_line(5, 30, 'Collecting data', 1)
             gc.collect()
-            # print(gc.mem_free())
+            print(gc.mem_free())
             led2.value(0)
             data['t'], data['rh'] = get_t_rh()
             oled.fill(0)
@@ -189,7 +202,7 @@ def main():
 
     init()
     loop.create_task(WifiManager(CFG).manage())
-    loop.create_task(schedule(ntp.set_rtc, NTP_INTERVAL, CFG['config']['ntp_host']))
+    loop.create_task(schedule(set_rtc, NTP_INTERVAL, CFG['config']['ntp_host']))
     loop.create_task(run(INTERVAL_MS, influxdb_client))
     loop.run_forever()
 

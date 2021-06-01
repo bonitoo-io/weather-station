@@ -4,29 +4,29 @@
 
 This is PoC Weather Station project written in Micropython language for ESP8266 device. 
 It is designed to show possibilities and limits of current Micropython firmware 
-and implement a simple InfluxDB2 Client with timestamp support. DHT11 sensor data are displayed on OLED display 
-(using included micropython SSD1306 driver) with random coordinates to avoid screen burn-in. 
+and implement a simple InfluxDB2 Client with timestamp support. In order to have relatively accurate timestamps it also 
+implements periodic RTC synchronisation with NTP server. OLED display 
+(using included micropython's DHT11 and SSD1306 driver) shows DHT11 data with random screen coordinates
+to avoid screen burn-in.
 
-It consists of several python files:
-- `config.json` - json objects with necessary configuration
-- `ntp.py` - provides periodic NTP time synchronization, period is configurable via `config.json`. 
-This function is mandatory in order to have relatively accurate timestamps.
-- `boot.py` - micropython boot file
-- `main.py` - micropython main code
+<img src="ws.gif" width="50%" height="50%">
+
+It consists of:
+- `config.json` - JSON objects with configuration.
+- `boot.py` - Micropython boot file.
+- `main.py` - Micropython main code.
 - `wm.py` - Wi-Fi Manager to allow automatic wi-fi connections according to _known_networks_ entries in `config.json`. 
-  In case of no _known_networks_ available it is also capable of running an private access point with webrepl.
-
-## 
+  In case of no _known_networks_ available it is also capable of running private access point with WebRepl.
 
 ## How to run the Micropython WeatherStation
 
-1) Flash the firmware
-2) Install python shell
-3) update `config.json`:
+1) Flash the firmware.
+2) Install python shell.
+3) Update `config.json`:
     - configure wi-fi connection details (With Internet connection for NTP routine)
     - add your influxdb2 connection details
     - adjust intervals
-4) adjust Point object parameters to reflect your infrastructure:
+4) Adjust Point object parameters to reflect your infrastructure:
    ```python
    def publish(data, client):
     point = Point("dht11") \
@@ -39,15 +39,16 @@ This function is mandatory in order to have relatively accurate timestamps.
    - Available functions for getting time:
      https://docs.micropython.org/en/latest/library/utime.html#module-utime
      
-5) Connect to the device
-6) put files into device
-7) restart WeatherStation device
+5) Connect to the device.
+6) Put files into device.
+7) Restart WeatherStation device.
 
 ## Firmware
 
 Before execution of any micropython code each ESP device must be erased and flashed with latest micropython firmware.
 
 How-To Guide: https://micropython-docs-esp32.readthedocs.io/en/esp32_doc/esp8266/tutorial/intro.html#intro
+
 Download page: https://micropython.org/download/esp8266/
 
 ## Remote shells
@@ -67,7 +68,7 @@ Rshell: https://github.com/dhylands/rshell
 
 ### SSL error (OSError -40):
 
-With Micropython version < 1.15 the https post to cloud2.influxdata.com fails with OSError -40. 
+With Micropython's ESP8266 port version (=< 1.15) the https post to cloud2.influxdata.com fails with OSError -40. 
 The issue seems to be that certain certificate types are not supported in axtls of underlining ESP-SDK.
 Only solution seems to be wait until micropython will be supporting newer ESP-SDK with mbedtls, 
 or compile your own micropython firmware with a hack described in:  
@@ -76,9 +77,11 @@ https://github.com/micropython/micropython-lib/issues/400
 More details: https://docs.micropython.org/en/latest/esp8266/general.html#ssl-tls-limitations
 
 ### NTP time in UTC only:
-There's currently no timezone support in MicroPython, and the RTC is set in UTC time.
+
+There's currently no timezone support in MicroPython (1.15) for ESP8266 port, and the RTC is set in UTC time.
 
 ### Internal Real-time Clock limits:
+
 RTC in ESP8266 has very bad accuracy, drift may be seconds per minute. 
 As a workaround, to measure short enough intervals you can use utime.time(), etc. 
 and/or synchronise time via ntp regularly. 
