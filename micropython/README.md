@@ -9,7 +9,7 @@ implements periodic RTC synchronisation with NTP server. OLED display
 (using included micropython's DHT11 and SSD1306 driver) shows DHT11 data with random screen coordinates
 to avoid screen burn-in.
 
-<img src="ws.gif" width="50%" height="50%">
+<img src="ws.gif" width="30%" height="30%">
 
 It consists of:
 - `config.json` - JSON objects with configuration.
