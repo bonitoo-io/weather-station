@@ -49,7 +49,7 @@ tConfig conf = {  //default values
   "en", //language
   0, //utcOffset
   37.7749,   //latitude
-  122.4194,    //longitude
+  -122.4194,    //longitude
   false, //useMetric
   false, //use24hour
   true, //useYMDdate
