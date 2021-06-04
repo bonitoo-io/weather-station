@@ -1,4 +1,4 @@
-#define VERSION "0.35"
+#define VERSION "0.36"
 
 // Include libraries
 #include <Arduino.h>
@@ -38,7 +38,7 @@
 
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
-tConfig conf = {
+tConfig conf = {  //default values
   WIFI_SSID,  //wifi_ssid
   WIFI_PWD, //wifi_pwd
 
@@ -54,7 +54,9 @@ tConfig conf = {
   false, //use24hour
   true, //useYMDdate
   "pool.ntp.org,time.nis.gov,time.google.com",
-
+  0,  //tempOffset
+  0,  //humOffset
+  
   INFLUXDB_URL,   //influxdbUrl;
   INFLUXDB_TOKEN, //influxdbToken;
   INFLUXDB_ORG,   //influxdbOrg;

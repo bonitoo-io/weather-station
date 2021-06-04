@@ -23,8 +23,8 @@ void _readDHT( bool metric) {
   if ( timeDHT > actualTime)
     timeDHT = actualTime;
   if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise provide "cached" values
-    tempDHT = dht.readTemperature(!metric);
-    humDHT = dht.readHumidity();
+    tempDHT = dht.readTemperature(!metric) + conf.tempOffset;
+    humDHT = dht.readHumidity() + conf.humOffset;
     hicDHT = dht.computeHeatIndex(tempDHT, humDHT, !metric);
     timeDHT = millis();
   }

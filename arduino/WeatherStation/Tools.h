@@ -26,6 +26,8 @@ struct tConfig {
   bool use24hour;
   bool useYMDdate;
   String ntp;
+  int8_t tempOffset;
+  int8_t humOffset;
 
   String influxdbUrl;
   String influxdbToken;
