@@ -47,7 +47,7 @@ const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", 
 const char* const Countries_Fahrenheit[] = { "US", "BZ", "PW", "BS", "KY"};
 const char* const Countries_DateYMD[] = { "BT", "CN", "HU", "JP", "KP", "KR", "LT", "MN", "TW", "US"};
 
-void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude) {
+void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude) {
   BearSSL::WiFiClientSecure client;
   HTTPClient http;
 
@@ -97,10 +97,10 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, S
   longitude = ipListener.longitude;
   location = ipListener.city + "," + country;
 
-  lang = ipListener.lang;
-  if ( lang == "cs")    //replace cs->cz code for weather
-    lang = "cz";
-
+  if ( ipListener.lang == "cs")    //replace cs->cz code for weather
+    ipListener.lang = "cz";
+  strncpy(lang,ipListener.lang.c_str(),2);
+ 
   //24-hours vs 12-hours clock detection
   b24h = true;
   for (unsigned int i = 0; i < sizeof(Countries_12h) / sizeof(Countries_12h[0]); i++) {

@@ -65,8 +65,8 @@ tConfig conf = {  //default values
 };
 
 // Initialize the oled display
-SSD1306Wire     display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
-OLEDDisplayUi   ui( &display);
+SSD1306Wire display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
+OLEDDisplayUi ui( &display);
 
 bool readyForWeatherUpdate = false; // flag changed in the ticker function
 String deviceID;
@@ -85,7 +85,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const char* label);
 
 void updateData(OLEDDisplay *display, bool firstStart);
-void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, String& lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
+void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
 void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
 void updateCurrentWeather( const bool metric, const String lang, const String location, const String APIKey);

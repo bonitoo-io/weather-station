@@ -18,7 +18,7 @@ struct tConfig {
   String openweatherApiKey;
 // Go to https://openweathermap.org/find?q= and search for a location  
   String location;
-  String language;
+  char language[3];
   int utcOffset;
   float latitude;
   float longitude;
