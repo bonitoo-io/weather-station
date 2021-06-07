@@ -4,6 +4,8 @@
 #include <JsonStreamingParser.h>
 #include <JsonListener.h>
 
+#include "Tools.h"
+
 class IPListener: public JsonListener {
   String _key;
   public:
@@ -96,10 +98,11 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   latitude = ipListener.latitude;
   longitude = ipListener.longitude;
   location = ipListener.city + "," + country;
-
+  
+  setLanguage( ipListener.lang.c_str());
   if ( ipListener.lang == "cs")    //replace cs->cz code for weather
     ipListener.lang = "cz";
-  strncpy(lang,ipListener.lang.c_str(),2);
+  strncpy( lang, ipListener.lang.c_str(), 2);
  
   //24-hours vs 12-hours clock detection
   b24h = true;

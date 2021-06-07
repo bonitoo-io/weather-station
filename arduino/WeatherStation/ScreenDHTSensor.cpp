@@ -42,13 +42,13 @@ float getDHTHum() {
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 + x, 5 + y, "INDOOR");
+  display->drawString(64 + x, 5 + y, F("INDOOR"));
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(8 + x, 38 + y, "feel: " + strTemp(hicDHT));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(120 + x, 38 + y, "hum");
+  display->drawString(120 + x, 38 + y, F("hum"));
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -57,5 +57,5 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->drawString(80 + x, 15 + y, strHum(getDHTHum()));
 
   display->setFont(Meteocons_Plain_21);
-  display->drawString(-7 + x, 19 + y, "'"); //show thermomether symbol
+  display->drawString(-7 + x, 19 + y, F("'")); //show thermomether symbol
 }

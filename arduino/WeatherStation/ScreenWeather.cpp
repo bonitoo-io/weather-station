@@ -80,7 +80,7 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x + 20, y + 5, WDAY_NAMES[timeInfo->tm_wday]);
+  display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
   display->drawString(x + 20, y + 39, strTemp(forecasts[dayIndex].temp));
   
   display->setFont(Meteocons_Plain_21);
@@ -101,7 +101,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x + 20, y + 5, WDAY_NAMES[timeInfo->tm_wday]);
+  display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
   
   const int clockSize=10;
   int clockCenterX=21+x;

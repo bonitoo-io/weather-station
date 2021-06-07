@@ -52,12 +52,12 @@ void writeInfluxDB( float temp, float hum, const float lat, const float lon) {
   sensor.addField("Lon", lon, 6);
 
   // Print what are we exactly writing
-  Serial.print("Writing: ");
+  Serial.print(F("Writing: "));
   Serial.println(influxDBClient.pointToLineProtocol(sensor));
 
   // Write point
   if (!influxDBClient.writePoint(sensor)) {
-    Serial.print("InfluxDB write failed: ");
+    Serial.print(F("InfluxDB write failed: "));
     Serial.println(influxDBClient.getLastErrorMessage());
   }
 }

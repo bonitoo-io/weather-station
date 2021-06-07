@@ -40,8 +40,8 @@ struct tForecast {
   uint32_t observationTime;
   int temp;
   char iconMeteoCon;
-  int windSpeed;
-  int windDeg;
+  unsigned int windSpeed;
+  unsigned int windDeg;
 };
 
 struct tCurrentWeather {
@@ -49,7 +49,7 @@ struct tCurrentWeather {
   int tempMin;
   int tempMax;
   String description;
-  int windSpeed;
+  unsigned int windSpeed;
   char iconMeteoCon;
   uint32_t sunrise;
   uint32_t sunset;
@@ -57,7 +57,7 @@ struct tCurrentWeather {
 
 extern tConfig conf;
 
-// Adjust according to your language
-extern const char* const WDAY_NAMES[];
-extern const char* const MONTH_NAMES[];
-extern const char* const MOON_PHASES[];
+void setLanguage( const char* lang);
+String getDayName( uint8_t index);
+String getMonthName( uint8_t index);
+String getMoonPhaseName( uint8_t index);

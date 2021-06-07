@@ -14,6 +14,8 @@ Weather station with OLED and WiFi (using ESP8266, SSD1306, and DHT11) with Infl
 * Update OPEN_WEATHER_MAP_API_KEY
 * Click the secon icon in the toolbar "Upload"
 
+* Create iot_center bucket inside InfluxDB
+
 ## Required Libraries
 
 (accessible via Library manager - indented libraries installed as dependencies)

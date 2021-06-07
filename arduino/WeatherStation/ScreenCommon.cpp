@@ -52,7 +52,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version) {
     Serial.print(".");
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
-    display->drawString(88, 0, "Connecting WiFi");
+    display->drawString(88, 0, F("Connecting WiFi"));
     display->drawString(88, 15, conf.wifi_ssid);
     display->drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
     display->drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
@@ -65,12 +65,12 @@ void drawWifiProgress(OLEDDisplay *display, const char* version) {
   Serial.println();
 }
 
-void drawUpdateProgress(OLEDDisplay *display, int percentage, const char* label) {
+void drawUpdateProgress(OLEDDisplay *display, int percentage, PGM_VOID_P label) {
   ESP.wdtFeed();  
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(64, 10, label);
+  display->drawString(64, 10, FPSTR(label));
   display->drawProgressBar(2, 28, 124, 10, percentage);
   display->display();
 }
@@ -160,7 +160,7 @@ void showFont(OLEDDisplay *display, const uint8_t *fontData) {
     int len = display->getStringWidth(String((char)(i)));
     display->setFont(ArialMT_Plain_10);
     if ( len == 0)
-      display->drawString(0, 0, "<empty>");
+      display->drawString(0, 0, F("<empty>"));
     display->drawString(0, 40, String((int)(i)) + " " + String((char)(i)) + "\n " + String(from) + "-" + String(to));
     display->display();
     delay( 1000);

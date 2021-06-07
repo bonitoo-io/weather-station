@@ -1,4 +1,4 @@
-#define VERSION "0.36"
+#define VERSION "0.37"
 
 // Include libraries
 #include <Arduino.h>
@@ -42,7 +42,7 @@ tConfig conf = {  //default values
   WIFI_SSID,  //wifi_ssid
   WIFI_PWD, //wifi_pwd
 
-  true, //detectLocationIP
+  truett, //detectLocationIP
   60,   //updateDataMin
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
   "San Francisco, US", //location
@@ -53,7 +53,7 @@ tConfig conf = {  //default values
   false, //useMetric
   false, //use24hour
   true, //useYMDdate
-  "pool.ntp.org,time.nis.gov,time.google.com",
+  "pool.ntp.org,time.nis.gov,time.google.com", //ntp
   0,  //tempOffset
   0,  //humOffset
   
@@ -68,11 +68,10 @@ tConfig conf = {  //default values
 SSD1306Wire display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi ui( &display);
 
-bool readyForWeatherUpdate = false; // flag changed in the ticker function
 String deviceID;
 
-unsigned long timeSinceLastWUpdate = 0;
-unsigned long timeLastInfluxDBUpdate = 0;
+unsigned long timeSinceLastUpdate = 0;
+unsigned int lastUpdateMins = 0;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
@@ -82,7 +81,7 @@ float getDHTTemp(bool metric);
 float getDHTHum();
 void drawSplashScreen(OLEDDisplay *display, const char* version);
 void drawWifiProgress(OLEDDisplay *display, const char* version);
-void drawUpdateProgress(OLEDDisplay *display, int percentage, const char* label);
+void drawUpdateProgress(OLEDDisplay *display, int percentage, PGM_VOID_P label);
 
 void updateData(OLEDDisplay *display, bool firstStart);
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
@@ -145,68 +144,67 @@ void setup() {
 void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
 
-  drawUpdateProgress(display, 0, "Detecting location");
+  drawUpdateProgress(display, 0, F("Detecting location"));
   if (conf.detectLocationIP)
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
   
-  drawUpdateProgress(display, 10, "Updating time");
+  drawUpdateProgress(display, 10, F("Updating time"));
   updateClock( firstStart, conf.utcOffset, conf.ntp);
 
-  drawUpdateProgress(display, 30, "Updating weather");
+  drawUpdateProgress(display, 30, F("Updating weather"));
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
-  drawUpdateProgress(display, 50, "Calculate moon phase");  
+  drawUpdateProgress(display, 50, F("Calculate moon phase"));
   updateAstronomy( firstStart, conf.latitude, conf.longitude);
   
-  drawUpdateProgress(display, 60, "Updating forecasts");
+  drawUpdateProgress(display, 60, F("Updating forecasts"));
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
-  drawUpdateProgress(display, 80, "Connecting InfluxDB");
+  drawUpdateProgress(display, 80, F("Connecting InfluxDB"));
   updateInfluxDB( firstStart, deviceID, VERSION, conf.location);
 
-  drawUpdateProgress(display, 100, "Done");
-  readyForWeatherUpdate = false;
+  drawUpdateProgress(display, 100, F("Done"));
 
   digitalWrite( LED, HIGH);
   delay(500);
 }
 
 void loop() {
-  if (millis() - timeSinceLastWUpdate > (1000L*conf.updateDataMin*60)) {
-    readyForWeatherUpdate = true;
-    timeSinceLastWUpdate = millis();
-  }
+  // Ticker function - executed once per minute
+  if ((ui.getUiState()->frameState == FIXED) && (millis() - timeSinceLastUpdate >= 1000*60)){
+    timeSinceLastUpdate = millis();
+    lastUpdateMins++;
 
-  // Update data?
-  if (ui.getUiState()->frameState == FIXED) {
-    if (readyForWeatherUpdate)
+    //Update data?
+    if (lastUpdateMins % conf.updateDataMin == 0) {
+      digitalWrite( LED, LOW);
       updateData(&display,false);
+      digitalWrite( LED, HIGH);
+    }
 
     //Write into InfluxDB
-    if ((timeLastInfluxDBUpdate == 0) || ( millis() - timeLastInfluxDBUpdate > (1000L*conf.influxdbRefreshMin * 60))) {
+    if (lastUpdateMins % conf.influxdbRefreshMin == 0) {
       digitalWrite( LED, LOW);
-      timeLastInfluxDBUpdate = millis();
       ESP.wdtFeed();
       writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
-      Serial.println("InfluxDB write " + String(millis() - timeLastInfluxDBUpdate) + "ms");
+      Serial.println("InfluxDB write " + String(millis() - timeSinceLastUpdate) + "ms");
       digitalWrite( LED, HIGH);
     }
   }
   
   //Handle BOOT button
-  int loops = 0;
+  unsigned int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
     if (loops == 0) {
       ui.nextFrame();   //jump to the next frame
     }
     if (loops > 4)
-      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastWUpdate, deviceID);  //Show configuration after 0.5s
+      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), deviceID);  //Show configuration after 0.5s
 
     loops++;
     if (loops > 200)  //reboot after 20 seconds
       ESP.restart();
 
-    ESP.wdtFeed();
     delay(100);
   }
 
