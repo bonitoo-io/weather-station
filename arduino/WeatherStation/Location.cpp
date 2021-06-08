@@ -4,9 +4,9 @@
 #include <JsonStreamingParser.h>
 #include <JsonListener.h>
 
-#include "Tools.h"
+//#include "Tools.h"
 
-class IPListener: public JsonListener {
+class tIPListener: public JsonListener {
   String _key;
   public:
     String city;
@@ -24,10 +24,10 @@ class IPListener: public JsonListener {
     virtual void startArray() {};
     virtual void startObject() {};
     virtual void endDocument() {};
-} ipListener;
+};
 
 
-void IPListener::value(String value) {
+void tIPListener::value(String value) {
   Serial.println("key: " + _key + " value: " + value);
   if ( _key == "ip") {
     Serial.print( F("External IP: "));
@@ -47,13 +47,29 @@ void IPListener::value(String value) {
     longitude = value.toFloat();
 }
 
-const char* const Countries_12h[] = { "EG", "BD", "IN", "JO", "PK", "PH", "MY", "SA", "US", "SV", "HN", "NI", "IE", "CA", "MX", "AU", "NZ", "CO"};
-const char* const Countries_Fahrenheit[] = { "US", "BZ", "PW", "BS", "KY"};
-const char* const Countries_DateYMD[] = { "BT", "CN", "HU", "JP", "KP", "KR", "LT", "MN", "TW", "US"};
+const char Countries12h[] PROGMEM = "EG" "BD" "IN" "JO" "PK" "PH" "MY" "SA" "US" "SV" "HN" "NI" "IE" "CA" "MX" "AU" "NZ" "CO";
+const char CountriesFahrenheit[] PROGMEM = "US" "BZ" "PW" "BS" "KY";
+const char CountriesDateYMD[] PROGMEM = "BT" "CN" "HU" "JP" "KP" "KR" "LT" "MN" "TW" "US";
+
+
+bool findCountry( const char* country, const char* list) {
+  uint16_t cw = (country[1] << 8) + country[0];
+  const char* pl = list;
+  while ( pgm_read_byte( pl) != 0) {  //end of list?
+    Serial.print( cw, HEX);
+    Serial.print( " - ");
+    Serial.println( pgm_read_word( pl), HEX);
+    if ( cw == pgm_read_word( pl))
+      return true;
+    pl += 2;   
+  }
+  return false;
+}
 
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude) {
   BearSSL::WiFiClientSecure client;
   HTTPClient http;
+  tIPListener ipListener;
 
   client.setInsecure();  //Ignore certificate
   JsonStreamingParser parser;
@@ -93,7 +109,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   
   if (!firstStart && (utc_offset_old != utc_offset)) { //if utc offset is changed during refresh
     Serial.print( F("UTC offset changed from "));
-    Serial.println( String(utc_offset_old) + " to " + String(utc_offset));
+    Serial.println( String(utc_offset_old) + String(F( " to ")) + String(utc_offset));
   }
 
   //Return other detected location values
@@ -109,28 +125,11 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   strncpy( lang, ipListener.lang.c_str(), 2);
   
   //24-hours vs 12-hours clock detection
-  b24h = true;
-  for (unsigned int i = 0; i < sizeof(Countries_12h) / sizeof(Countries_12h[0]); i++) {
-    if (country == Countries_12h[i]) {
-      b24h = false;
-      break;
-    }
-  }
+  b24h = !findCountry(country.c_str(), Countries12h);
 
   //Celsius vs Fahrenheit detection
-  metric = true;
-  for (unsigned int i = 0; i < sizeof(Countries_Fahrenheit) / sizeof(Countries_Fahrenheit[0]); i++) {
-    if (country == Countries_Fahrenheit[i]) {
-      metric = false;
-      break;
-    }
-  }
+  metric = !findCountry(country.c_str(), CountriesFahrenheit);
   
-  bYMD = false;
-  for (unsigned int i = 0; i < sizeof(Countries_DateYMD) / sizeof(Countries_DateYMD[0]); i++) {
-    if (country == Countries_DateYMD[i]) {
-      bYMD = true;
-      break;
-    }
-  }
+  //Date format YMD vs DMY
+  bYMD = findCountry(country.c_str(), CountriesDateYMD);
 }

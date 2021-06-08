@@ -1,4 +1,4 @@
-#define VERSION "0.38"
+#define VERSION "0.39"
 
 // Include libraries
 #include <Arduino.h>

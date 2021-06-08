@@ -139,7 +139,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
     display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + " s");
     display->drawString(1, 30, String(F("InfluxDB ")) + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
-    display->drawString(1, 40, String("V") + version + "; tz: " + String(conf.utcOffset) + " " + conf.language);
+    display->drawString(1, 40, String("V") + version + String(F("; tz: ")) + String(conf.utcOffset) + " " + conf.language);
     display->drawString(1, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, String(F("RESETING IN ")) + String(secToReset) + String(F("s !")));
