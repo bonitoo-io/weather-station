@@ -135,14 +135,14 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   display->setFont(ArialMT_Plain_10);
   display->drawRect(0, 0, display->getWidth(), display->getHeight());
   if ( secToReset > 5) {
-    display->drawString(1,  0, "Wifi " + WiFi.SSID() + " " + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + "%" : String(wifiStatusStr(WiFi.status()))));
-    display->drawString(1, 10, "Up: " + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + "s RAM: " + String( ESP.getFreeHeap()));
+    display->drawString(1,  0, String(F("Wifi ")) + WiFi.SSID() + " " + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + "%" : String(wifiStatusStr(WiFi.status()))));
+    display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
     display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + " s");
-    display->drawString(1, 30, "InfluxDB " + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
+    display->drawString(1, 30, String(F("InfluxDB ")) + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
     display->drawString(1, 40, String("V") + version + "; tz: " + String(conf.utcOffset) + " " + conf.language);
-    display->drawString(1, 50, "http://" + WiFi.localIP().toString());
+    display->drawString(1, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
-    display->drawString(0, 30, String(F("RESETING IN ")) + String(secToReset) + "s !");
+    display->drawString(0, 30, String(F("RESETING IN ")) + String(secToReset) + String(F("s !")));
 
   display->display();
 }

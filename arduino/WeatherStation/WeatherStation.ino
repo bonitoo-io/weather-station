@@ -47,7 +47,7 @@ tConfig conf = {  //default values
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
   "San Francisco, US", //location
   "en", //language
-  0, //utcOffset
+  -25200, //utcOffset
   37.7749,   //latitude
   122.4194,    //longitude
   false, //useMetric
