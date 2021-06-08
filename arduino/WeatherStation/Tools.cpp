@@ -84,7 +84,7 @@ String strTime(time_t timestamp, bool shortTime) {
 
 String strTimeSuffix(time_t timestamp) {
   struct tm *timeInfo = localtime(&timestamp);  
-  return conf.use24hour ? "" : (timeInfo->tm_hour>=12?"pm":"am");
+  return conf.use24hour ? "" : String(timeInfo->tm_hour>=12?F("pm"):F("am"));
 }
 
 String strDate(time_t timestamp, bool shortDate) {
@@ -106,15 +106,15 @@ String strDate(time_t timestamp, bool shortDate) {
 }
 
 String strTemp( float t) {
-  return String(t, 0) + (conf.useMetric ? "°C" : "°F");
+  return String(t, 0) + String(conf.useMetric ? F("°C") : F("°F"));
 }
 
 String strHum( float h) {
-  return String(h, 0) + "%";
+  return String(h, 0) + String(F("%"));
 }
 
 String strWind( float w) {
-  return String(w, 0) + (conf.useMetric ? "m/s" : "mph");  
+  return String(w, 0) + String(conf.useMetric ? F("m/s") : F("mph"));  
 }
 
 // Convert UTF8-string to extended ASCII
@@ -156,7 +156,7 @@ char utf8ascii(uint8_t ascii) {
 
 // convert String object from UTF8 String to Extended ASCII
 String utf8ascii(const String s) {
-  String r = "";
+  String r(F(""));
   char c;
   char c1 = 0;
   for (unsigned int i=0; i < s.length(); i++) {

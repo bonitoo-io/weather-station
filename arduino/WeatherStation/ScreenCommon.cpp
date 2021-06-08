@@ -51,7 +51,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version) {
   Serial.print(F("Wifi "));
   Serial.print( conf.wifi_ssid);
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
+    Serial.print(F("."));
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
     display->drawString(88, 0, getStr(s_Connecting_WiFi));
@@ -136,11 +136,11 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   display->setFont(ArialMT_Plain_10);
   display->drawRect(0, 0, display->getWidth(), display->getHeight());
   if ( secToReset > 5) {
-    display->drawString(1,  0, String(F("Wifi ")) + WiFi.SSID() + " " + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + "%" : String(wifiStatusStr(WiFi.status()))));
-    display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + "h " + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + " s");
+    display->drawString(1,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
+    display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
+    display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
     display->drawString(1, 30, String(F("InfluxDB ")) + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
-    display->drawString(1, 40, String("V") + version + String(F("; tz: ")) + String(conf.utcOffset) + " " + conf.language);
+    display->drawString(1, 40, String("V") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
     display->drawString(1, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, String(F("RESETING IN ")) + String(secToReset) + String(F("s !")));

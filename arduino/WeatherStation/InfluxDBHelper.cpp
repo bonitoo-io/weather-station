@@ -12,15 +12,16 @@ void setupInfluxDB( const String &serverUrl, const String &org, const String &bu
 }
 
 
-void updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location) {
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &wifi, const String &version, const String &location) {
   // Check server connection
   if (firstStart) {
-    sensor.addTag("clientId", deviceID);
-    sensor.addTag("Device", "WS-ESP8266");
-    sensor.addTag("Version", version);
-    sensor.addTag("Location", location);
-    sensor.addTag("TemperatureSensor", "DHT11");
-    sensor.addTag("HumiditySensor", "DHT11");
+    sensor.addTag(String(F("clientId")), deviceID);
+    sensor.addTag(String(F("Device")), String(F("WS-ESP8266")));
+    sensor.addTag(String(F("Version")), version);
+    sensor.addTag(String(F("Location")), location);
+    sensor.addTag(String(F("WiFi")), wifi);
+    sensor.addTag(String(F("TemperatureSensor")), String(F("DHT11")));
+    sensor.addTag(String(F("HumiditySensor")), String(F("DHT11")));
 
     if (influxDBClient.validateConnection()) {
       Serial.print(F("Connected to InfluxDB: "));
@@ -33,7 +34,7 @@ void updateInfluxDB( bool firstStart, const String &deviceID, const String &vers
 }
 
 bool errorInfluxDB() {
-  return (influxDBClient.getServerUrl() == "") || (influxDBClient.getLastErrorMessage() != "");
+  return (influxDBClient.getServerUrl().length() == 0) || (influxDBClient.getLastErrorMessage().length() != 0);
 }
 
 String errorInfluxDBMsg() {
@@ -41,15 +42,15 @@ String errorInfluxDBMsg() {
 }
 
 void writeInfluxDB( float temp, float hum, const float lat, const float lon) {
-  if (influxDBClient.getLastErrorMessage() != "")
+  if (influxDBClient.getLastErrorMessage().length() != 0)
     influxDBClient.validateConnection();
 
   sensor.clearFields();
   // Report temperature and humidity
-  sensor.addField("Temperature", temp);
-  sensor.addField("Humidity", hum);
-  sensor.addField("Lat", lat, 6);
-  sensor.addField("Lon", lon, 6);
+  sensor.addField(String(F("Temperature")), temp);
+  sensor.addField(String(F("Humidity")), hum);
+  sensor.addField(String(F("Lat")), lat, 6);
+  sensor.addField(String(F("Lon")), lon, 6);
 
   // Print what are we exactly writing
   Serial.print(F("Writing: "));

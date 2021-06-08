@@ -1,4 +1,4 @@
-#define VERSION "0.40"
+#define VERSION "0.41"
 
 // Include libraries
 #include <Arduino.h>
@@ -87,10 +87,10 @@ void updateData(OLEDDisplay *display, bool firstStart);
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
 void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
-void updateCurrentWeather( const bool metric, const String lang, const String location, const String APIKey);
-void updateForecast( const bool metric, const String lang, const String location, const String APIKey);
+void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey);
+void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey);
 
-void updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location);
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &wifi, const String &version, const String &location);
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID);
 
@@ -135,7 +135,6 @@ void setup() {
   setupOLEDUI(&ui);
 
   //Configure InfluxDB
-  deviceID += "-" + WiFi.SSID();  //Add connected Wifi network
   setupInfluxDB( conf.influxdbUrl, conf.influxdbOrg, conf.influxdbBucket, conf.influxdbToken, conf.influxdbRefreshMin * 60);
 
   //Load all data
@@ -164,7 +163,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
-  updateInfluxDB( firstStart, deviceID, VERSION, conf.location);
+  updateInfluxDB( firstStart, deviceID, WiFi.SSID(), VERSION, conf.location);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
 
@@ -191,7 +190,7 @@ void loop() {
       ESP.wdtFeed();
       writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
       Serial.print(F("InfluxDB write "));
-      Serial.println(String(millis() - timeSinceLastUpdate) + "ms");
+      Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
       digitalWrite( LED, HIGH);
     }
   }

@@ -26,22 +26,22 @@ class tIPListener: public JsonListener {
 
 
 void tIPListener::value(String value) {
-  Serial.println("key: " + _key + " value: " + value);
+  Serial.println(String(F("key: ")) + _key + String(F(" value: ")) + value);
   if ( _key == "ip") {
     Serial.print( F("External IP: "));
     Serial.println( value);
   }
-  if ( _key == "city")
+  if ( _key == String(F("city")))
     city = value;
-  if ( _key == "country")
+  if ( _key == String(F("country")))
     country = value;
-  if ( _key == "utc_offset")
+  if ( _key == String(F("utc_offset")))
     utc_offset = value;
-  if ( _key == "languages")
+  if ( _key == String(F("languages")))
     lang = value.substring(0, 2);
-  if ( _key == "latitude")
+  if ( _key == String(F("latitude")))
     latitude = value.toFloat();
-  if ( _key == "longitude")
+  if ( _key == String(F("longitude")))
     longitude = value.toFloat();
 }
 
@@ -70,7 +70,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   JsonStreamingParser parser;
   parser.setListener(&ipListener);
 
-  http.begin(client, "https://ipapi.co/json");
+  http.begin(client, String(F("https://ipapi.co/json")));
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
   Serial.print( F("Detect IP code: "));

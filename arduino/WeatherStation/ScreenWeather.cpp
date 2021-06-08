@@ -16,7 +16,7 @@ float getCurrentWeatherTemperature() {
 }
 
 
-void updateCurrentWeather( const bool metric, const String lang, const String location, const String APIKey) {
+void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey) {
   OpenWeatherMapCurrent currentWeatherClient;
   OpenWeatherMapCurrentData _currentWeather;
   currentWeatherClient.setMetric(metric);
@@ -34,7 +34,7 @@ void updateCurrentWeather( const bool metric, const String lang, const String lo
 }
 
 
-void updateForecast( const bool metric, const String lang, const String location, const String APIKey) {
+void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
   forecastClient.setMetric(metric);
@@ -57,7 +57,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(conf.location));
-  display->drawString(display->getWidth() + x, 38 + y, "(" + String(currentWeather.tempMin) + "-" + strTemp(currentWeather.tempMax) + ")");
+  display->drawString(display->getWidth() + x, 38 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 38 + y, utf8ascii(currentWeather.description));
   display->drawString(40 + x, 17 + y, getStr( s_wind));
