@@ -4,8 +4,6 @@
 #include <JsonStreamingParser.h>
 #include <JsonListener.h>
 
-//#include "Tools.h"
-
 class tIPListener: public JsonListener {
   String _key;
   public:
@@ -56,9 +54,6 @@ bool findCountry( const char* country, const char* list) {
   uint16_t cw = (country[1] << 8) + country[0];
   const char* pl = list;
   while ( pgm_read_byte( pl) != 0) {  //end of list?
-    Serial.print( cw, HEX);
-    Serial.print( " - ");
-    Serial.println( pgm_read_word( pl), HEX);
     if ( cw == pgm_read_word( pl))
       return true;
     pl += 2;   

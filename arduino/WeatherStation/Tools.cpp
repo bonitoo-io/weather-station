@@ -1,7 +1,6 @@
 #include "Tools.h"
-#define getFlashStr( str) reinterpret_cast<const char *>(pgm_read_word( &str))
 
-// Adjust according to your language
+// English strings
 static const char DAYS_ENG[] PROGMEM = "Sun\0" "Mon\0" "Tue\0" "Wed\0" "Thu\0" "Fri\0" "Sat\0";
 static const char MONTHS_ENG[] PROGMEM = "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0" "Jul\0" "Aug\0" "Sep\0" "Oct\0" "Nov\0" "Dec\0";
 static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first quarter\0" "waxing gibbous\0" "full moon\0" "waning gibbous\0" "third quarter\0" "waning crescent\0";
@@ -11,9 +10,7 @@ static const char STR_ENG[] PROGMEM =
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
 "Moon\0" "Sun\0" ;
 
-
-//static const char MONTHS_CZ_S[] PROGMEM = "Led\0" "Úno\0" "Bře\0" "Dub\0" "Kvě\0" "Čvn\0" "Čvc\0" "Srp\0" "Zář\0" "Říj\0" "Lis\0" "Pro\0";
-//static const char DAYS_CZ_L[] PROGMEM =  "Neděle\0" "Pondělí\0" "Úterý\0" "Středa\0" "Čtvrtek\0" "Pátek\0" "Sobota\0";
+// Czech strings
 static const char DAYS_CZ[] PROGMEM = "Ne\0" "Po\0" "Út\0" "St\0" "Čt\0" "Pá\0" "So\0";
 static const char MONTHS_CZ[] PROGMEM = "Leden\0" "Únor\0" "Březen\0" "Duben\0" "Květen\0" "Červen\0" "Červenec\0" "Srpen\0" "Září\0" "Říjen\0" "Listopad\0" "Prosinec\0";
 static const char MOON_CZ[] PROGMEM = "nov\0" "dorůstající srpek\0" "první čtvrť\0" "dorůstající měsíc\0" "úplněk\0" "couvající měsíc\0" "poslední čtvrť\0" "ubývající srpek\0";
@@ -22,6 +19,9 @@ static const char STR_CZ[] PROGMEM =
 "Doma:\0" " Vně:\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
 "Měsíc\0" "Slunce\0";
+
+// Add other languages
+// ...
 
 struct tLanguage {
   const char* days;
@@ -48,8 +48,12 @@ String getPgmStr( const char* s, uint8_t index) {
 }
 
 void setLanguage( const char* lang) {
+  //Default language is en
   if ( strcmp( lang, "cz") == 0)
     pLang = &languages[1];
+  
+  //Add other languages
+  //....
 }
 
 String getDayName( uint8_t index) {
@@ -131,7 +135,7 @@ char replaceChar( char c1, char c2) {
 // Convert a single Character from UTF8 to Extended ASCII
 // Return "0" if a byte has to be ignored
 static uint8_t c1;  // Last character buffer
-uint8_t utf8ascii(uint8_t ascii) {
+char utf8ascii(uint8_t ascii) {
   if (ascii < 128) {   // Standard ASCII-set 0..0x7F handling
     c1 = 0;
     return ascii;
@@ -166,9 +170,7 @@ String utf8ascii(const String s) {
       c1 = c;
       continue;
     }
-    c = utf8ascii( c);
-    if (c != 0)
-      r += c;
+    r += utf8ascii( c);
   }
   return r;
 }
