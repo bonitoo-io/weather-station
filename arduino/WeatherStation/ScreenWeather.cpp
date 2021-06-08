@@ -93,6 +93,26 @@ void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   drawForecastDetails(display, x + 88, y, 2);
 }
 
+void arrow(OLEDDisplay *display, int x1, int y1, int x2, int y2, int alength, int awidth) {
+  float distance;
+  int dx, dy, x2o,y2o,x3,y3,x4,y4,k;
+  distance = sqrt(pow((x1 - x2),2) + pow((y1 - y2), 2));
+  dx = x2 + (x1 - x2) * alength / distance;
+  dy = y2 + (y1 - y2) * alength / distance;
+  k = awidth / alength;
+  x2o = x2 - dx;
+  y2o = dy - y2;
+  x3 = y2o * k + dx;
+  y3 = x2o * k + dy;
+  //
+  x4 = dx - y2o * k;
+  y4 = dy - x2o * k;
+  display->drawLine(x1, y1, x2, y2);
+  display->drawLine(x1, y1, dx, dy);
+  display->drawLine(x3, y3, x4, y4);
+  display->drawLine(x3, y3, x2, y2);
+  display->drawLine(x2, y2, x4, y4);
+} 
 
 void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   time_t observationTimestamp = forecasts[dayIndex].observationTime;
@@ -106,15 +126,17 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   const int clockSize=10;
   int clockCenterX=21+x;
   int clockCenterY=28+y;
-
+  float f;
+  
   // Draw marks for hours
   for (unsigned int i=0; i<8; i++) {
-    float f = ((i * 45) + 270) * 0.0175;  //angle to radians
-    display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-2+(i%2==0?0:1))*cos(f)+clockCenterX, (clockSize-1+(i%2==0?0:1))*sin(f)+clockCenterY);
+    f = ((i * 45) + 270) * 0.0175;  //angle to radians
+    if ( abs((int)((i * 45) + 270) - (int)(forecasts[dayIndex].windDeg+90)) > 40)
+      display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-2+(i%2==0?0:1))*cos(f)+clockCenterX, (clockSize-1+(i%2==0?0:1))*sin(f)+clockCenterY);
   }
-  float w = ((forecasts[dayIndex].windDeg)+270)*0.0175;
-  display->drawLine(clockSize*cos(w)+clockCenterX, clockSize*sin(w)+clockCenterY, cos(w)+clockCenterX, sin(w)+clockCenterY);
-  
+  f = (forecasts[dayIndex].windDeg+90)*0.0175;
+  arrow( display, cos(f)+clockCenterX, sin(f)+clockCenterY, clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, 3, 5);
+
   display->setFont(ArialMT_Plain_10);
   //display->drawString(x + 20, y + 29, String(forecasts[dayIndex].windDeg, 0) + "°");
   display->drawString(x + 20, y + 39, strWind(forecasts[dayIndex].windSpeed));

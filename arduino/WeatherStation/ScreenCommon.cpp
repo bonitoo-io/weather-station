@@ -37,6 +37,7 @@ void setupOLEDUI(OLEDDisplayUi *ui) {
   ui->init(); // Inital UI takes care of initalising the display too
 }
 
+
 void drawSplashScreen(OLEDDisplay *display, const char* version) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -150,22 +151,29 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
 /*void showFont(OLEDDisplay *display, const uint8_t *fontData) {
   Serial.println( "showFont");
   int from = pgm_read_byte_near(fontData+2);
-  int to = pgm_read_byte_near(fontData+2)+pgm_read_byte_near(fontData+3);
+  int to = pgm_read_byte_near(fontData+2)+pgm_read_byte_near(fontData+3)-1;
   Serial.println( "from " + String(from) + " to " +  String(to));
+  bool but;
   while (true)
-  for (char i=from; i<to; i++) {
+  for (char i=from; i<=to; i++) {
+    but = false;
     display->clear();
     display->setFont(fontData);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
     display->drawString(0, 0, String((char)(i)));
     int len = display->getStringWidth(String((char)(i)));
     display->setFont(ArialMT_Plain_10);
-    if ( len == 0)
+    if ( len == 0) {
       display->drawString(0, 0, F("<empty>"));
+      continue;
+    }
     display->drawString(0, 40, String((int)(i)) + " " + String((char)(i)) + "\n " + String(from) + "-" + String(to));
     display->display();
-    delay( 1000);
-    while (digitalRead(D3) == LOW) //wait if the button is pressed
+    while (digitalRead(D3) == LOW) { //wait if the button is pressed
       delay( 200);
+      but = true;
+    }
+    if (!but)
+      delay( 1000);
   }
 }*/
