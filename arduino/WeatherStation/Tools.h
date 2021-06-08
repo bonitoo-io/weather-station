@@ -61,3 +61,11 @@ void setLanguage( const char* lang);
 String getDayName( uint8_t index);
 String getMonthName( uint8_t index);
 String getMoonPhaseName( uint8_t index);
+
+enum tStrings {
+  s_Connecting_WiFi=0, s_Detecting_location, s_Updating_time, s_Updating_weather, s_Calculate_moon_phase, s_Updating_forecasts, s_Connecting_InfluxDB, s_Done,
+  s_In, s_Out,
+  s_INDOOR, s_feel, s_hum, s_wind,
+  s_Moon, s_Sun
+};
+String getStr( uint8_t index);

@@ -29,8 +29,10 @@ class IPListener: public JsonListener {
 
 void IPListener::value(String value) {
   Serial.println("key: " + _key + " value: " + value);
-  if ( _key == "ip")
-    Serial.println( "External IP: " + value);
+  if ( _key == "ip") {
+    Serial.print( F("External IP: "));
+    Serial.println( value);
+  }
   if ( _key == "city")
     city = value;
   if ( _key == "country")
@@ -60,7 +62,8 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   http.begin(client, "https://ipapi.co/json");
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
-  Serial.printf("Detect IP code: %d\n", httpCode);
+  Serial.print( F("Detect IP code: "));
+  Serial.println( httpCode);
 
   if (httpCode == HTTP_CODE_OK) {
     int c = 1;
@@ -88,8 +91,10 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   if (minus)
     utc_offset = -utc_offset;
   
-  if (!firstStart && (utc_offset_old != utc_offset))  //if utc offset is changed during refresh
-    Serial.println( "UTC offset changed from " + String(utc_offset_old) + " to " + String(utc_offset));
+  if (!firstStart && (utc_offset_old != utc_offset)) { //if utc offset is changed during refresh
+    Serial.print( F("UTC offset changed from "));
+    Serial.println( String(utc_offset_old) + " to " + String(utc_offset));
+  }
 
   //Return other detected location values
   String country;
@@ -99,11 +104,10 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   longitude = ipListener.longitude;
   location = ipListener.city + "," + country;
   
-  setLanguage( ipListener.lang.c_str());
   if ( ipListener.lang == "cs")    //replace cs->cz code for weather
     ipListener.lang = "cz";
   strncpy( lang, ipListener.lang.c_str(), 2);
- 
+  
   //24-hours vs 12-hours clock detection
   b24h = true;
   for (unsigned int i = 0; i < sizeof(Countries_12h) / sizeof(Countries_12h[0]); i++) {

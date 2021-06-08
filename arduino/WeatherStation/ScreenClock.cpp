@@ -16,10 +16,10 @@ void updateClock( bool firstStart, int utc_offset, const String ntp) {
   configTime( utc_offset, 0, ntparr[0], ntparr[1], ntparr[2]);
   if (firstStart) {
     // Wait till time is synced
-    Serial.print("Syncing time");
+    Serial.print(F("Syncing time"));
     int i = 0;
     while (time(nullptr) < 1000000000ul && i < 40) {
-      Serial.print(".");
+      Serial.print(F("."));
       delay(500);
       i++;
     }
@@ -27,7 +27,7 @@ void updateClock( bool firstStart, int utc_offset, const String ntp) {
   
     // Show time
     time_t now = time(nullptr);
-    Serial.print("Synchronized time: ");
+    Serial.print(F("Synchronized time: "));
     Serial.println(ctime(&now));
   }
 }

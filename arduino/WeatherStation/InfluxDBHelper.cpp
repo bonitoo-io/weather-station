@@ -23,10 +23,10 @@ void updateInfluxDB( bool firstStart, const String &deviceID, const String &vers
     sensor.addTag("HumiditySensor", "DHT11");
 
     if (influxDBClient.validateConnection()) {
-      Serial.print("Connected to InfluxDB: ");
+      Serial.print(F("Connected to InfluxDB: "));
       Serial.println(influxDBClient.getServerUrl());
     } else {
-      Serial.print("InfluxDB connection failed: ");
+      Serial.print(F("InfluxDB connection failed: "));
       Serial.println(influxDBClient.getLastErrorMessage());
     }
   }

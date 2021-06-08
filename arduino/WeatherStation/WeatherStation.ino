@@ -1,4 +1,4 @@
-#define VERSION "0.37"
+#define VERSION "0.38"
 
 // Include libraries
 #include <Arduino.h>
@@ -42,7 +42,7 @@ tConfig conf = {  //default values
   WIFI_SSID,  //wifi_ssid
   WIFI_PWD, //wifi_pwd
 
-  truett, //detectLocationIP
+  true, //detectLocationIP
   60,   //updateDataMin
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
   "San Francisco, US", //location
@@ -81,7 +81,7 @@ float getDHTTemp(bool metric);
 float getDHTHum();
 void drawSplashScreen(OLEDDisplay *display, const char* version);
 void drawWifiProgress(OLEDDisplay *display, const char* version);
-void drawUpdateProgress(OLEDDisplay *display, int percentage, PGM_VOID_P label);
+void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 
 void updateData(OLEDDisplay *display, bool firstStart);
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
@@ -108,6 +108,7 @@ void setup() {
   setupDHT();
 
   //Initialize OLED
+  setLanguage( conf.language);
   display.init();
   display.clear();
   display.display();
@@ -144,26 +145,28 @@ void setup() {
 void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
 
-  drawUpdateProgress(display, 0, F("Detecting location"));
-  if (conf.detectLocationIP)
+  drawUpdateProgress(display, 0, getStr(s_Detecting_location));
+  if (conf.detectLocationIP) {
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
+    setLanguage( conf.language);
+  }
   
-  drawUpdateProgress(display, 10, F("Updating time"));
+  drawUpdateProgress(display, 10, getStr(s_Updating_time));
   updateClock( firstStart, conf.utcOffset, conf.ntp);
 
-  drawUpdateProgress(display, 30, F("Updating weather"));
+  drawUpdateProgress(display, 30, getStr(s_Updating_weather));
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
-  drawUpdateProgress(display, 50, F("Calculate moon phase"));
+  drawUpdateProgress(display, 50, getStr(s_Calculate_moon_phase));
   updateAstronomy( firstStart, conf.latitude, conf.longitude);
   
-  drawUpdateProgress(display, 60, F("Updating forecasts"));
+  drawUpdateProgress(display, 60, getStr(s_Updating_forecasts));
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
-  drawUpdateProgress(display, 80, F("Connecting InfluxDB"));
+  drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
   updateInfluxDB( firstStart, deviceID, VERSION, conf.location);
 
-  drawUpdateProgress(display, 100, F("Done"));
+  drawUpdateProgress(display, 100, getStr(s_Done));
 
   digitalWrite( LED, HIGH);
   delay(500);
@@ -187,7 +190,8 @@ void loop() {
       digitalWrite( LED, LOW);
       ESP.wdtFeed();
       writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
-      Serial.println("InfluxDB write " + String(millis() - timeSinceLastUpdate) + "ms");
+      Serial.print(F("InfluxDB write "));
+      Serial.println(String(millis() - timeSinceLastUpdate) + "ms");
       digitalWrite( LED, HIGH);
     }
   }

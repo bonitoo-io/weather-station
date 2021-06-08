@@ -26,9 +26,9 @@ void updateAstronomy(bool firstStart, const float lat, const float lon) {
 void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(x + 40, y + 4,  F("Sun"));
+  display->drawString(x + 40, y + 4,  getStr(s_Sun));
   display->drawString(x + 43, y + 13, strTime(currentWeather.sunrise, true) + strTimeSuffix(currentWeather.sunrise) + "-" + strTime(currentWeather.sunset, true) +  strTimeSuffix(currentWeather.sunset));
-  display->drawString(x + 40, y + 21, F("Moon"));
+  display->drawString(x + 40, y + 21, getStr(s_Moon));
   display->drawString(x + 43, y + 30, strTime(moonRise, true) + strTimeSuffix(moonRise) + "-" + strTime(moonSet, true) + strTimeSuffix(moonSet));
   display->drawString(x + 0, y + 38, getMoonPhaseName( moonPhase));
 

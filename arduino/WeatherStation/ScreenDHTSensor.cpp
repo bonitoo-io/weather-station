@@ -42,13 +42,13 @@ float getDHTHum() {
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 + x, 5 + y, F("INDOOR"));
+  display->drawString(64 + x, 5 + y, getStr(s_INDOOR));
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(8 + x, 38 + y, "feel: " + strTemp(hicDHT));
+  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp(hicDHT));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(120 + x, 38 + y, F("hum"));
+  display->drawString(120 + x, 38 + y, getStr(s_hum));
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);

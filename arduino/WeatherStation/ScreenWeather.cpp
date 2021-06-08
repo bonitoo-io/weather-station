@@ -60,7 +60,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->drawString(display->getWidth() + x, 38 + y, "(" + String(currentWeather.tempMin) + "-" + strTemp(currentWeather.tempMax) + ")");
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 38 + y, utf8ascii(currentWeather.description));
-  display->drawString(40 + x, 17 + y, "wind");
+  display->drawString(40 + x, 17 + y, getStr( s_wind));
   display->drawString(38 + x, 27 + y, strWind(currentWeather.windSpeed));
 
   display->setFont(ArialMT_Plain_24);
