@@ -1,0 +1,77 @@
+#include <time.h>
+#include <ESPHTTPClient.h>
+
+//Load value for specific parameter
+String loadParameter( const String& response, const __FlashStringHelper* param_p) {
+  String param(FPSTR(param_p));
+  int i = response.indexOf(param);
+  if (i == -1) {
+    Serial.print(F("Error - missing parameter: "));
+    Serial.println( param);
+    return "";
+  }
+  return response.substring( response.indexOf(":", i) + 2, response.indexOf("\n", i));
+}
+
+void loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, String& influxdbUrl, String& influxdbOrg, String& influxdbToken, String& influxdbBucket, unsigned int& influxdbRefreshMin, unsigned int& iotRefreshMin, float& latitude, float& longitude) {
+  if ( iot_url.length() == 0) //if iot_center url is not defined, exit
+    return;
+  
+  // Load config from IoT Center
+  WiFiClient client;
+  HTTPClient http_config;
+  String payload;
+  String url = iot_url + String(F("/api/env/")) + deviceID;
+  Serial.print(F("Connecting "));
+  Serial.println( url);
+  http_config.begin( client, url);
+  http_config.addHeader("Accept", "text/plain");
+  int httpCode = http_config.GET();
+  
+  if (httpCode == HTTP_CODE_OK) {
+    payload = http_config.getString();
+    Serial.println( "--Received configuration");
+    Serial.print(payload);
+    Serial.println("--end");
+  } else {
+    Serial.print("IoT GET failed, error: ");
+    Serial.println( http_config.errorToString(httpCode).c_str());
+  }
+  http_config.end();
+
+  //Parse response, if exists
+  if ( payload.length() > 0) {
+    //Sync time from IoT Center
+    String iotTime = loadParameter( payload, F("serverTime"));
+    /*tm tmServer;
+    strptime(iotTime.c_str(), "%Y-%m-%dT%H:%M:%S.%f", &tmServer);
+    time_t ttServer = mktime(&tmServer);
+    struct timeval tvServer = { .tv_sec = ttServer };
+    settimeofday(&tvServer, NULL);
+
+    // Show time
+    ttServer = time(nullptr);
+    Serial.print(F("Set time: "));
+    Serial.print(String(ctime(&ttServer)));*/
+
+    //Load InfluxDB parameters
+    influxdbUrl = loadParameter( payload, F("influx_url"));
+    influxdbOrg = loadParameter( payload, F("influx_org"));
+    influxdbToken = loadParameter( payload, F("influx_token"));
+    influxdbBucket = loadParameter( payload, F("influx_bucket"));
+
+    //Load refresh parameters
+    influxdbRefreshMin = loadParameter( payload, F("measurement_interval")).toInt();
+    if (influxdbRefreshMin == 0)
+      influxdbRefreshMin = 1;
+
+    iotRefreshMin = loadParameter( payload, F("configuration_refresh")).toInt();
+    if (iotRefreshMin == 0)
+      iotRefreshMin = 60;
+    
+    latitude = loadParameter( payload, F("default_lat")).toDouble();
+    longitude = loadParameter( payload, F("default_lon")).toDouble();
+  } else {
+    Serial.println(F("IoT Center GET failed, emty response"));
+  }
+}

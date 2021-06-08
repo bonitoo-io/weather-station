@@ -73,9 +73,6 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   http.begin(client, String(F("https://ipapi.co/json")));
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
-  Serial.print( F("Detect IP code: "));
-  Serial.println( httpCode);
-
   if (httpCode == HTTP_CODE_OK) {
     int c = 1;
     while (http.connected() && c) {
@@ -83,6 +80,9 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
       c = client.read(&payload, sizeof(payload));
       parser.parse(payload);
     }
+  } else {
+    Serial.print( F("Detect IP error code: "));
+    Serial.println( httpCode);
   }
   http.end();
 

@@ -5,7 +5,7 @@ static const char DAYS_ENG[] PROGMEM = "Sun\0" "Mon\0" "Tue\0" "Wed\0" "Thu\0" "
 static const char MONTHS_ENG[] PROGMEM = "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0" "Jul\0" "Aug\0" "Sep\0" "Oct\0" "Nov\0" "Dec\0";
 static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first quarter\0" "waxing gibbous\0" "full moon\0" "waning gibbous\0" "third quarter\0" "waning crescent\0";
 static const char STR_ENG[] PROGMEM = 
-"Connecting WiFi\0" "Detecting location\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
+"Connecting WiFi\0" "Connecting IoT Center\0" "Detecting location\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
 "In:\0" " Out:\0"
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
 "Moon\0" "Sun\0" ;
@@ -15,7 +15,7 @@ static const char DAYS_CZ[] PROGMEM = "Ne\0" "Po\0" "Út\0" "St\0" "Čt\0" "Pá\
 static const char MONTHS_CZ[] PROGMEM = "Leden\0" "Únor\0" "Březen\0" "Duben\0" "Květen\0" "Červen\0" "Červenec\0" "Srpen\0" "Září\0" "Říjen\0" "Listopad\0" "Prosinec\0";
 static const char MOON_CZ[] PROGMEM = "nov\0" "dorůstající srpek\0" "první čtvrť\0" "dorůstající měsíc\0" "úplněk\0" "couvající měsíc\0" "poslední čtvrť\0" "ubývající srpek\0";
 static const char STR_CZ[] PROGMEM =
-"Připojuji WiFi\0" "Zjišťuji polohu\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
+"Připojuji WiFi\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
 "Doma:\0" " Vně:\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
 "Měsíc\0" "Slunce\0";

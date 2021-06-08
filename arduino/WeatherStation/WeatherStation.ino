@@ -1,4 +1,4 @@
-#define VERSION "0.41"
+#define VERSION "0.42"
 
 // Include libraries
 #include <Arduino.h>
@@ -18,6 +18,8 @@
 //See https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define OPEN_WEATHER_MAP_API_KEY "XXX"
 
+// IoT Center url, e.g. http://192.168.1.20:5000  (can be empty, if not configured)
+#define IOT_CENTER_URL ""
 // InfluxDB v2 server url, e.g. https://eu-central-1-1.aws.cloud2.influxdata.com (Use: InfluxDB UI -> Load Data -> Client Libraries)
 #define INFLUXDB_URL "server-url"
 // InfluxDB v2 server or cloud API authentication token (Use: InfluxDB UI -> Load Data -> Tokens -> <select token>)
@@ -57,6 +59,9 @@ tConfig conf = {  //default values
   0,  //tempOffset
   0,  //humOffset
   
+  IOT_CENTER_URL, //iotCenterUrl;
+  60,             //iotRefreshMin
+  
   INFLUXDB_URL,   //influxdbUrl;
   INFLUXDB_TOKEN, //influxdbToken;
   INFLUXDB_ORG,   //influxdbOrg;
@@ -84,6 +89,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 
 void updateData(OLEDDisplay *display, bool firstStart);
+void loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, String& influxdbUrl, String& influxdbOrg, String& influxdbToken, String& influxdbBucket, unsigned int& influxdbRefreshMin, unsigned int& iotRefreshMin, float& latitude, float& longitude);
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
 void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
@@ -144,22 +150,26 @@ void setup() {
 void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
 
-  drawUpdateProgress(display, 0, getStr(s_Detecting_location));
+  drawUpdateProgress(display, 0, getStr(s_Connecting_IoT_Center));
+  if (firstStart)
+    loadIoTCenter(firstStart, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
+  
+  drawUpdateProgress(display, 10, getStr(s_Detecting_location));
   if (conf.detectLocationIP) {
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
     setLanguage( conf.language);
   }
   
-  drawUpdateProgress(display, 10, getStr(s_Updating_time));
+  drawUpdateProgress(display, 30, getStr(s_Updating_time));
   updateClock( firstStart, conf.utcOffset, conf.ntp);
 
-  drawUpdateProgress(display, 30, getStr(s_Updating_weather));
+  drawUpdateProgress(display, 50, getStr(s_Updating_weather));
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
-  drawUpdateProgress(display, 50, getStr(s_Calculate_moon_phase));
+  drawUpdateProgress(display, 60, getStr(s_Calculate_moon_phase));
   updateAstronomy( firstStart, conf.latitude, conf.longitude);
   
-  drawUpdateProgress(display, 60, getStr(s_Updating_forecasts));
+  drawUpdateProgress(display, 70, getStr(s_Updating_forecasts));
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
@@ -181,6 +191,12 @@ void loop() {
     if (lastUpdateMins % conf.updateDataMin == 0) {
       digitalWrite( LED, LOW);
       updateData(&display,false);
+      digitalWrite( LED, HIGH);
+    }
+
+    if (lastUpdateMins % conf.iotRefreshMin == 0) {
+      digitalWrite( LED, LOW);
+      loadIoTCenter( false, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
       digitalWrite( LED, HIGH);
     }
 

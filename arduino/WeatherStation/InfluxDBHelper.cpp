@@ -13,6 +13,7 @@ void setupInfluxDB( const String &serverUrl, const String &org, const String &bu
 
 
 void updateInfluxDB( bool firstStart, const String &deviceID, const String &wifi, const String &version, const String &location) {
+  
   // Check server connection
   if (firstStart) {
     sensor.addTag(String(F("clientId")), deviceID);
