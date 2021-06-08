@@ -187,16 +187,17 @@ void loop() {
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
 
+    //Sync IoT Center configuration
+    if (lastUpdateMins % conf.iotRefreshMin == 0) {
+      digitalWrite( LED, LOW);
+      loadIoTCenter( false, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
+      digitalWrite( LED, HIGH);
+    }
+
     //Update data?
     if (lastUpdateMins % conf.updateDataMin == 0) {
       digitalWrite( LED, LOW);
       updateData(&display,false);
-      digitalWrite( LED, HIGH);
-    }
-
-    if (lastUpdateMins % conf.iotRefreshMin == 0) {
-      digitalWrite( LED, LOW);
-      loadIoTCenter( false, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
       digitalWrite( LED, HIGH);
     }
 

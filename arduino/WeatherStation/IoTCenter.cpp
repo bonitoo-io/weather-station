@@ -25,16 +25,16 @@ void loadIoTCenter( bool firstStart, const String& iot_url, const String &device
   Serial.print(F("Connecting "));
   Serial.println( url);
   http_config.begin( client, url);
-  http_config.addHeader("Accept", "text/plain");
+  http_config.addHeader(String(F("Accept")), String(F("text/plain")));
   int httpCode = http_config.GET();
   
   if (httpCode == HTTP_CODE_OK) {
     payload = http_config.getString();
-    Serial.println( "--Received configuration");
+    Serial.println(F("--Received configuration"));
     Serial.print(payload);
-    Serial.println("--end");
+    Serial.println(F("--end"));
   } else {
-    Serial.print("IoT GET failed, error: ");
+    Serial.print(F("IoT GET failed, error: "));
     Serial.println( http_config.errorToString(httpCode).c_str());
   }
   http_config.end();
