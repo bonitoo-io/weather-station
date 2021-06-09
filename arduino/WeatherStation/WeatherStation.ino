@@ -1,4 +1,4 @@
-#define VERSION "0.43"
+#define VERSION "0.44"
 
 // Include libraries
 #include <Arduino.h>
@@ -146,6 +146,9 @@ void setup() {
 
   //Load all data
   updateData(&display, true);
+
+  //Save temperature for the chart
+  saveDHTTemp( conf.useMetric);
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {

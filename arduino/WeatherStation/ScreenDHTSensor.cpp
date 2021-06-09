@@ -9,7 +9,7 @@
 #define DHTPIN D1       // Digital pin connected to the DHT sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-int tempHistory[96];
+int tempHistory[90];
 
 void setupDHT() {
   dht.begin();
@@ -33,18 +33,9 @@ float getDHTHic(bool metric) {
 }
 
 void saveDHTTemp( bool metric) {
-  if (tempHistory[0] == 0xffff) { //buffer is not full yet
-    for (int i = sizeof(tempHistory) / sizeof(tempHistory[0]); i >= 0 ;i--)
-      if ( tempHistory[i] == 0xffff) {
-        tempHistory[i] = round( getDHTTemp( metric) * 10);
-        break;
-      }
-    return;
-  }
-
-  //buffer is already full
+  //move all values left
   for (int i = 1; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
-    tempHistory[i-1] = tempHistory[i];  //move all values left
+    tempHistory[i-1] = tempHistory[i];
   tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( getDHTTemp( metric) * 10); //save the latest value
 }
 

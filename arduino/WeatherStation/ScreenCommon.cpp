@@ -23,7 +23,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
 FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy};
 //FrameCallback frames[] = { drawTemperatureChart};
-OverlayCallback overlays[] = { drawHeaderOverlay };
+OverlayCallback overlays[] = { drawHeaderOverlay};
 
 void setupOLEDUI(OLEDDisplayUi *ui) {
   ui->setTargetFPS(30);
