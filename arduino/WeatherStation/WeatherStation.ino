@@ -5,6 +5,8 @@
 #include <ESPWiFi.h>
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
+#include <ESPAsyncWebServer.h>
+#include "WeatherStation.h"
 
 #include "Tools.h"
 
@@ -40,10 +42,7 @@
 
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
-tConfig conf = {  //default values
-  WIFI_SSID,  //wifi_ssid
-  WIFI_PWD, //wifi_pwd
-
+tConfig conf = {
   true, //detectLocationIP
   60,   //updateDataMin
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
@@ -61,17 +60,21 @@ tConfig conf = {  //default values
   
   IOT_CENTER_URL, //iotCenterUrl;
   60,             //iotRefreshMin
-  
-  INFLUXDB_URL,   //influxdbUrl;
-  INFLUXDB_TOKEN, //influxdbToken;
-  INFLUXDB_ORG,   //influxdbOrg;
-  "iot_center",   //influxdbBucket;
-  1 //influxdbRefreshMin;
 };
 
 // Initialize the oled display
 SSD1306Wire display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi ui( &display);
+  "pool.ntp.org,time.nis.gov,time.google.com",
+};
+
+// Initialize the oled display
+SSD1306Wire     display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
+OLEDDisplayUi   ui( &display );
+#if defined(WS_FT_SERVER)
+AsyncWebServer server(80);
+WeatherStation station(&server);
+#endif
 
 String deviceID;
 
@@ -80,14 +83,13 @@ unsigned int lastUpdateMins = 0;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
-void setupInfluxDB( const String &serverUrl, const String &org, const String &bucket, const String &authToken, int refresh_sec);
 void setupDHT();
 float getDHTTemp(bool metric);
 float getDHTHum();
 void saveDHTTempHist();
 void drawSplashScreen(OLEDDisplay *display, const char* version);
-void drawWifiProgress(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
+void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 
 void updateData(OLEDDisplay *display, bool firstStart);
 void loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, String& influxdbUrl, String& influxdbOrg, String& influxdbToken, String& influxdbBucket, unsigned int& influxdbRefreshMin, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -101,13 +103,36 @@ void updateInfluxDB( bool firstStart, const String &deviceID, const String &buck
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID);
 
+bool initialized = false;
+
+void initData() {
+  if(!initialized && WiFi.isConnected()) {
+    //Initialize OLED UI
+    setupOLEDUI(&ui);
+
+    //setupInfluxDB( conf.influxdbUrl, conf.influxdbOrg, conf.influxdbBucket, conf.influxdbToken, conf.influxdbRefreshMin * 60);
+    Serial.printf("RAM 1_4: %d\n", ESP.getFreeHeap());
+    //Load all data
+    updateData(&display, true);
+    Serial.printf("RAM 1_5: %d\n", ESP.getFreeHeap());
+    
+    //Save temperature for the chart
+    saveDHTTempHist();
+
+    initialized = true;
+  }
+}
 void setup() {
   // Prepare serial port
-  Serial.begin(115200);
+  Serial.begin(74880);
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
-
+  Serial.printf("RAM 1_1: %d\n", ESP.getFreeHeap());
+#if defined(WS_FT_SERVER)
+  station.begin();
+  Serial.printf("RAM 1_2: %d\n", ESP.getFreeHeap());
+#endif
   // Configure pins
   pinMode(BUTTONHPIN, INPUT);
   pinMode(LED, OUTPUT);
@@ -130,25 +155,26 @@ void setup() {
   deviceID.remove(8, 1);
   deviceID.remove(5, 1);
 
+#if !defined(WS_FT_SERVER)
   //Initialize Wifi
   WiFi.mode(WIFI_STA);
   WiFi.hostname(deviceID);
-  WiFi.begin(conf.wifi_ssid, conf.wifi_pwd);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+#endif
   drawSplashScreen(&display, VERSION);
   delay(500);
-  drawWifiProgress(&display, VERSION);
-
-  //Initialize OLED UI
-  setupOLEDUI(&ui);
-
-  //Configure InfluxDB
-  setupInfluxDB( conf.influxdbUrl, conf.influxdbOrg, conf.influxdbBucket, conf.influxdbToken, conf.influxdbRefreshMin * 60);
-
-  //Load all data
-  updateData(&display, true);
-
-  //Save temperature for the chart
-  saveDHTTempHist();
+  
+#if !defined(WS_FT_SERVER)
+  drawWifiProgress(&display, VERSION, WIFI_SSID);
+#endif
+  initData();
+  
+#if defined(WS_FT_SERVER)    
+  // start the server
+  server.begin();
+   Serial.printf("RAM 1_6: %d\n", ESP.getFreeHeap());
+#endif  
+ 
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
@@ -159,9 +185,12 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     loadIoTCenter(firstStart, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
   
   drawUpdateProgress(display, 10, getStr(s_Detecting_location));
+    
   if (conf.detectLocationIP) {
+    Serial.printf("1 free_heap %d, max_alloc_heap %d, heap_fragmentation  %d\n", ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), ESP.getHeapFragmentation());
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
     setLanguage( conf.language);
+    Serial.printf("3 free_heap %d, max_alloc_heap %d, heap_fragmentation  %d\n", ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), ESP.getHeapFragmentation());
   }
   
   drawUpdateProgress(display, 30, getStr(s_Updating_time));
@@ -177,7 +206,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
-  updateInfluxDB( firstStart, deviceID, conf.influxdbBucket, WiFi.SSID(), VERSION, conf.location);
+  //updateInfluxDB( firstStart, deviceID, conf.influxdbBucket, WiFi.SSID(), VERSION, conf.location);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
 
@@ -185,9 +214,18 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   delay(500);
 }
 
+uint16_t nextUIUpdate = 0;
+
 void loop() {
+  #if defined(WS_FT_SERVER)  
+  station.loop();
+#endif
+  if(!initialized) {
+    initData();
+  }
   // Ticker function - executed once per minute
-  if ((ui.getUiState()->frameState == FIXED) && (millis() - timeSinceLastUpdate >= 1000*60)){
+  if (WiFi.isConnected() && (ui.getUiState()->frameState == FIXED) && (millis() - timeSinceLastUpdate >= 1000*60)){
+     Serial.printf("RAM 2: %d\n", ESP.getFreeHeap());
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
 
@@ -214,9 +252,11 @@ void loop() {
       Serial.print(F("InfluxDB write "));
       Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
       digitalWrite( LED, HIGH);
+      Serial.printf("RAM 3: %d\n", ESP.getFreeHeap());
     }
+
   }
-  
+      
   //Handle BOOT button
   unsigned int loops = 0;
   while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
@@ -233,11 +273,9 @@ void loop() {
     delay(100);
   }
 
-  //Handle OLED UI
-  int remainingTimeBudget = ui.update();
-  if (remainingTimeBudget > 0) {
-    // You can do some work here
-    // Don't do stuff if you are below your time budget.
-    delay(remainingTimeBudget);
+  if(initialized && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
+    ESP.wdtFeed();
+    int remainingTimeBudget = ui.update();
+    nextUIUpdate = millis()+remainingTimeBudget;
   }
 }

@@ -1,3 +1,4 @@
+#if 0
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
@@ -90,3 +91,4 @@ void writeInfluxDB( float temp, float hum, const float lat, const float lon) {
     Serial.println(influxDBClient.getLastErrorMessage());
   }
 }
+#endif

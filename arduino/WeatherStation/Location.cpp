@@ -26,7 +26,7 @@ class tIPListener: public JsonListener {
 
 
 void tIPListener::value(String value) {
-  Serial.println(String(F("key: ")) + _key + String(F(" value: ")) + value);
+  //Serial.println(String(F("key: ")) + _key + String(F(" value: ")) + value);
   if ( _key == "ip") {
     Serial.print( F("External IP: "));
     Serial.println( value);

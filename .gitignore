@@ -1,2 +1,4 @@
 .vscode
 custom_dev.h
+node_modules/
+build/

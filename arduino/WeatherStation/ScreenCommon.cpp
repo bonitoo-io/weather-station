@@ -6,8 +6,9 @@
 
 float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();
-bool errorInfluxDB();
-String errorInfluxDBMsg();
+//TODO: encapsulate
+bool errorInfluxDB() { return false; }
+String errorInfluxDBMsg() { return ""; }
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -48,16 +49,16 @@ void drawSplashScreen(OLEDDisplay *display, const char* version) {
   display->display();
 }
 
-void drawWifiProgress(OLEDDisplay *display, const char* version) {
+void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid) {
   int counter = 0;
   Serial.print(F("Wifi "));
-  Serial.print( conf.wifi_ssid);
+  Serial.print( ssid);
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(F("."));
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
     display->drawString(88, 0, getStr(s_Connecting_WiFi));
-    display->drawString(88, 15, conf.wifi_ssid);
+    display->drawString(88, 15, ssid);
     display->drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
     display->drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
     display->drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
