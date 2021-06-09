@@ -1,4 +1,4 @@
-#define VERSION "0.42"
+#define VERSION "0.43"
 
 // Include libraries
 #include <Arduino.h>
@@ -84,6 +84,7 @@ void setupInfluxDB( const String &serverUrl, const String &org, const String &bu
 void setupDHT();
 float getDHTTemp(bool metric);
 float getDHTHum();
+void saveDHTTemp(bool metric);
 void drawSplashScreen(OLEDDisplay *display, const char* version);
 void drawWifiProgress(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
@@ -205,10 +206,11 @@ void loop() {
     if (lastUpdateMins % conf.influxdbRefreshMin == 0) {
       digitalWrite( LED, LOW);
       ESP.wdtFeed();
-      writeInfluxDB( getDHTTemp( conf.useMetric), getDHTHum(), conf.latitude, conf.longitude);
+      writeInfluxDB( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
       Serial.print(F("InfluxDB write "));
-      Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
+      Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));      
       digitalWrite( LED, HIGH);
+      saveDHTTemp( conf.useMetric);  //Save temperature for the chart
     }
   }
   

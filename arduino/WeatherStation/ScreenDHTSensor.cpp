@@ -9,34 +9,43 @@
 #define DHTPIN D1       // Digital pin connected to the DHT sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-int tempDHT;
-int humDHT;
-int hicDHT;
-unsigned long timeDHT = 0;
+int tempHistory[96];
 
 void setupDHT() {
-  dht.begin();  
-}
-
-void _readDHT( bool metric) {
-  unsigned long actualTime = millis();
-  if ( timeDHT > actualTime)
-    timeDHT = actualTime;
-  if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise provide "cached" values
-    tempDHT = round((dht.readTemperature(!metric) + conf.tempOffset) * 10);
-    humDHT = round((dht.readHumidity() + conf.humOffset) * 10);
-    hicDHT = round(dht.computeHeatIndex((float)tempDHT/10, (float)humDHT/10, !metric) * 10);
-    timeDHT = millis();
-  }
+  dht.begin();
+  //clean data
+  for (int i = 0; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
+    tempHistory[i] = 0xffff;
 }
 
 float getDHTTemp(bool metric) {
-  _readDHT(metric);
-  return (float)tempDHT / 10;
+  return dht.readTemperature(!metric) + conf.tempOffset;
 }
 
 float getDHTHum() {
-  return (float)humDHT/10;
+  return dht.readHumidity() + conf.humOffset;
+}
+
+float getDHTHic(bool metric) {
+  float tempDHT = getDHTTemp( metric);
+  float humDHT = getDHTHum();
+  return dht.computeHeatIndex(tempDHT, humDHT, !metric);
+}
+
+void saveDHTTemp( bool metric) {
+  if (tempHistory[0] == 0xffff) { //buffer is not full yet
+    for (int i = sizeof(tempHistory) / sizeof(tempHistory[0]); i >= 0 ;i--)
+      if ( tempHistory[i] == 0xffff) {
+        tempHistory[i] = round( getDHTTemp( metric) * 10);
+        break;
+      }
+    return;
+  }
+
+  //buffer is already full
+  for (int i = 1; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
+    tempHistory[i-1] = tempHistory[i];  //move all values left
+  tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( getDHTTemp( metric) * 10); //save the latest value
 }
 
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -45,7 +54,7 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->drawString(64 + x, 6 + y, getStr(s_INDOOR));
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp((float)hicDHT/10));
+  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp(getDHTHic(conf.useMetric)));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(120 + x, 38 + y, getStr(s_hum));

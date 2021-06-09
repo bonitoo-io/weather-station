@@ -105,8 +105,12 @@ String strDate(time_t timestamp, bool shortDate) {
   return String(buff);
 }
 
+String strTempUnit() {
+  return String(conf.useMetric ? F("°C") : F("°F"));
+}
+
 String strTemp( float t) {
-  return String(t, 0) + String(conf.useMetric ? F("°C") : F("°F"));
+  return String(t, 0) + strTempUnit();
 }
 
 String strHum( float h) {

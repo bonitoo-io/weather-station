@@ -4,6 +4,7 @@
 String strTime(time_t timestamp, bool shortTime);
 String strTimeSuffix(time_t timestamp);
 String strDate(time_t timestamp, bool shortDate);
+String strTempUnit();
 String strTemp( float t);
 String strHum( float h);
 String strWind( float w);

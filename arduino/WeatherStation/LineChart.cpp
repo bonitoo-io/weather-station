@@ -1,17 +1,36 @@
 #include <OLEDDisplayUi.h>
+#include "Tools.h"
 
-const int Now = 1547;                   // To set the time; eg 15:47
-unsigned long StartMins = (unsigned long)((Now/100)*60 + (Now%100));
+extern int tempHistory[96];
 
-
-void drawLineChart(OLEDDisplay *display, const char* name, /*int samples[],*/ unsigned int samples, int16_t x, int16_t y) {
-  unsigned int SampleNo = StartMins/15;
+void drawLineChart(OLEDDisplay *display, int data[], unsigned int size, int16_t x, int16_t y) {
+  //Caclculate min, max and number of samples
+  int min = 32767;
+  int max = -32768;
+  int samples = 0;
+  for (unsigned int i = 0; i < size; i++) {
+    if (data[i] == 0xffff)  //skip empty values
+      continue;
+    if ( data[i] > max)
+      max = data[i];
+    if ( data[i] < min)
+      min = data[i];
+    samples++;
+  }
+  min = floor(min);
+  max = ceil(max);
+  if (min == max)
+    max++;
+  if (min == (max + 1))
+    min--;
+  
   // Plot temperature graph
-  int x1 = 16, y1 = 39;
+  int x1 = 16;
+  int y1 = 39;
   int yscale = 2;                         // Points per degree
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  //display->drawString(64 + x, 5 + y, name);
+  display->drawString(64 + x, 5 + y, strTempUnit());
 
   // Horizontal axis
   display->drawHorizontalLine(x1 + x, y1 + y, 96);
@@ -31,6 +50,7 @@ void drawLineChart(OLEDDisplay *display, const char* name, /*int samples[],*/ un
   }
 
   //Data
+  samples = 96;
   if (samples > 96)
     samples = 96;
   for (unsigned int i = 0; i < samples; i++) {
@@ -40,5 +60,5 @@ void drawLineChart(OLEDDisplay *display, const char* name, /*int samples[],*/ un
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  drawLineChart( display, String(F("Temperature °C")).c_str(), 96, x, y);
+  drawLineChart( display, tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
 }
