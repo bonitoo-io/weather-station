@@ -16,13 +16,13 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawLineChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
   
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
-FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy, drawLineChart};
-//FrameCallback frames[] = { drawDateTimeAnalog};
+FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy};
+//FrameCallback frames[] = { drawTemperatureChart};
 OverlayCallback overlays[] = { drawHeaderOverlay };
 
 void setupOLEDUI(OLEDDisplayUi *ui) {

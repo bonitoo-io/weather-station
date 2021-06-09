@@ -9,9 +9,9 @@
 #define DHTPIN D1       // Digital pin connected to the DHT sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-float tempDHT;
-float humDHT;
-float hicDHT;
+int tempDHT;
+int humDHT;
+int hicDHT;
 unsigned long timeDHT = 0;
 
 void setupDHT() {
@@ -23,20 +23,20 @@ void _readDHT( bool metric) {
   if ( timeDHT > actualTime)
     timeDHT = actualTime;
   if ( actualTime - timeDHT > 2000) { //read once 2 seconds, otherwise provide "cached" values
-    tempDHT = dht.readTemperature(!metric) + conf.tempOffset;
-    humDHT = dht.readHumidity() + conf.humOffset;
-    hicDHT = dht.computeHeatIndex(tempDHT, humDHT, !metric);
+    tempDHT = round((dht.readTemperature(!metric) + conf.tempOffset) * 10);
+    humDHT = round((dht.readHumidity() + conf.humOffset) * 10);
+    hicDHT = round(dht.computeHeatIndex((float)tempDHT/10, (float)humDHT/10, !metric) * 10);
     timeDHT = millis();
   }
 }
 
 float getDHTTemp(bool metric) {
   _readDHT(metric);
-  return tempDHT;
+  return (float)tempDHT / 10;
 }
 
 float getDHTHum() {
-  return humDHT;
+  return (float)humDHT/10;
 }
 
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -45,7 +45,7 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->drawString(64 + x, 6 + y, getStr(s_INDOOR));
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp(hicDHT));
+  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp((float)hicDHT/10));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(120 + x, 38 + y, getStr(s_hum));
