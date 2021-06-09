@@ -208,7 +208,7 @@ void loop() {
       ESP.wdtFeed();
       writeInfluxDB( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
       Serial.print(F("InfluxDB write "));
-      Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));      
+      Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
       digitalWrite( LED, HIGH);
       saveDHTTemp( conf.useMetric);  //Save temperature for the chart
     }

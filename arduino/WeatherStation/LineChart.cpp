@@ -5,24 +5,27 @@ extern int tempHistory[96];
 
 void drawLineChart(OLEDDisplay *display, int data[], unsigned int size, int16_t x, int16_t y) {
   //Caclculate min, max and number of samples
-  int min = 32767;
-  int max = -32768;
-  int samples = 0;
+  int min10 = 32767;
+  int max10 = -32768;
   for (unsigned int i = 0; i < size; i++) {
     if (data[i] == 0xffff)  //skip empty values
       continue;
-    if ( data[i] > max)
-      max = data[i];
-    if ( data[i] < min)
-      min = data[i];
-    samples++;
+    if ( data[i] > max10)
+      max10 = data[i];
+    if ( data[i] < min10)
+      min10 = data[i];
   }
-  min = floor(min);
-  max = ceil(max);
-  if (min == max)
-    max++;
-  if (min == (max + 1))
-    min--;
+  min10 = floor((float)min10/10);
+  max10 = ceil((float)max10/10);
+  if (min10 == max10)
+    max10++;
+  if (max10 == (min10 + 1))
+    min10--;
+  min10 *= 10;
+  max10 *= 10;
+
+  float scale = (float)(max10-min10) / 30;
+  Serial.println( String( min10) + "~" + String( max10) + "~" + String( scale));
   
   // Plot temperature graph
   int x1 = 16;
@@ -49,14 +52,16 @@ void drawLineChart(OLEDDisplay *display, int data[], unsigned int size, int16_t 
     display->drawString( x1-4 + x, mark - 6 + y, String(i));
   }
 
-  //Data
-  samples = 96;
-  if (samples > 96)
-    samples = 96;
-  for (unsigned int i = 0; i < samples; i++) {
-    int data = ((sin(float(i)/10) + 1) * 15) + 11;
-    display->setPixel( i+x1 + x, y1 - (data-10 + y));
-  }
+  //Draw data
+  if (size > 96)  //crop size if needed
+    size = 96;
+
+  for (unsigned int i = 0; i < size; i++)
+    if ( data[i] != 0xffff) {
+      int d = round((float)(data[i] - min10) * scale);
+      Serial.println( String( i) + "-" + String( data[i]) + "=" + String(d));
+      display->setPixel( i+x1 + x, y1 - d + y);
+    }
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {

@@ -131,7 +131,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   // Draw marks for hours
   for (unsigned int i=0; i<8; i++) {
     f = ((i * 45) + 270) * 0.0175;  //angle to radians
-    if ( abs((int)((i * 45) + 270) - (int)(forecasts[dayIndex].windDeg+90)) > 35)
+    if ( abs((int)((i * 45) + 270) - (int)(forecasts[dayIndex].windDeg+90)) > 40)
       display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-2+(i%2==0?0:1))*cos(f)+clockCenterX, (clockSize-1+(i%2==0?0:1))*sin(f)+clockCenterY);
   }
   f = (forecasts[dayIndex].windDeg+90)*0.0175;
