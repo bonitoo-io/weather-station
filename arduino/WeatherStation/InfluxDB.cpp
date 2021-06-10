@@ -11,21 +11,21 @@ void printInfluxDBettings(String prefix, InfluxDBSettings *s) {
 }
 
 int InfluxDBSettings::save(JsonObject& root) {
-    root["server"] = serverURL;
-    root["token"] = authorizationToken;
-    root["org"] = org;
-    root["bucket"] = bucket;
-    root["writeInterval"] = writeInterval;
+    root[F("server")] = serverURL;
+    root[F("token")] = authorizationToken;
+    root[F("org")] = org;
+    root[F("bucket")] = bucket;
+    root[F("writeInterval")] = writeInterval;
     printInfluxDBettings("Save", this);
     return 0;
 }
 
 int InfluxDBSettings::load(JsonObject& root) {
-    serverURL = root["server"].as<const char *>();
-    authorizationToken = root["token"].as<const char *>();
-    org = root["org"].as<const char *>();
-    bucket = root["bucket"] | INFLUXDB_DEFAULT_BUCKET;
-    writeInterval = root["writeInterval"] | INFLUXDB_DEFAULT_WRITE_INTERVAL;
+    serverURL = root[F("server")].as<const char *>();
+    authorizationToken = root[F("token")].as<const char *>();
+    org = root[F("org")].as<const char *>();
+    bucket = root[F("bucket")] | INFLUXDB_DEFAULT_BUCKET;
+    writeInterval = root[F("writeInterval")] | INFLUXDB_DEFAULT_WRITE_INTERVAL;
     printInfluxDBettings("Load", this);
     return 1;
 }
@@ -44,21 +44,22 @@ void InfluxDBWriter::setupInfluxDB( const String &serverUrl, const String &org, 
 }
 
 
-void InfluxDBWriter::updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location) {
+void InfluxDBWriter::updateInfluxDB( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location) {
   // Check server connection
   if (firstStart) {
-    _sensor.addTag("clientId", deviceID);
-    _sensor.addTag("Device", "WS-ESP8266");
-    _sensor.addTag("Version", version);
-    _sensor.addTag("Location", location);
-    _sensor.addTag("TemperatureSensor", "DHT11");
-    _sensor.addTag("HumiditySensor", "DHT11");
+    _sensor.addTag(String(F("clientId")), deviceID);
+    _sensor.addTag(String(F("Device")), String(F("WS-ESP8266")));
+    _sensor.addTag(String(F("Version")), version);
+    _sensor.addTag(String(F("Location")), location);
+    _sensor.addTag(String(F("WiFi")), wifi);
+    _sensor.addTag(String(F("TemperatureSensor")), String(F("DHT11")));
+    _sensor.addTag(String(F("HumiditySensor")), String(F("DHT11")));
 
     if (_client.validateConnection()) {
-      Serial.print("Connected to InfluxDB: ");
+      Serial.print(F("Connected to InfluxDB: "));
       Serial.println(_client.getServerUrl());
     } else {
-      Serial.print("InfluxDB connection failed: ");
+      Serial.print(F("InfluxDB connection failed: "));
       Serial.println(_client.getLastErrorMessage());
     }
   }
@@ -68,23 +69,23 @@ void InfluxDBWriter::updateInfluxDB( bool firstStart, const String &deviceID, co
  
 
 void InfluxDBWriter::writeInfluxDB( float temp, float hum, const float lat, const float lon) {
-  if (_client.getLastErrorMessage() != "")
+  if (_client.getLastErrorMessage().length())
     _client.validateConnection();
 
   _sensor.clearFields();
   // Report temperature and humidity
-  _sensor.addField("Temperature", temp);
-  _sensor.addField("Humidity", hum);
-  _sensor.addField("Lat", lat, 6);
-  _sensor.addField("Lon", lon, 6);
+  _sensor.addField(String(F("Temperature")), temp);
+  _sensor.addField(String(F("Humidity")), hum);
+  _sensor.addField(String(F("Lat")), lat, 6);
+  _sensor.addField(String(F("Lon")), lon, 6);
 
   // Print what are we exactly writing
-  Serial.print("Writing: ");
+  Serial.print(F("Writing: "));
   Serial.println(_client.pointToLineProtocol(_sensor));
 
   // Write point
   if (!_client.writePoint(_sensor)) {
-    Serial.print("InfluxDB write failed: ");
+    Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client.getLastErrorMessage());
   }
 }

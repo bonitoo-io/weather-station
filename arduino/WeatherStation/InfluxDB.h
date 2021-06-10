@@ -28,13 +28,13 @@ class InfluxDBWriter {
  public:
   InfluxDBWriter();
   bool errorInfluxDB() {
-    return (_client.getServerUrl() == "") || (_client.getLastErrorMessage() != "");
+    return (!_client.getServerUrl().length()) || (!_client.getLastErrorMessage().length());
   }
   String errorInfluxDBMsg() { 
     return _client.getLastErrorMessage();
   }
   void setupInfluxDB( const String &serverUrl, const String &org, const String &bucket, const String &authToken, int refresh_sec);
-  void updateInfluxDB( bool firstStart, const String &deviceID, const String &version, const String &location);
+  void updateInfluxDB( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location);
   void writeInfluxDB( float temp, float hum, const float lat, const float lon);
 private:
   InfluxDBClient _client;

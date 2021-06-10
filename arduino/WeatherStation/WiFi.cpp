@@ -3,29 +3,29 @@
 
 void printWifiSettings(String prefix, WiFiSettings *s) {
     Serial.print(prefix);
-    Serial.print(" ssid: ");Serial.print(s->ssid);
-    Serial.print(", password: ");Serial.print(s->password);
-    Serial.print(", hostname: ");Serial.print(s->hostname);
-    Serial.print(", static_ip_config: ");Serial.print(s->staticIPConfig);
-    Serial.print(", local_ip: ");Serial.print(s->localIP);
-    Serial.print(", gateway_ip: ");Serial.print(s->gatewayIP);
-    Serial.print(", subnet_mask: ");Serial.print(s->subnetMask);
-    Serial.print(", dns_ip_1: ");Serial.print(s->dnsIP1);
-    Serial.print(", dns_ip_2: ");Serial.print(s->dnsIP2);
+    Serial.print(F(" ssid: "));Serial.print(s->ssid);
+    Serial.print(F(", password: "));Serial.print(s->password);
+    Serial.print(F(", hostname: "));Serial.print(s->hostname);
+    Serial.print(F(", static_ip_config: "));Serial.print(s->staticIPConfig);
+    Serial.print(F(", local_ip: "));Serial.print(s->localIP);
+    Serial.print(F(", gateway_ip: "));Serial.print(s->gatewayIP);
+    Serial.print(F(", subnet_mask: "));Serial.print(s->subnetMask);
+    Serial.print(F(", dns_ip_1: "));Serial.print(s->dnsIP1);
+    Serial.print(F(", dns_ip_2: "));Serial.print(s->dnsIP2);
     Serial.println();
 }
 
 int WiFiSettings::save(JsonObject& root) {
-    root["ssid"] = ssid;
-    root["password"] = password;
-    root["hostname"] = hostname;
-    root["static_ip_config"] = staticIPConfig;
+    root[F("ssid")] = ssid;
+    root[F("password")] = password;
+    root[F("hostname")] = hostname;
+    root[F("static_ip_config")] = staticIPConfig;
 
-    writeIP(root, "local_ip", localIP);
-    writeIP(root, "gateway_ip", gatewayIP);
-    writeIP(root, "subnet_mask", subnetMask);
-    writeIP(root, "dns_ip_1", dnsIP1);
-    writeIP(root, "dns_ip_2", dnsIP2);
+    writeIP(root, F("local_ip"), localIP);
+    writeIP(root, F("gateway_ip"), gatewayIP);
+    writeIP(root, F("subnet_mask"), subnetMask);
+    writeIP(root, F("dns_ip_1"), dnsIP1);
+    writeIP(root, F("dns_ip_2"), dnsIP2);
     printWifiSettings("Save", this);
     return 0;
 }
@@ -44,17 +44,17 @@ int WiFiSettings::load(JsonObject& root) {
     if(!DefaultHostname) {
         DefaultHostname = createDefaultHostname();
     }
-    ssid = root["ssid"] | DEFAULT_WIFI_SSID;
-    password = root["password"] | DEFAULT_WIFI_PASSWORD;
-    hostname = root["hostname"] | DefaultHostname;
-    staticIPConfig = root["static_ip_config"] | false;
+    ssid = root[F("ssid")] | DEFAULT_WIFI_SSID;
+    password = root[F("password")] | DEFAULT_WIFI_PASSWORD;
+    hostname = root[F("hostname")] | DefaultHostname;
+    staticIPConfig = root[F("static_ip_config")] | false;
 
     // extended settings
-    readIP(root, "local_ip", localIP);
-    readIP(root, "gateway_ip", gatewayIP);
-    readIP(root, "subnet_mask", subnetMask);
-    readIP(root, "dns_ip_1", dnsIP1);
-    readIP(root, "dns_ip_2", dnsIP2);
+    readIP(root, F("local_ip"), localIP);
+    readIP(root, F("gateway_ip"), gatewayIP);
+    readIP(root, F("subnet_mask"), subnetMask);
+    readIP(root, F("dns_ip_1"), dnsIP1);
+    readIP(root, F("dns_ip_2"), dnsIP2);
 
     // Swap dns servers if 2 is is set but 1 not
     if (!isIPSet(dnsIP1) && isIPSet(dnsIP2)) {
@@ -245,14 +245,14 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
     if (numNetworks > -1) {
         AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
         JsonObject root = response->getRoot();
-        JsonArray networks = root.createNestedArray("networks");
+        JsonArray networks = root.createNestedArray(F("networks"));
         for (int i = 0; i < numNetworks; i++) {
             JsonObject network = networks.createNestedObject();
-            network["rssi"] = WiFi.RSSI(i);
-            network["ssid"] = WiFi.SSID(i);
-            network["bssid"] = WiFi.BSSIDstr(i);
-            network["channel"] = WiFi.channel(i);
-            network["encryption_type"] = convertEncryptionType(WiFi.encryptionType(i));
+            network[F("rssi")] = WiFi.RSSI(i);
+            network[F("ssid")] = WiFi.SSID(i);
+            network[F("bssid")] = WiFi.BSSIDstr(i);
+            network[F("channel")] = WiFi.channel(i);
+            network[F("encryption_type")] = convertEncryptionType(WiFi.encryptionType(i));
         }
         response->setLength();
         request->send(response);
@@ -304,7 +304,7 @@ void WiFiStatusEndpoint::onStationModeDisconnected(const WiFiEventStationModeDis
 
 void WiFiStatusEndpoint::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
   Serial.printf_P(
-      PSTR("WiFi Got IP. localIP=%s, hostName=%s\r\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
+      PSTR("WiFi Got IP. localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
 }
 
 
@@ -313,24 +313,24 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
   wl_status_t status = WiFi.status();
-  root["mode"] = WiFi.getMode();
-  root["status"] =status;
+  root[F("mode")] = WiFi.getMode();
+  root[F("status")] =status;
   if (status == WL_CONNECTED) {
-    root["local_ip"] = WiFi.localIP().toString();
-    root["mac_address"] = WiFi.macAddress();
-    root["rssi"] = WiFi.RSSI();
-    root["ssid"] = WiFi.SSID();
-    root["bssid"] = WiFi.BSSIDstr();
-    root["channel"] = WiFi.channel();
-    root["subnet_mask"] = WiFi.subnetMask().toString();
-    root["gateway_ip"] = WiFi.gatewayIP().toString();
+    root[F("local_ip")] = WiFi.localIP().toString();
+    root[F("mac_address")] = WiFi.macAddress();
+    root[F("rssi")] = WiFi.RSSI();
+    root[F("ssid")] = WiFi.SSID();
+    root[F("bssid")] = WiFi.BSSIDstr();
+    root[F("channel")] = WiFi.channel();
+    root[F("subnet_mask")] = WiFi.subnetMask().toString();
+    root[F("gateway_ip")] = WiFi.gatewayIP().toString();
     IPAddress dnsIP1 = WiFi.dnsIP(0);
     IPAddress dnsIP2 = WiFi.dnsIP(1);
     if (isIPSet(dnsIP1)) {
-      root["dns_ip_1"] = dnsIP1.toString();
+      root[F("dns_ip_1")] = dnsIP1.toString();
     }
     if (isIPSet(dnsIP2)) {
-      root["dns_ip_2"] = dnsIP2.toString();
+      root[F("dns_ip_2")] = dnsIP2.toString();
     }
   }
   response->setLength();

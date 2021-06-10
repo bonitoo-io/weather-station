@@ -59,18 +59,12 @@ tConfig conf = {
   0,  //humOffset
   
   IOT_CENTER_URL, //iotCenterUrl;
-  60,             //iotRefreshMin
+  60             //iotRefreshMin
 };
 
 // Initialize the oled display
 SSD1306Wire display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi ui( &display);
-  "pool.ntp.org,time.nis.gov,time.google.com",
-};
-
-// Initialize the oled display
-SSD1306Wire     display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
-OLEDDisplayUi   ui( &display );
 #if defined(WS_FT_SERVER)
 AsyncWebServer server(80);
 WeatherStation station(&server);
@@ -181,8 +175,9 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
 
   drawUpdateProgress(display, 0, getStr(s_Connecting_IoT_Center));
-  if (firstStart)
-    loadIoTCenter(firstStart, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
+  //if (firstStart)
+  //TODO pass config and update influxdb settings
+    //loadIoTCenter(firstStart, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
   
   drawUpdateProgress(display, 10, getStr(s_Detecting_location));
     
@@ -217,7 +212,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 uint16_t nextUIUpdate = 0;
 
 void loop() {
-  #if defined(WS_FT_SERVER)  
+#if defined(WS_FT_SERVER)  
   station.loop();
 #endif
   if(!initialized) {
@@ -232,7 +227,7 @@ void loop() {
     //Sync IoT Center configuration
     if (lastUpdateMins % conf.iotRefreshMin == 0) {
       digitalWrite( LED, LOW);
-      loadIoTCenter( false, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
+      //loadIoTCenter( false, conf.iotCenterUrl, deviceID, conf.influxdbUrl, conf.influxdbOrg, conf.influxdbToken, conf.influxdbBucket, conf.influxdbRefreshMin, conf.iotRefreshMin, conf.latitude, conf.longitude);
       digitalWrite( LED, HIGH);
     }
 

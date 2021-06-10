@@ -15,20 +15,20 @@ WeatherStation::WeatherStation(AsyncWebServer* server):
     WWWData::registerRoutes(
       [server, this](const String& uri, const String& contentType, const uint8_t* content, size_t len) {
         ArRequestHandlerFunction requestHandler = [uri,contentType, content, len](AsyncWebServerRequest* request) {
-          Serial.print("Serving ");
+          Serial.print(F("Serving "));
           Serial.print(uri);
           uint32_t s = millis();
           AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
-          response->addHeader("Content-Encoding", "gzip");
+          response->addHeader(F("Content-Encoding"), F("gzip"));
           request->send(response);
-          Serial.print(" in ");
+          Serial.print(F(" in "));
           Serial.println(millis()-s);
-           Serial.printf("RAM 4: %d\n", ESP.getFreeHeap());
+           Serial.printf_P(PSTR("RAM 4: %d\n"), ESP.getFreeHeap());
         };
         server->on(uri.c_str(), HTTP_GET, requestHandler);
         // Serving non matching get requests with "/index.html"
         // OPTIONS get a straight up 200 response
-        if (uri.equals("/index.html")) {
+        if (uri.equals(F("/index.html"))) {
           server->onNotFound([requestHandler](AsyncWebServerRequest* request) {
             if (request->method() == HTTP_GET) {
               requestHandler(request);
@@ -43,9 +43,9 @@ WeatherStation::WeatherStation(AsyncWebServer* server):
 
 // Enable CORS for UI development
 #if 1
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Credentials", "true");
+    DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("http://localhost:3000"));
+    DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("Accept, Content-Type, Authorization"));
+    DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Credentials"), F("true"));
 #endif
 }
 
