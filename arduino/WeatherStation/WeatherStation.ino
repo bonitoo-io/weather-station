@@ -1,4 +1,4 @@
-#define VERSION "0.44"
+#define VERSION "0.45"
 
 // Include libraries
 #include <Arduino.h>
@@ -97,7 +97,7 @@ void updateAstronomy(bool firstStart, const float lat, const float lon);
 void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey);
 void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey);
 
-void updateInfluxDB( bool firstStart, const String &deviceID, const String &wifi, const String &version, const String &location);
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &bucket, const String &wifi, const String &version, const String &location);
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID);
 
@@ -177,7 +177,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
-  updateInfluxDB( firstStart, deviceID, WiFi.SSID(), VERSION, conf.location);
+  updateInfluxDB( firstStart, deviceID, conf.influxdbBucket, WiFi.SSID(), VERSION, conf.location);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
 

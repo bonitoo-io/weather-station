@@ -1,6 +1,8 @@
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 
+extern int tempHistory[90];
+
 Point sensor("environment"); // Data point
 InfluxDBClient influxDBClient;
 
@@ -11,9 +13,33 @@ void setupInfluxDB( const String &serverUrl, const String &org, const String &bu
   influxDBClient.setHTTPOptions(htOpt);  
 }
 
+void loadTempHistory( const String &bucket, const String &deviceID) { //load temperature from InfluxDB - the last 90 minutes and the selected device
+  String query = String(F("from(bucket: \"")) + bucket + String(F("\") |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == \"")) + deviceID +  String(F("\")"
+  "|> filter(fn: (r) => r[\"_measurement\"] == \"environment\") |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")"
+  "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)"));
 
-void updateInfluxDB( bool firstStart, const String &deviceID, const String &wifi, const String &version, const String &location) {
-  
+  Serial.print(F("Querying with: "));
+  Serial.println(query);
+
+  unsigned int i = 0;
+  FluxQueryResult result = influxDBClient.query(query);
+  while (result.next()) {
+    double value = result.getValueByName("_value").getDouble();
+    tempHistory[ i] = round( value * 10);
+    i++;
+    if (i == 90)
+      break;
+  }
+
+  // Check if there was an error
+  if(result.getError().length() > 0) {
+    Serial.print(F("Query result error: "));
+    Serial.println(result.getError());
+  }
+  result.close();
+}
+
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &bucket, const String &wifi, const String &version, const String &location) {
   // Check server connection
   if (firstStart) {
     sensor.addTag(String(F("clientId")), deviceID);
@@ -27,6 +53,7 @@ void updateInfluxDB( bool firstStart, const String &deviceID, const String &wifi
     if (influxDBClient.validateConnection()) {
       Serial.print(F("Connected to InfluxDB: "));
       Serial.println(influxDBClient.getServerUrl());
+      loadTempHistory( bucket, deviceID);
     } else {
       Serial.print(F("InfluxDB connection failed: "));
       Serial.println(influxDBClient.getLastErrorMessage());
