@@ -26,14 +26,11 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
   max10 = ceil((float)max10/10);
   if (min10 == max10)
     max10++;
-  if (max10 == (min10 + 1))
-    min10--;
   min10 *= 10;
   max10 *= 10;
 
   float scale = 30.0 / (float)(max10-min10);
-  //Serial.println( String( min10) + "~" + String( max10) + "~" + String( scale,2));
-  
+
   // Plot temperature graph
   int x1 = 23;
   int y1 = 39;
@@ -53,7 +50,12 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
   // Vertical axis
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawLine( x1 + x, y1 + y, x1 + x, y1-30+y);
-  for (int i=min10; i<=max10; i+=10) {
+  int step = ceil((float)(max10-min10)/3/10)*10;
+  if (step < 10)
+    step = 10;  //Minimal value
+
+  //Serial.println( String( min10) + "~" + String( max10) + "~" + String( scale,2) + "=" + String( step));
+  for (int i=min10; i<=max10; i+=step) {
     int mark = round((float)(i - min10) * scale);
     display->drawLine( x1 + x, y1 - mark + y, x1-2 + x, y1 - mark + y);
     display->drawString( x1-4 + x, y1 - mark - 7 + y, String((float)i/10, 0));
