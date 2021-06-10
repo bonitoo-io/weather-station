@@ -18,13 +18,13 @@ void loadTempHistory( const String &bucket, const String &deviceID) { //load tem
   "|> filter(fn: (r) => r[\"_measurement\"] == \"environment\") |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")"
   "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)"));
 
-  Serial.print(F("Querying with: "));
+  Serial.print(F("Querying: "));
   Serial.println(query);
 
   unsigned int i = 0;
   FluxQueryResult result = influxDBClient.query(query);
   while (result.next()) {
-    double value = result.getValueByName("_value").getDouble();
+    double value = result.getValueByName(String(F("_value"))).getDouble();
     tempHistory[ i] = round( value * 10);
     i++;
     if (i == 90)
@@ -33,7 +33,7 @@ void loadTempHistory( const String &bucket, const String &deviceID) { //load tem
 
   // Check if there was an error
   if(result.getError().length() > 0) {
-    Serial.print(F("Query result error: "));
+    Serial.print(F("Query error: "));
     Serial.println(result.getError());
   }
   result.close();

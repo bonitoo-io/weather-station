@@ -3,17 +3,24 @@
 
 extern int tempHistory[90];
 
-void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigned int size, int16_t x, int16_t y) {
+int convertCtoF(int c) {
+  return round(((float)(c/10) * 1.8 + 32) * 10);
+}
+
+void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int data[], unsigned int size, int16_t x, int16_t y) {
   //Caclculate min, max and number of samples
   int min10 = 32767;
   int max10 = -32768;
   for (unsigned int i = 0; i < size; i++) {
-    if (data[i] == 0xffff)  //skip empty values
+    int d = data[i];
+    if (d == 0xffff)  //skip empty values
       continue;
-    if ( data[i] > max10)
-      max10 = data[i];
-    if ( data[i] < min10)
-      min10 = data[i];
+    if (convert2F)
+      d = convertCtoF(d);
+    if ( d > max10)
+      max10 = d;
+    if ( d < min10)
+      min10 = d;
   }
   min10 = floor((float)min10/10);
   max10 = ceil((float)max10/10);
@@ -54,12 +61,13 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigne
 
   for (unsigned int i = 0; i < size; i++)
     if ( data[i] != 0xffff) {
-      int d = round((float)(data[i] - min10) * scale);
+      int d = convert2F ? convertCtoF( data[i]) : data[i];
+      d = round((float)(d - min10) * scale);
       //Serial.println( String( i) + "-" + String( data[i]) + "=" + String(d));
       display->setPixel( i+x1 + x, y1 - d + y);
     }
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  drawLineChart( display, strTempUnit(), tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
+  drawLineChart( display, strTempUnit(), !conf.useMetric, tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
 }
