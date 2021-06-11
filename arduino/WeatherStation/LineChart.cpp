@@ -61,13 +61,19 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
     display->drawString( x1-4 + x, y1 - mark - 7 + y, String((float)i/10, 0));
   }
 
+  int prev = 0xffff;
   for (unsigned int i = 0; i < size; i++)
     if ( data[i] != 0xffff) {
       int d = convert2F ? convertCtoF( data[i]) : data[i];
       d = round((float)(d - min10) * scale);
       //Serial.println( String( i) + "-" + String( data[i]) + "=" + String(d));
-      display->setPixel( i+x1 + x, y1 - d + y);
-    }
+      if (prev == 0xffff)
+        display->setPixel( i+x1 + x, y1 - d + y);
+      else
+        display->drawLine( i+x1 + x - 1, y1 - prev + y, i+x1 + x, y1 - d + y);
+      prev = d;
+    } else
+      prev = 0xffff;
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
