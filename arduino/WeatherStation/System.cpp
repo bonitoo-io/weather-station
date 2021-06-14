@@ -1,3 +1,4 @@
+#if 1
 #include "System.h"
 #include "Settings.h"
 #include <AsyncJson.h>
@@ -32,8 +33,8 @@ void SystemStatusEndpoint::systemStatusHandler(AsyncWebServerRequest* request) {
   request->send(response);
 }
 
-SystemServiceEndpoint::SystemServiceEndpoint(AsyncWebServer* server, FS* fs):
-  _fs(fs) {
+SystemServiceEndpoint::SystemServiceEndpoint(AsyncWebServer* server, FSPersistence* persistence):
+  _persistence(persistence) {
   server->on(SYSTEM_RESTART_ENDPOINT_PATH, HTTP_POST, std::bind(&SystemServiceEndpoint::restartHandler, this, std::placeholders::_1));
   server->on(SYSTEM_FACTORY_RESET_ENDPOINT_PATH, HTTP_POST, std::bind(&SystemServiceEndpoint::factoryResetHandler, this, std::placeholders::_1));
 }
@@ -53,13 +54,8 @@ void SystemServiceEndpoint::factoryResetHandler(AsyncWebServerRequest* request) 
  * factoryReset function assumes that all files are stored flat in the config directory.
  */
 void SystemServiceEndpoint::factoryReset() {
-  Dir configDirectory = _fs->openDir(FS_CONFIG_DIRECTORY);
-  while (configDirectory.next()) {
-    String path = FS_CONFIG_DIRECTORY;
-    path.concat(F("/"));
-    path.concat(configDirectory.fileName());
-    _fs->remove(path);
-  }
+  Serial.println(F("Factory reset request"));
+  _persistence->removeConfigs();
   restartNow();
 }
-
+#endif

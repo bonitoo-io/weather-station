@@ -1,6 +1,7 @@
 #ifndef WS_WIFI_H
 #define WS_WIFI_H
 
+#include <ESP8266WiFi.h>
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
@@ -15,7 +16,7 @@
 #define WIFI_SETTINGS_ENDPOINT_PATH "/api/wifiSettings"
 
 #define AP_SSID_PREFIX "weather-station-"
-#define AP_PASSWORD "influxdata"
+#define AP_PASSWORD ""
 #define AP_LOCAL_IP "192.168.4.1"
 #define AP_GATEWAY_IP "192.168.4.1"
 #define AP_SUBNET_MASK "255.255.255.0"
@@ -39,78 +40,82 @@ public:
     IPAddress dnsIP1;
     IPAddress dnsIP2;
 public:
+    WiFiSettings();
     virtual int save(JsonObject& root) override;
     virtual int load(JsonObject& root) override;
     virtual String filePath() override { return F(FS_CONFIG_DIRECTORY "/wifiSettings.json"); }
-};
-
-class WiFiStationService {
-public:
-    WiFiStationService(WiFiSettings *_settings);
-
-    void begin();
-    void loop();
-
 private:
-    WiFiSettings *_settings;
-    unsigned long _lastConnectionAttempt;
-    WiFiEventHandler _onStationModeDisconnectedHandler;
-    void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event);
-
-
-    void reconfigureWiFiConnection();
-    void manageSTA();
+    static char *DefaultHostname;
 };
 
-class WifiAccessPointService  {
+struct APInfo {
+    IPAddress ipAddress;
+    String ssid;
+    String password;
+    bool running;
+};
+
+enum WifiConnectionEvent {
+    ConnectingStarted = 0,
+    ConnectingSuccess,
+    ConnectingFailed
+};
+
+typedef std::function<void(APInfo *apInfo)> APEventHandler;
+typedef std::function<void(WifiConnectionEvent event, const char *ssid)> WiFiConnectionEventHandler;
+
+class WiFiManager {
 public:
-    WifiAccessPointService();
+    WiFiManager(WiFiSettings *_settings);
 
     void begin();
     void loop();
-
+    void setAPEventHandler(APEventHandler handler) { 
+        _apEventHandler = handler;
+    }
+     void setWiFiConnectionEventHandler(WiFiConnectionEventHandler handler) { 
+        _wifiEventHandler = handler;
+    }
  private:
-    // for the captive portal
-    DNSServer *_dnsServer;
-
-    // for the management delay loop
-    unsigned long _lastManaged;
-    boolean _reconfigureAp;
-
-    void reconfigureAP();
-    void manageAP();
-    void startAP();
-    void stopAP();
-    void handleDNS();
+  void reconfigureWiFiConnection();
+  void manageSTA();
+  void manageAP();
+  void startAP();
+  void stopAP();
+  void handleDNS();
+  void onStationModeConnected(const WiFiEventStationModeConnected& event);
+  void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event);
+  void onStationModeGotIP(const WiFiEventStationModeGotIP& event);
+  void notifyWifiEvent(WifiConnectionEvent event);
+  void notifyAPEvent();
+ private:
+  WiFiSettings *_settings;
+  APInfo _apInfo;
+  // for the management delay loop
+  unsigned long _lastConnectionAttempt;
+  // for the captive portal
+  DNSServer *_dnsServer;
+  APEventHandler _apEventHandler;
+  WiFiConnectionEventHandler _wifiEventHandler;
+  // WiFi event handlers
+  WiFiEventHandler _onStationModeConnectedHandler;
+  WiFiEventHandler _onStationModeDisconnectedHandler;
+  WiFiEventHandler _onStationModeGotIPHandler;
 };
 
-
+#if 1
 #define SCAN_NETWORKS_ENDPOINT_PATH "/api/scanNetworks"
 #define LIST_NETWORKS_ENDPOINT_PATH "/api/listNetworks"
 
 class WiFiScannerEndpoint {
-public:
-    WiFiScannerEndpoint(AsyncWebServer* server);
+ public:
+  WiFiScannerEndpoint(AsyncWebServer* server);
 
-private:
-    void scanNetworks(AsyncWebServerRequest* request);
-    void listNetworks(AsyncWebServerRequest* request);
+ private:
+  void scanNetworks(AsyncWebServerRequest* request);
+  void listNetworks(AsyncWebServerRequest* request);
 
-    uint8_t convertEncryptionType(uint8_t encryptionType);
-};
-
-#define WIFI_SETTINGS_ENDPOINT_PATH "/api/wifiSettings"
-
-class WiFiSettingsEndpoint {
-public:
-    WiFiSettingsEndpoint(AsyncWebServer* server, FSPersistence *persistence, WiFiSettings *_settings);
-private:
-    void fetchSettings(AsyncWebServerRequest* request);
-    void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
-private:
-    WiFiSettings *_settings;
-    FSPersistence *_persistence;
-    AsyncCallbackJsonWebHandler _updateHandler;
+  uint8_t convertEncryptionType(uint8_t encryptionType);
 };
 
 #define WIFI_STATUS_ENDPOINT_PATH "/api/wifiStatus"
@@ -121,13 +126,6 @@ class WiFiStatusEndpoint {
 
  private:
   void wifiStatusHandler(AsyncWebServerRequest* request);
-  // handler refrences for logging important WiFi events over serial
-  WiFiEventHandler _onStationModeConnectedHandler;
-  WiFiEventHandler _onStationModeDisconnectedHandler;
-  WiFiEventHandler _onStationModeGotIPHandler;
-  // static functions for logging WiFi events to the UART
-  static void onStationModeConnected(const WiFiEventStationModeConnected& event);
-  static void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event);
-  static void onStationModeGotIP(const WiFiEventStationModeGotIP& event);
 };
+#endif
 #endif //WS_WIFI_H

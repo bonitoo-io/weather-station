@@ -27,12 +27,16 @@ export const wifiStatus = ({ status }: WiFiStatus) => {
       return "Idle";
     case WiFiConnectionStatus.WIFI_STATUS_NO_SSID_AVAIL:
       return "No SSID Available";
+    case WiFiConnectionStatus.WIFI_STATUS_SCAN_COMPLETED:
+      return "Scan Completed";
     case WiFiConnectionStatus.WIFI_STATUS_CONNECTED:
       return "Connected";
     case WiFiConnectionStatus.WIFI_STATUS_CONNECT_FAILED:
       return "Connection Failed";
     case WiFiConnectionStatus.WIFI_STATUS_CONNECTION_LOST:
       return "Connection Lost";
+    case WiFiConnectionStatus.WIFI_STATUS_WRONG_PASSWORD:
+      return "Wrong Password";
     case WiFiConnectionStatus.WIFI_STATUS_DISCONNECTED:
       return "Disconnected";
     default:

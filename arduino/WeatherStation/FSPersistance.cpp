@@ -13,7 +13,7 @@ void FSPersistence::readFromFS(Settings *s) {
         DynamicJsonDocument jsonDocument = DynamicJsonDocument(DEFAULT_BUFFER_SIZE);
         DeserializationError error = deserializeJson(jsonDocument, settingsFile);
         if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            Serial.println(F("  deserialize ok"));
+            Serial.println();
             JsonObject jsonObject = jsonDocument.as<JsonObject>();
             s->load(jsonObject);
             settingsFile.close();
@@ -42,7 +42,7 @@ bool FSPersistence::writeToFS(Settings *s) {
         Serial.println(F(" not exist"));
         return false;
     }
-    Serial.println(F(" ok"));
+    Serial.println();
 
     // serialize the data to the file
     serializeJson(jsonDocument, settingsFile);
@@ -52,4 +52,14 @@ bool FSPersistence::writeToFS(Settings *s) {
 
 void FSPersistence::begin() {
     _fs->begin();
+}
+
+void FSPersistence::removeConfigs() {
+  Dir configDirectory = _fs->openDir(FS_CONFIG_DIRECTORY);
+  while (configDirectory.next()) {
+    String path = FS_CONFIG_DIRECTORY;
+    path.concat(F("/"));
+    path.concat(configDirectory.fileName());
+    _fs->remove(path);
+  }
 }

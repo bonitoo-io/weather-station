@@ -3,12 +3,11 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 #include "Tools.h"
+#include "WiFi.h"
+#include "InfluxDBHelper.h"
 
 float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();
-//TODO: encapsulate
-bool errorInfluxDB() { return false; }
-String errorInfluxDBMsg() { return ""; }
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -49,11 +48,12 @@ void drawSplashScreen(OLEDDisplay *display, const char* version) {
   display->display();
 }
 
+bool shouldDrawWifiProgress = false;
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid) {
   int counter = 0;
-  Serial.print(F("Wifi "));
-  Serial.print( ssid);
-  while (WiFi.status() != WL_CONNECTED) {
+  wl_status_t status;
+  shouldDrawWifiProgress = true;
+  while(shouldDrawWifiProgress) {
     Serial.print(F("."));
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
@@ -66,8 +66,21 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
     display->display();
     counter++;
     delay(500);
-  }
+  } 
   Serial.println();
+}
+
+
+void drawAPInfo(OLEDDisplay *display, APInfo *info) {
+  display->clear();
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString(64, 0, String(F("1. Connect to Wifi")));
+  display->drawString(64, 10, info->ssid);
+  display->drawString(64, 20, String(F("2. Point web browser to")));
+  display->drawString(64, 30, info->ipAddress.toString());
+  display->drawString(64, 40, String(F("3. Configure WiFi")));
+  display->display();
 }
 
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label) {

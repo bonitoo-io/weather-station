@@ -1,5 +1,6 @@
 #include <time.h>
 #include <ESPHTTPClient.h>
+#include "InfluxDBHelper.h"
 
 //Load value for specific parameter
 String loadParameter( const String& response, const __FlashStringHelper* param_p) {
@@ -13,9 +14,9 @@ String loadParameter( const String& response, const __FlashStringHelper* param_p
   return response.substring( response.indexOf(":", i) + 2, response.indexOf("\n", i));
 }
 
-void loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, String& influxdbUrl, String& influxdbOrg, String& influxdbToken, String& influxdbBucket, unsigned int& influxdbRefreshMin, unsigned int& iotRefreshMin, float& latitude, float& longitude) {
+bool loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude) {
   if ( iot_url.length() == 0) //if iot_center url is not defined, exit
-    return;
+    return false;
   
   // Load config from IoT Center
   WiFiClient client;
@@ -55,15 +56,15 @@ void loadIoTCenter( bool firstStart, const String& iot_url, const String &device
     Serial.print(String(ctime(&ttServer)));*/
 
     //Load InfluxDB parameters
-    influxdbUrl = loadParameter( payload, F("influx_url"));
-    influxdbOrg = loadParameter( payload, F("influx_org"));
-    influxdbToken = loadParameter( payload, F("influx_token"));
-    influxdbBucket = loadParameter( payload, F("influx_bucket"));
+    influxdbSettings->serverURL = loadParameter( payload, F("influx_url"));
+    influxdbSettings->org = loadParameter( payload, F("influx_org"));
+    influxdbSettings->authorizationToken = loadParameter( payload, F("influx_token"));
+    influxdbSettings->bucket = loadParameter( payload, F("influx_bucket"));
 
     //Load refresh parameters
-    influxdbRefreshMin = loadParameter( payload, F("measurement_interval")).toInt();
-    if (influxdbRefreshMin == 0)
-      influxdbRefreshMin = 1;
+    influxdbSettings->writeInterval = loadParameter( payload, F("measurement_interval")).toInt();
+    if (influxdbSettings->writeInterval == 0)
+      influxdbSettings->writeInterval  = 1;
 
     iotRefreshMin = loadParameter( payload, F("configuration_refresh")).toInt();
     if (iotRefreshMin == 0)
@@ -73,5 +74,7 @@ void loadIoTCenter( bool firstStart, const String& iot_url, const String &device
     longitude = loadParameter( payload, F("default_lon")).toDouble();
   } else {
     Serial.println(F("IoT Center GET failed, emty response"));
+    return false;
   }
+  return true;
 }

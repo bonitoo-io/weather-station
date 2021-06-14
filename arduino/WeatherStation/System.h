@@ -1,16 +1,14 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
-
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
-#include <LittleFS.h>
-
+#include "FSPersistance.h"
 
 #define SYSTEM_STATUS_ENDPOINT_PATH "/api/systemStatus"
 
 class SystemStatusEndpoint {
  public:
-  SystemStatusEndpoint(AsyncWebServer* server, FS* fs);
+  SystemStatusEndpoint(AsyncWebServer *server, FS *fs);
 
  private:
   FS *_fs;
@@ -22,10 +20,11 @@ class SystemStatusEndpoint {
 
 class SystemServiceEndpoint {
  public:
-  SystemServiceEndpoint(AsyncWebServer* server, FS* fs);
+  SystemServiceEndpoint(AsyncWebServer* server, FSPersistence* persistence);
   void factoryReset();
 
   static void restartNow() {
+    Serial.println(F("Restart request"));
     WiFi.disconnect(true);
     delay(500);
     ESP.restart();
@@ -35,7 +34,7 @@ class SystemServiceEndpoint {
   void restartHandler(AsyncWebServerRequest* request);
   void factoryResetHandler(AsyncWebServerRequest* request);
  private:
-  FS *_fs;
+  FSPersistence* _persistence;
 };
 
 #endif  // end SystemStatus_h

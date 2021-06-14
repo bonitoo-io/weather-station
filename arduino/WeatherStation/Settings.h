@@ -2,9 +2,9 @@
 #define SETTINGS_H
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
-#include <IPAddress.h>
 #include <functional>
 
 #define DEFAULT_BUFFER_SIZE 1024
