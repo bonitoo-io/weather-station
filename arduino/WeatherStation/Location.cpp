@@ -114,7 +114,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   latitude = ipListener.latitude;
   longitude = ipListener.longitude;
   location = ipListener.city + "," + country;
-  
+
   if ( ipListener.lang == "cs")    //replace cs->cz code for weather
     ipListener.lang = "cz";
   strncpy( lang, ipListener.lang.c_str(), 2);

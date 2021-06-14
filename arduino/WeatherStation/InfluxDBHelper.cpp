@@ -10,7 +10,7 @@ void setupInfluxDB( const String &serverUrl, const String &org, const String &bu
   influxDBClient.setConnectionParams(serverUrl.c_str(), org.c_str(), bucket.c_str(), authToken.c_str(), InfluxDbCloud2CACert);
   HTTPOptions htOpt;
   htOpt.connectionReuse(refresh_sec <= 60);
-  influxDBClient.setHTTPOptions(htOpt);  
+  influxDBClient.setHTTPOptions(htOpt);
 }
 
 void loadTempHistory( const String &bucket, const String &deviceID) { //load temperature from InfluxDB - the last 90 minutes and the selected device

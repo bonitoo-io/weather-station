@@ -20,7 +20,7 @@ struct tConfig {
 // Go to https://openweathermap.org/find?q= and search for a location  
   String location;
   char language[3];
-  int utcOffset;
+  int utcOffset;  //in seconds
   float latitude;
   float longitude;
   bool useMetric;
