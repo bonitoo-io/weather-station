@@ -11,9 +11,6 @@ String strWind( float w);
 String utf8ascii(const String s);
 
 struct tConfig {
-  String wifi_ssid;
-  String wifi_pwd;
-
   bool detectLocationIP;
   unsigned int updateDataMin;
   String openweatherApiKey;
@@ -29,15 +26,8 @@ struct tConfig {
   String ntp;
   int8_t tempOffset;
   int8_t humOffset;
-  
   String iotCenterUrl;
   unsigned int iotRefreshMin;
-  
-  String influxdbUrl;
-  String influxdbToken;
-  String influxdbOrg;
-  String influxdbBucket;
-  unsigned int influxdbRefreshMin;
 };
 
 struct tForecast {

@@ -3,11 +3,11 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 #include "Tools.h"
+#include "WiFi.h"
+#include "InfluxDBHelper.h"
 
 float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();
-bool errorInfluxDB();
-String errorInfluxDBMsg();
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -48,16 +48,17 @@ void drawSplashScreen(OLEDDisplay *display, const char* version) {
   display->display();
 }
 
-void drawWifiProgress(OLEDDisplay *display, const char* version) {
+bool shouldDrawWifiProgress = false;
+void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid) {
   int counter = 0;
-  Serial.print(F("Wifi "));
-  Serial.print( conf.wifi_ssid);
-  while (WiFi.status() != WL_CONNECTED) {
+  wl_status_t status;
+  shouldDrawWifiProgress = true;
+  while(shouldDrawWifiProgress) {
     Serial.print(F("."));
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
     display->drawString(88, 0, getStr(s_Connecting_WiFi));
-    display->drawString(88, 15, conf.wifi_ssid);
+    display->drawString(88, 15, ssid);
     display->drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
     display->drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
     display->drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
@@ -65,8 +66,21 @@ void drawWifiProgress(OLEDDisplay *display, const char* version) {
     display->display();
     counter++;
     delay(500);
-  }
+  } 
   Serial.println();
+}
+
+
+void drawAPInfo(OLEDDisplay *display, APInfo *info) {
+  display->clear();
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString(64, 0, String(F("1. Connect to Wifi")));
+  display->drawString(64, 10, info->ssid);
+  display->drawString(64, 20, String(F("2. Point web browser to")));
+  display->drawString(64, 30, info->ipAddress.toString());
+  display->drawString(64, 40, String(F("3. Configure WiFi")));
+  display->display();
 }
 
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label) {

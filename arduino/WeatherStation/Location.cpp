@@ -26,7 +26,7 @@ class tIPListener: public JsonListener {
 
 
 void tIPListener::value(String value) {
-  Serial.println(String(F("key: ")) + _key + String(F(" value: ")) + value);
+  //Serial.println(String(F("key: ")) + _key + String(F(" value: ")) + value);
   if ( _key == "ip") {
     Serial.print( F("External IP: "));
     Serial.println( value);
@@ -69,23 +69,25 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   client.setInsecure();  //Ignore certificate
   JsonStreamingParser parser;
   parser.setListener(&ipListener);
+  Serial.print(F("Getting IP based regional info"));
 
   http.begin(client, String(F("https://ipapi.co/json")));
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
   if (httpCode == HTTP_CODE_OK) {
+    Serial.println();
     int c = 1;
     while (http.connected() && c) {
       uint8_t payload;
       c = client.read(&payload, sizeof(payload));
       parser.parse(payload);
     }
+    
   } else {
-    Serial.print( F("Detect IP error code: "));
+    Serial.print(F(" error: "));
     Serial.println( httpCode);
   }
   http.end();
-
   if (httpCode != HTTP_CODE_OK)
     return;
 
