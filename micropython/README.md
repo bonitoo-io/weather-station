@@ -12,10 +12,11 @@ to avoid screen burn-in.
 <img src="ws.gif" width="30%" height="30%">
 
 It consists of:
-- `config.json` - JSON objects with configuration.
-- `boot.py` - Micropython boot file.
-- `main.py` - Micropython main code.
-- `wm.py` - Wi-Fi Manager to allow automatic wi-fi connections according to _known_networks_ entries in `config.json`. 
+  - `config.json` - JSON objects with configuration.
+  - `webrepl_cfg.py` - WebREPL configuration. 
+  - `boot.py` - Micropython boot file.
+  - `main.py` - Micropython main code.
+  - `wm.py` - Wi-Fi Manager to allow automatic wi-fi connections according to _known_networks_ entries in `config.json`. 
   In case of no _known_networks_ available it is also capable of running private access point with WebRepl.
 
 ## How to run the Micropython WeatherStation
@@ -26,6 +27,7 @@ It consists of:
     - configure wi-fi connection details (With Internet connection for NTP routine)
     - add your influxdb2 connection details
     - adjust intervals
+4) Set password for WebREPL connection in `webrepl_cfg.py`  
 4) Adjust Point object parameters to reflect your infrastructure:
    ```python
    def publish(data, client):
@@ -40,7 +42,7 @@ It consists of:
      https://docs.micropython.org/en/latest/library/utime.html#module-utime
      
 5) Connect to the device.
-6) Put files into device.
+6) Put all files into device.
 7) Restart WeatherStation device.
 
 ## Firmware

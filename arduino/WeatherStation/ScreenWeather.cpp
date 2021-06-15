@@ -16,7 +16,7 @@ float getCurrentWeatherTemperature() {
 }
 
 
-void updateCurrentWeather( const bool metric, const String lang, const String location, const String APIKey) {
+void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey) {
   OpenWeatherMapCurrent currentWeatherClient;
   OpenWeatherMapCurrentData _currentWeather;
   currentWeatherClient.setMetric(metric);
@@ -34,7 +34,7 @@ void updateCurrentWeather( const bool metric, const String lang, const String lo
 }
 
 
-void updateForecast( const bool metric, const String lang, const String location, const String APIKey) {
+void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
   forecastClient.setMetric(metric);
@@ -57,10 +57,10 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(conf.location));
-  display->drawString(display->getWidth() + x, 38 + y, "(" + String(currentWeather.tempMin) + "-" + strTemp(currentWeather.tempMax) + ")");
+  display->drawString(display->getWidth() + x, 38 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 38 + y, utf8ascii(currentWeather.description));
-  display->drawString(40 + x, 17 + y, "wind");
+  display->drawString(40 + x, 17 + y, getStr( s_wind));
   display->drawString(38 + x, 27 + y, strWind(currentWeather.windSpeed));
 
   display->setFont(ArialMT_Plain_24);
@@ -80,7 +80,7 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x + 20, y + 5, WDAY_NAMES[timeInfo->tm_wday]);
+  display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
   display->drawString(x + 20, y + 39, strTemp(forecasts[dayIndex].temp));
   
   display->setFont(Meteocons_Plain_21);
@@ -93,6 +93,26 @@ void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   drawForecastDetails(display, x + 88, y, 2);
 }
 
+void arrow(OLEDDisplay *display, int x1, int y1, int x2, int y2, int alength, int awidth) {
+  float distance;
+  int dx, dy, x2o,y2o,x3,y3,x4,y4,k;
+  distance = sqrt(pow((x1 - x2),2) + pow((y1 - y2), 2));
+  dx = x2 + (x1 - x2) * alength / distance;
+  dy = y2 + (y1 - y2) * alength / distance;
+  k = awidth / alength;
+  x2o = x2 - dx;
+  y2o = dy - y2;
+  x3 = y2o * k + dx;
+  y3 = x2o * k + dy;
+  //
+  x4 = dx - y2o * k;
+  y4 = dy - x2o * k;
+  display->drawLine(x1, y1, x2, y2);
+  display->drawLine(x1, y1, dx, dy);
+  display->drawLine(x3, y3, x4, y4);
+  display->drawLine(x3, y3, x2, y2);
+  display->drawLine(x2, y2, x4, y4);
+} 
 
 void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   time_t observationTimestamp = forecasts[dayIndex].observationTime;
@@ -101,20 +121,22 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(x + 20, y + 5, WDAY_NAMES[timeInfo->tm_wday]);
+  display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
   
   const int clockSize=10;
   int clockCenterX=21+x;
   int clockCenterY=28+y;
-
+  float f;
+  
   // Draw marks for hours
   for (unsigned int i=0; i<8; i++) {
-    float f = ((i * 45) + 270) * 0.0175;  //angle to radians
-    display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-2+(i%2==0?0:1))*cos(f)+clockCenterX, (clockSize-1+(i%2==0?0:1))*sin(f)+clockCenterY);
+    f = ((i * 45) + 270) * 0.0175;  //angle to radians
+    if ( abs((int)((i * 45) + 270) - (int)(forecasts[dayIndex].windDeg+90)) > 40)
+      display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-2+(i%2==0?0:1))*cos(f)+clockCenterX, (clockSize-1+(i%2==0?0:1))*sin(f)+clockCenterY);
   }
-  float w = ((forecasts[dayIndex].windDeg)+270)*0.0175;
-  display->drawLine(clockSize*cos(w)+clockCenterX, clockSize*sin(w)+clockCenterY, cos(w)+clockCenterX, sin(w)+clockCenterY);
-  
+  f = (forecasts[dayIndex].windDeg+90)*0.0175;
+  arrow( display, cos(f)+clockCenterX, sin(f)+clockCenterY, clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, 3, 5);
+
   display->setFont(ArialMT_Plain_10);
   //display->drawString(x + 20, y + 29, String(forecasts[dayIndex].windDeg, 0) + "°");
   display->drawString(x + 20, y + 39, strWind(forecasts[dayIndex].windSpeed));

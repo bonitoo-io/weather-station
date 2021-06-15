@@ -65,6 +65,7 @@ def init():
     # init buses
     i2c = I2C(scl=Pin(14), sda=Pin(2), freq=400000)
     oled = SSD1306_I2C(OLED_WIDTH, OLED_HEIGHT, i2c, addr=0x3c)
+    oled.rotate(False)
     show_text_line(12, 30, 'InfluxData WS', 1, 3)
     # init devices
     line = show_text_line(5, 30, 'Initialize', 1)
@@ -150,7 +151,6 @@ async def run(interval, client):
             oled.fill(0)
             show_text_line(5, 30, 'Collecting data', 1)
             gc.collect()
-            print(gc.mem_free())
             led2.value(0)
             data['t'], data['rh'] = get_t_rh()
             oled.fill(0)
