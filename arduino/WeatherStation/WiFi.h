@@ -101,6 +101,7 @@ public:
   WiFiEventHandler _onStationModeConnectedHandler;
   WiFiEventHandler _onStationModeDisconnectedHandler;
   WiFiEventHandler _onStationModeGotIPHandler;
+  bool _forceAPStop;
 };
 
 #if 1

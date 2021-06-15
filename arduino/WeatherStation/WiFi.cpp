@@ -82,7 +82,8 @@ int WiFiSettings::load(JsonObject& root) {
 WiFiManager::WiFiManager(WiFiSettings *settings):
   _settings(settings),
   _lastConnectionAttempt(0),
-  _dnsServer(nullptr) {
+  _dnsServer(nullptr),
+  _forceAPStop(false) {
 #if 1    
   // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash, this is not the default.
   // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
@@ -137,7 +138,7 @@ void WiFiManager::loop() {
         manageSTA();
     }
     // try AP after only first conn attempt   
-    if (manageElapsed >= WIFI_RECONNECTION_DELAY) {
+    if (_forceAPStop || manageElapsed >= WIFI_RECONNECTION_DELAY) {
         manageAP();
     }
     handleDNS();
@@ -176,7 +177,7 @@ void WiFiManager::manageAP() {
       if (currentWiFiMode == WIFI_OFF || currentWiFiMode == WIFI_STA) {
         startAP();
       }
-    } else if ((currentWiFiMode == WIFI_AP ||  currentWiFiMode == WIFI_AP_STA) && !WiFi.softAPgetStationNum()) {
+    } else if (_forceAPStop || ((currentWiFiMode == WIFI_AP ||  currentWiFiMode == WIFI_AP_STA) && !WiFi.softAPgetStationNum())) {
         stopAP();
     }
 }
@@ -225,6 +226,7 @@ void WiFiManager::stopAP() {
     Serial.println(F("Stopping software access point"));
     WiFi.softAPdisconnect(true);
     _apInfo.running = false;
+    _forceAPStop = false;
     notifyAPEvent();
 }
 
@@ -238,6 +240,9 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
   Serial.print("WiFi Disconnected. Reason code=");
   Serial.println(event.reason);
   WiFi.disconnect(true);
+  if(_apInfo.running) {
+    _forceAPStop = true;
+  }
   notifyWifiEvent(WifiConnectionEvent::ConnectingFailed);
 }
 

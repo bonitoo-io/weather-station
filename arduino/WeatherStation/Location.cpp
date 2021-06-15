@@ -84,7 +84,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
     }
     
   } else {
-    Serial.print(F(" erro: "));
+    Serial.print(F(" error: "));
     Serial.println( httpCode);
   }
   http.end();

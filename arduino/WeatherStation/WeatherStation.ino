@@ -58,15 +58,18 @@ tConfig conf = {
 SSD1306Wire display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi ui( &display);
 
-
+// Weather station backend
 WeatherStation station;
 
 String deviceID;
 
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
-
+String wifiSSID;
+bool shouldSetupInfluxDb = false;
 extern bool shouldDrawWifiProgress;
+bool initialized = false;
+
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
 void setupDHT();
@@ -88,8 +91,6 @@ void updateForecast( const bool metric, const String& lang, const String& locati
 
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID);
 
-bool initialized = false;
-
 void initData() {
   if(!initialized && WiFi.isConnected()) {
     //Initialize OLED UI
@@ -105,7 +106,6 @@ void initData() {
   }
 }
 
-String wifiSSID;
 
 void setup() {
   // Prepare serial port
@@ -139,12 +139,11 @@ void setup() {
   });
   
   station.getInfluxDBSettings()->setHandler([](){
-    setupInfluxDB(station.getInfluxDBSettings());
-    updateInfluxDB( true, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location);
+    shouldSetupInfluxDb =  true;
   });
-
   
   station.begin();
+
 #endif
   WS_DEBUG_RAM("Setup 2");
 
@@ -234,7 +233,11 @@ void loop() {
   if(shouldDrawWifiProgress) {
     drawWifiProgress(&display, VERSION, wifiSSID.c_str());
   }
-
+  if(shouldSetupInfluxDb) {
+    setupInfluxDB(station.getInfluxDBSettings());
+    updateInfluxDB( true, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location);
+    shouldSetupInfluxDb = false;
+  }
   if(!initialized) {
     initData();
   }
