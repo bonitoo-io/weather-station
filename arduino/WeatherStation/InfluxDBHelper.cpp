@@ -78,10 +78,11 @@ void writeInfluxDB( float temp, float hum, const float lat, const float lon) {
 
   sensor.clearFields();
   // Report temperature and humidity
-  sensor.addField(String(F("Temperature")), temp);
-  sensor.addField(String(F("Humidity")), hum);
-  sensor.addField(String(F("Lat")), lat, 6);
-  sensor.addField(String(F("Lon")), lon, 6);
+
+  sensor.addField("Temperature", temp);
+  sensor.addField("Humidity", hum);
+  sensor.addField("lat", lat, 6);
+  sensor.addField("lon", lon, 6);
 
   // Print what are we exactly writing
   Serial.print(F("Writing: "));
