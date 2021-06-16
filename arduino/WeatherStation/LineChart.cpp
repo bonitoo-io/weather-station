@@ -41,7 +41,7 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigne
   for (int i=0; i<=90; i+=30) {
     int mark = x1+i;
     display->drawLine( mark + x, y1 + y, mark + x, y1+2 + y);
-    display->drawString( mark + x, y1+1 + y, String(-90+i) + "m");
+    display->drawString( mark + x, y1+1 + y, i == 90 ? "now" : String(-90+i) + "m");
   }
     
   // Vertical axis
