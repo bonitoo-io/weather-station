@@ -1,6 +1,7 @@
 #include <InfluxDbClient.h>
 #include <InfluxDbCloud.h>
 #include "InfluxDBHelper.h"
+#include "Tools.h"
 
 extern int tempHistory[90];
 
@@ -15,7 +16,7 @@ void setupInfluxDB(InfluxDBSettings *settings) {
 }
 
 // load temperature from InfluxDB - the last 90 minutes and the selected device
-void loadTempHistory( const String &bucket, const String &deviceID) { 
+void loadTempHistory( const String &bucket, const String &deviceID, bool metric) {
   if(!influxDBClient.getServerUrl().length()) {
     return;
   }
@@ -29,8 +30,8 @@ void loadTempHistory( const String &bucket, const String &deviceID) {
   unsigned int i = 0;
   FluxQueryResult result = influxDBClient.query(query);
   while (result.next()) {
-    double value = result.getValueByName(String(F("_value"))).getDouble();
-    tempHistory[ i] = round( value * 10);
+    float value = result.getValueByName(String(F("_value"))).getDouble();
+    tempHistory[ i] = metric ? round( value * 10) : round( convertCtoF( value) * 10);
     i++;
     if (i == 90)
       break;
@@ -44,7 +45,7 @@ void loadTempHistory( const String &bucket, const String &deviceID) {
   result.close();
 }
 
-void updateInfluxDB( bool firstStart, const String &deviceID, const String &bucket, const String &wifi, const String &version, const String &location) {
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &bucket, const String &wifi, const String &version, const String &location, bool metric) {
   if(!influxDBClient.getServerUrl().length()) {
     return;
   }
@@ -57,7 +58,7 @@ void updateInfluxDB( bool firstStart, const String &deviceID, const String &buck
   sensor.addTag(String(F("TemperatureSensor")), String(F("DHT11")));
   sensor.addTag(String(F("HumiditySensor")), String(F("DHT11")));
   if(firstStart) {
-    loadTempHistory( bucket, deviceID);
+    loadTempHistory( bucket, deviceID, metric);
   }
 }
 

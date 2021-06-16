@@ -63,4 +63,9 @@ enum tStrings {
   s_INDOOR, s_feel, s_hum, s_wind,
   s_Moon, s_Sun
 };
+
 String getStr( uint8_t index);
+
+int convertCtoF(int c);
+int convertFtoC(int c);
+float convertCtoF(float c);

@@ -3,11 +3,7 @@
 
 extern int tempHistory[90];
 
-int convertCtoF(int c) {
-  return round(((float)(c/10) * 1.8 + 32) * 10);
-}
-
-void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int data[], unsigned int size, int16_t x, int16_t y) {
+void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigned int size, int16_t x, int16_t y) {
   //Caclculate min, max and number of samples
   int min10 = 32767;
   int max10 = -32768;
@@ -15,13 +11,12 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
     int d = data[i];
     if (d == 0xffff)  //skip empty values
       continue;
-    if (convert2F)
-      d = convertCtoF(d);
     if ( d > max10)
       max10 = d;
     if ( d < min10)
       min10 = d;
   }
+  //Serial.println( "Min-Max: " + String(min10) + "-" + String(max10));
   min10 = floor((float)min10/10);
   max10 = ceil((float)max10/10);
   if (min10 == max10)
@@ -30,7 +25,9 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
   max10 *= 10;
 
   float scale = 30.0 / (float)(max10-min10);
-
+  //Serial.println("-----");  
+  //Serial.println( "Min-Max-Scale: " + String(min10) + "-" + String(max10) + "-" + String(scale));
+  
   // Plot temperature graph
   int x1 = 23;
   int y1 = 39;
@@ -64,8 +61,8 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
   int prev = 0xffff;
   for (unsigned int i = 0; i < size; i++)
     if ( data[i] != 0xffff) {
-      int d = convert2F ? convertCtoF( data[i]) : data[i];
-      d = round((float)(d - min10) * scale);
+      //Serial.println( String(i) + "-" + String(data[i]) + "-" + String(convertFtoC(data[i])));
+      int d = round((float)(data[i] - min10) * scale);
       //Serial.println( String( i) + "-" + String( data[i]) + "=" + String(d));
       if (prev == 0xffff)
         display->setPixel( i+x1 + x, y1 - d + y);
@@ -77,5 +74,5 @@ void drawLineChart(OLEDDisplay *display, const String& unit, bool convert2F, int
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  drawLineChart( display, strTempUnit(), !conf.useMetric, tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
+  drawLineChart( display, strTempUnit(), tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
 }

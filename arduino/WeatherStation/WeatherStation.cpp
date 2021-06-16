@@ -58,8 +58,6 @@ void WeatherStation::begin() {
   _persistence.begin();
   
   //_persistence.removeConfigs();
-  //_wifiSettings.init("Bonitoo-ng","change1t");
-  //_wifiSettings.init("666G","andromeda");
   _persistence.readFromFS(&_wifiSettings);
   _persistence.readFromFS(&_influxDBSettings);
   

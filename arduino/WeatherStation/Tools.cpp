@@ -16,7 +16,7 @@ static const char MONTHS_CZ[] PROGMEM = "Leden\0" "Únor\0" "Březen\0" "Duben\0
 static const char MOON_CZ[] PROGMEM = "nov\0" "dorůstající srpek\0" "první čtvrť\0" "dorůstající měsíc\0" "úplněk\0" "couvající měsíc\0" "poslední čtvrť\0" "ubývající srpek\0";
 static const char STR_CZ[] PROGMEM =
 "Připojuji WiFi\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
-"Doma:\0" " Vně:\0"
+"Zde:\0" " Vně:\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
 "Měsíc\0" "Slunce\0";
 
@@ -207,3 +207,19 @@ String utf8ascii(const String s) {
   Serial.println( utf8ascii("Любя, съешь щипцы, — вздохнёт мэр, — кайф жгуч."));
   Serial.println( utf8ascii("Γκόλφω, βάδιζε μπροστά ξανθή ψυχή!"));
 }*/
+
+int convertCtoF(int c) {
+  return round(((float)(c/10) * 1.8 + 32) * 10);
+}
+
+int convertFtoC(int c) { 
+  return round(((float)(c/10) - 32) * 5.55555);
+}
+
+float convertFtoC(float f) {
+  return (f - 32) * 0.55555; 
+}
+
+float convertCtoF(float c) {
+  return c * 1.8 + 32;
+}

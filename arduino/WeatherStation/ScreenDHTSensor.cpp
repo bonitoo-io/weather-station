@@ -32,11 +32,10 @@ float getDHTHic(bool metric) {
   return dht.computeHeatIndex(tempDHT, humDHT, !metric);
 }
 
-void saveDHTTempHist() {
-  //move all values left
-  for (int i = 1; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
+void saveDHTTempHist(bool metric) {
+  for (int i = 1; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++) //move all values left
     tempHistory[i-1] = tempHistory[i];
-  tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( getDHTTemp(true) * 10); //save the latest value
+  tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( getDHTTemp(metric) * 10); //save the latest value
 }
 
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {

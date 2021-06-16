@@ -1,4 +1,4 @@
-#define VERSION "0.46"
+#define VERSION "0.47"
 
 // Include libraries
 #include <Arduino.h>
@@ -40,7 +40,7 @@ tConfig conf = {
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
   "San Francisco, US", //location
   "en", //language
-  -25200, //utcOffset
+  -25200, //utcOffset in seconds
   37.7749,   //latitude
   -122.4194,    //longitude
   false, //useMetric
@@ -75,7 +75,7 @@ void setupOLEDUI(OLEDDisplayUi *ui);
 void setupDHT();
 float getDHTTemp(bool metric);
 float getDHTHum();
-void saveDHTTempHist();
+void saveDHTTempHist(bool metric);
 void drawSplashScreen(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
@@ -98,10 +98,7 @@ void initData() {
     //Load all data
     updateData(&display, true);
     WS_DEBUG_RAM("InitData");
-    
-    //Save temperature for the chart
-    saveDHTTempHist();
-
+   
     initialized = true;
   }
 }
@@ -171,10 +168,9 @@ void setup() {
 
   drawSplashScreen(&display, VERSION);
   delay(500);
-  
 
   initData();
-  
+
   WS_DEBUG_RAM("Setup 3");
 }
 
@@ -193,10 +189,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     }
   }
   
-  drawUpdateProgress(display, 10, getStr(s_Updating_time));
-  updateClock( firstStart, conf.utcOffset, conf.ntp);
-
-  drawUpdateProgress(display, 30, getStr(s_Detecting_location));
+  drawUpdateProgress(display, 10, getStr(s_Detecting_location));
     
   if (conf.detectLocationIP) {
     WS_DEBUG_RAM("Before IPloc");
@@ -205,7 +198,8 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     WS_DEBUG_RAM("After IPloc");
   }
   
-
+  drawUpdateProgress(display, 20, getStr(s_Updating_time));
+  updateClock( firstStart, conf.utcOffset, conf.ntp);
 
   drawUpdateProgress(display, 50, getStr(s_Updating_weather));
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
@@ -217,9 +211,14 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
-  updateInfluxDB( firstStart, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location);
+  updateInfluxDB( firstStart, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location, conf.useMetric);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
+
+  if (firstStart) {
+    //Save temperature for the chart
+    saveDHTTempHist( conf.useMetric);
+  }
 
   digitalWrite( LED, HIGH);
   delay(500);
@@ -235,7 +234,7 @@ void loop() {
   }
   if(shouldSetupInfluxDb) {
     setupInfluxDB(station.getInfluxDBSettings());
-    updateInfluxDB( true, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location);
+    updateInfluxDB( true, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location, conf.useMetric);
     shouldSetupInfluxDb = false;
   }
   if(!initialized) {
@@ -269,7 +268,7 @@ void loop() {
     //Write into InfluxDB
     if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
       digitalWrite( LED, LOW);
-      saveDHTTempHist();  //Save temperature for the chart
+      saveDHTTempHist( conf.useMetric);  //Save temperature for the chart
       ESP.wdtFeed();
       writeInfluxDB( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
       Serial.print(F("InfluxDB write "));
@@ -289,8 +288,10 @@ void loop() {
       showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), deviceID);  //Show configuration after 0.5s
 
     loops++;
-    if (loops > 200)  //reboot after 20 seconds
+    if (loops > 200) {  //factory reset after 20 seconds
+      station.getPersistence()->removeConfigs();
       ESP.restart();
+    }
 
     delay(100);
   }

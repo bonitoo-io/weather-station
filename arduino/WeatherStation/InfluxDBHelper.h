@@ -27,8 +27,7 @@ class InfluxDBSettings : public Settings {
 bool errorInfluxDB();
 String errorInfluxDBMsg();
 void setupInfluxDB( InfluxDBSettings *settings);
-void updateInfluxDB( bool firstStart, const String &deviceID, const String &bucket, const String &wifi, const String &version, const String &location);
+void updateInfluxDB( bool firstStart, const String &deviceID, const String &bucket, const String &wifi, const String &version, const String &location, bool metric);
 void writeInfluxDB( float temp, float hum, const float lat, const float lon);
-void loadTempHistory( const String &bucket, const String &deviceID);
 
 #endif //INFLUXDB_HELPER_H

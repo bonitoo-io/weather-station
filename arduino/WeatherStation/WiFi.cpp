@@ -102,6 +102,7 @@ WiFiManager::WiFiManager(WiFiSettings *settings):
   _settings->setHandler([this]() {
     Serial.println(F("Wifi settings changed, reconfigure"));
     reconfigureWiFiConnection();
+    ESP.restart();
   });
 #endif
 }
