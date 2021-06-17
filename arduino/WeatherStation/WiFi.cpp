@@ -28,7 +28,8 @@ char *WiFiSettings::DefaultHostname = nullptr;
 
 WiFiSettings::WiFiSettings():
   ssid(DEFAULT_WIFI_SSID),
-  password(DEFAULT_WIFI_PASSWORD) { 
+  password(DEFAULT_WIFI_PASSWORD),
+  staticIPConfig(false) { 
   if(!DefaultHostname) {
     DefaultHostname = createDefaultHostname();
   }
@@ -51,10 +52,10 @@ int WiFiSettings::save(JsonObject& root) {
 }
 
 int WiFiSettings::load(JsonObject& root) {
-  ssid = root[F("ssid")] | DEFAULT_WIFI_SSID;
-  password = root[F("password")] | DEFAULT_WIFI_PASSWORD;
-  hostname = root[F("hostname")] | DefaultHostname;
-  staticIPConfig = root[F("static_ip_config")] | false;
+  ssid = root[F("ssid")].as<const char *>();
+  password = root[F("password")].as<const char *>();
+  hostname = root[F("hostname")].as<const char *>();
+  staticIPConfig = root[F("static_ip_config")];
 
   // extended settings
   readIP(root, F("local_ip"), localIP);
@@ -143,6 +144,10 @@ void WiFiManager::loop() {
         manageAP();
     }
     handleDNS();
+}
+
+void WiFiManager::end() {
+  WiFi.disconnect(true);
 }
 
 void WiFiManager::manageSTA() {
@@ -238,23 +243,26 @@ void WiFiManager::handleDNS() {
 }
 
 void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnected& event) {
-  Serial.print("WiFi Disconnected. Reason code=");
+  Serial.print(F("WiFi Disconnected. Reason code="));
   Serial.println(event.reason);
   WiFi.disconnect(true);
-  if(_apInfo.running) {
-    _forceAPStop = true;
+  if(event.reason < 200) {
+    reconfigureWiFiConnection();
   }
   notifyWifiEvent(WifiConnectionEvent::ConnectingFailed);
 }
 
 void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& event) {
-  Serial.print("WiFi Connected. SSID=");
+  Serial.print(F("WiFi Connected. SSID="));
   Serial.println(event.ssid);
   notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
+  if(_apInfo.running) {
+    _forceAPStop = true;
+  }
 }
 
 void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
-  Serial.printf("WiFi Got IP. localIP=%s, hostName=%s\n", event.ip.toString().c_str(), WiFi.hostname().c_str());
+  Serial.printf_P(PSTR("WiFi Got IP. localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
 }
 
 #if 1

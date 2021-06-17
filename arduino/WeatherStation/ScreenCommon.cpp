@@ -48,38 +48,45 @@ void drawSplashScreen(OLEDDisplay *display, const char* version) {
   display->display();
 }
 
-bool shouldDrawWifiProgress = false;
+int wifiProgressCounter;
+uint32_t wifiProgressLastDrown;
+
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid) {
-  int counter = 0;
-  wl_status_t status;
-  shouldDrawWifiProgress = true;
-  while(shouldDrawWifiProgress) {
+  if(!wifiProgressLastDrown || (millis()-wifiProgressLastDrown >= 500)) {
     Serial.print(F("."));
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
     display->drawString(88, 0, getStr(s_Connecting_WiFi));
     display->drawString(88, 15, ssid);
-    display->drawXbm(71, 30, 8, 8, counter % 3 == 0 ? activeSymbole : inactiveSymbole);
-    display->drawXbm(85, 30, 8, 8, counter % 3 == 1 ? activeSymbole : inactiveSymbole);
-    display->drawXbm(99, 30, 8, 8, counter % 3 == 2 ? activeSymbole : inactiveSymbole);
+    display->drawXbm(71, 30, 8, 8, wifiProgressCounter % 3 == 0 ? activeSymbole : inactiveSymbole);
+    display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
+    display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
     display->drawString(88, 40, String(F("V")) + version);
     display->display();
-    counter++;
-    delay(500);
-  } 
-  Serial.println();
+    wifiProgressCounter++;
+    wifiProgressLastDrown = millis();
+  }
 }
 
+void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid) {
+  wifiProgressCounter = 0;
+  wifiProgressLastDrown = 0;
+  drawWifiProgress(display, version, ssid);
+}
 
 void drawAPInfo(OLEDDisplay *display, APInfo *info) {
   display->clear();
   display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(0, 0, getStr(s_Wifi_AP_connect));
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64, 0, String(F("1. Connect to Wifi")));
-  display->drawString(64, 10, info->ssid);
-  display->drawString(64, 20, String(F("2. Point web browser to")));
-  display->drawString(64, 30, info->ipAddress.toString());
-  display->drawString(64, 40, String(F("3. Configure WiFi")));
+  display->drawString(64, 12, info->ssid);
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(0, 24, getStr(s_Wifi_web_point));
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString(64, 36, info->ipAddress.toString());
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(0, 48, getStr(s_Wifi_configure));
   display->display();
 }
 
@@ -90,6 +97,24 @@ void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& labe
   display->setFont(ArialMT_Plain_10);
   display->drawString(64, 10, label);
   display->drawProgressBar(2, 28, 124, 10, percentage);
+  display->display();
+}
+
+void drawFWUpdateInfo(OLEDDisplay *display, const String &firstLine, const String &secondLine) {
+  display->clear();
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString(64, 10, firstLine);
+  display->drawString(64, 25, secondLine);
+  display->display();  
+}
+
+void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent) {
+  display->clear();
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString(64, 10, getStr(s_Updating_to) + version);
+  display->drawProgressBar(2, 28, 124, 10, percent);
   display->display();
 }
 

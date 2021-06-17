@@ -57,7 +57,6 @@ void WeatherStation::begin() {
   // Must be called first before accessing FS
   _persistence.begin();
   
-  //_persistence.removeConfigs();
   _persistence.readFromFS(&_wifiSettings);
   _persistence.readFromFS(&_influxDBSettings);
   
@@ -67,4 +66,8 @@ void WeatherStation::begin() {
 
 void WeatherStation::loop() {
   _wifiManager.loop();
+}
+
+void WeatherStation::end() {
+  _wifiManager.end();
 }

@@ -5,7 +5,8 @@ static const char DAYS_ENG[] PROGMEM = "Sun\0" "Mon\0" "Tue\0" "Wed\0" "Thu\0" "
 static const char MONTHS_ENG[] PROGMEM = "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0" "Jul\0" "Aug\0" "Sep\0" "Oct\0" "Nov\0" "Dec\0";
 static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first quarter\0" "waxing gibbous\0" "full moon\0" "waning gibbous\0" "third quarter\0" "waning crescent\0";
 static const char STR_ENG[] PROGMEM = 
-"Connecting WiFi\0" "Connecting IoT Center\0" "Detecting location\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
+"Connecting WiFi\0" "Connecting IoT Center\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
+"Found update to \0" "Starting update in 1 s\0" "Update successful\0" "Restarting in 1 s\0" "Update failed \0" "Updating to \0" "Restarting\0" "1. Connect to WiFi:\0" "2. Point web browser to:\0" "3. Configure WiFi connection\0"
 "In:\0" " Out:\0" "now\0"
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
 "Moon\0" "Sun\0" ;
@@ -15,7 +16,8 @@ static const char DAYS_CZ[] PROGMEM = "Ne\0" "Po\0" "Út\0" "St\0" "Čt\0" "Pá\
 static const char MONTHS_CZ[] PROGMEM = "Leden\0" "Únor\0" "Březen\0" "Duben\0" "Květen\0" "Červen\0" "Červenec\0" "Srpen\0" "Září\0" "Říjen\0" "Listopad\0" "Prosinec\0";
 static const char MOON_CZ[] PROGMEM = "nov\0" "dorůstající srpek\0" "první čtvrť\0" "dorůstající měsíc\0" "úplněk\0" "couvající měsíc\0" "poslední čtvrť\0" "ubývající srpek\0";
 static const char STR_CZ[] PROGMEM =
-"Připojuji WiFi\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
+"Připojuji WiFi\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Kontrola aktualizace\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
+"Dostupná aktualizace na \0" "Aktualizace začne za 1s\0" "Aktualizace byla úpěšná\0" "Restartuji za 1s\0" "Aktualizace selhala \0" "Aktualizuji na \0" "Restartuji se\0" "1. Připojte se na WiFi\0" "2. V prohlížeči jděte na\0" "3. Nastavte WiFi připojení\0"
 "Zde:\0" " Vně:\0" "nyní\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
 "Měsíc\0" "Slunce\0";

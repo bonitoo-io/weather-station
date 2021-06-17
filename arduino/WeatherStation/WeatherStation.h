@@ -9,12 +9,12 @@
 #include "System.h"
 #include "InfluxDBHelper.h"
 
-
 class WeatherStation {
 public:
     WeatherStation();
     void begin();
     void loop();
+    void end();
 
     WiFiSettings *getWifiSettings() {
         return &_wifiSettings;
