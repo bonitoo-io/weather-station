@@ -57,6 +57,7 @@ void updateInfluxDB( bool firstStart, const String &deviceID, const String &buck
   sensor.addTag(String(F("WiFi")), wifi);
   sensor.addTag(String(F("TemperatureSensor")), String(F("DHT11")));
   sensor.addTag(String(F("HumiditySensor")), String(F("DHT11")));
+  sensor.addTag(String(F("TemperatureUnit")), String(F("C")));
   if(firstStart) {
     loadTempHistory( bucket, deviceID, metric);
   }
