@@ -62,6 +62,7 @@ OLEDDisplayUi ui( &display);
 // Weather station backend
 WeatherStation station;
 Updater updater;
+InfluxDBHelper influxdbHelper;
 String deviceID;
 
 unsigned long timeSinceLastUpdate = 0;
@@ -93,7 +94,7 @@ void updateAstronomy(bool firstStart, const float lat, const float lon);
 void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey);
 void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey);
 
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID);
+void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID, InfluxDBHelper *influxDBHelper);
 
 void initData() {
   if(!initialized && WiFi.isConnected()) {
@@ -232,7 +233,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
       station.getPersistence()->writeToFS(influxDBSettings);
       influxDBSettings->notify();
     } else {
-      setupInfluxDB(influxDBSettings);
+      influxdbHelper.begin(influxDBSettings);
     }
   }
   
@@ -248,7 +249,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
-  updateInfluxDB( firstStart, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location, conf.useMetric);
+  influxdbHelper.update( firstStart, deviceID,  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
 
@@ -270,8 +271,8 @@ void loop() {
     drawWifiProgress(&display, VERSION, wifiSSID.c_str());
   }
   if(shouldSetupInfluxDb) {
-    setupInfluxDB(station.getInfluxDBSettings());
-    updateInfluxDB( true, deviceID,  station.getInfluxDBSettings()->bucket, WiFi.SSID(), VERSION, conf.location, conf.useMetric);
+    influxdbHelper.begin(station.getInfluxDBSettings());
+    influxdbHelper.update( true, deviceID,  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
     shouldSetupInfluxDb = false;
   }
   if(!initialized) {
@@ -316,7 +317,7 @@ void loop() {
       digitalWrite( LED, LOW);
       saveDHTTempHist( conf.useMetric);  //Save temperature for the chart
       ESP.wdtFeed();
-      writeInfluxDB( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
+      influxdbHelper.write( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
       Serial.print(F("InfluxDB write "));
       Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
       digitalWrite( LED, HIGH);
@@ -331,7 +332,7 @@ void loop() {
       ui.nextFrame();   //jump to the next frame
     }
     if (loops > 4)
-      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), deviceID);  //Show configuration after 0.5s
+      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), deviceID, &influxdbHelper);  //Show configuration after 0.5s
 
     loops++;
     if (loops > 200) {  //factory reset after 20 seconds
@@ -347,4 +348,8 @@ void loop() {
     int remainingTimeBudget = ui.update();
     nextUIUpdate = millis()+remainingTimeBudget;
   }
+}
+
+bool isInfluxDBError() {
+  return influxdbHelper.isError();
 }

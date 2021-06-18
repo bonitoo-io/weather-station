@@ -18,7 +18,7 @@ void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x
 void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-  
+bool isInfluxDBError();  
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
 FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy};
@@ -151,7 +151,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
 
   //Draw InfluxDB write mark
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  if ( errorInfluxDB())
+  if ( isInfluxDBError())
     display->drawXbm( 0, 0, 8, 8, warning_8x8);
   
   display->drawHorizontalLine(0, 52, display->getWidth());
@@ -171,7 +171,7 @@ const __FlashStringHelper * wifiStatusStr(wl_status_t status) {
   }
 }
 
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID) {
+void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID, InfluxDBHelper *influxDBHelper) {
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
@@ -180,7 +180,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     display->drawString(1,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
     display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
     display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
-    display->drawString(1, 30, String(F("InfluxDB ")) + (!errorInfluxDB() ? deviceID : errorInfluxDBMsg()));
+    display->drawString(1, 30, String(F("InfluxDB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
     display->drawString(1, 40, String("V") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
     display->drawString(1, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
