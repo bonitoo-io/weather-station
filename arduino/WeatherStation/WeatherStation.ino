@@ -209,16 +209,17 @@ void setup() {
 void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
   
-  drawUpdateProgress(display, 0, getStr(s_Updating_time));
-  updateClock( firstStart, conf.utcOffset, conf.ntp);
-
-  drawUpdateProgress(display, 10, getStr(s_Detecting_location));
+  drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (conf.detectLocationIP) {
     WS_DEBUG_RAM("Before IPloc");
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
     setLanguage( conf.language);
     WS_DEBUG_RAM("After IPloc");
   }
+
+  drawUpdateProgress(display, 10, getStr(s_Updating_time));
+  updateClock( firstStart, conf.utcOffset, conf.ntp);
+
 
   drawUpdateProgress(display, 20, getStr(s_Checking_update));
   if(firstStart) {
