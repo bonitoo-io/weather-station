@@ -1,4 +1,4 @@
-#define VERSION "0.47"
+#define VERSION "0.48"
 
 // Include libraries
 #include <Arduino.h>
@@ -8,8 +8,9 @@
 #include "WeatherStation.h"
 #include "InfluxDBHelper.h"
 #include "Tools.h"
-
+#include "Updater.h"
 #include "Debug.h"
+
 
 /***************************
  * Begin Settings
@@ -51,7 +52,9 @@ tConfig conf = {
   0,  //humOffset
   
   IOT_CENTER_URL, //iotCenterUrl;
-  60             //iotRefreshMin
+  60,             //iotRefreshMin
+  60,             //updateRefreshMin;
+  true,         //updateCheckBeta
 };
 
 // Initialize the oled display
@@ -60,14 +63,14 @@ OLEDDisplayUi ui( &display);
 
 // Weather station backend
 WeatherStation station;
-
+Updater updater;
 String deviceID;
 
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
 String wifiSSID;
 bool shouldSetupInfluxDb = false;
-extern bool shouldDrawWifiProgress;
+bool shouldDrawWifiProgress = false;
 bool initialized = false;
 
 //declaring prototypes
@@ -78,8 +81,11 @@ float getDHTHum();
 void saveDHTTempHist(bool metric);
 void drawSplashScreen(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
+void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 void drawAPInfo(OLEDDisplay *display, APInfo *info);
+void drawFWUpdateInfo(OLEDDisplay *display, const String &fistLine, const String &secondLine);
+void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent);
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -93,11 +99,13 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
 
 void initData() {
   if(!initialized && WiFi.isConnected()) {
+    WS_DEBUG_RAM("InitData");
+    updater.init("bonitoo-io","weather-station", VERSION, conf.updateCheckBeta);
+    
     //Initialize OLED UI
     setupOLEDUI(&ui);
     //Load all data
     updateData(&display, true);
-    WS_DEBUG_RAM("InitData");
    
     initialized = true;
   }
@@ -106,10 +114,11 @@ void initData() {
 
 void setup() {
   // Prepare serial port
-  Serial.begin(74880);
+  Serial.begin(115200);
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
+  Serial.println(F("Starting Weather station v" VERSION));
   WS_DEBUG_RAM("Setup 1");
 #if 1  
   station.getWifiManager()->setWiFiConnectionEventHandler([](WifiConnectionEvent event, const char *ssid){
@@ -117,18 +126,22 @@ void setup() {
       switch(event) {
         case WifiConnectionEvent::ConnectingStarted:
           shouldDrawWifiProgress = true;
+          startWifiProgress(&display, VERSION, ssid);
           //TODO: better solution for passing current wifi
           wifiSSID = ssid;
           break;
         case WifiConnectionEvent::ConnectingSuccess:
-        case WifiConnectionEvent::ConnectingFailed:
           shouldDrawWifiProgress = false;
           station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
-          break;
+          break;        
       };
   });
   station.getWifiManager()->setAPEventHandler([](APInfo *info){
     if(info->running) {
+      if(shouldDrawWifiProgress) {
+        shouldDrawWifiProgress = false;
+        station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
+      }
       drawAPInfo(&display, info);
       // Unregister after first run
       station.getWifiManager()->setAPEventHandler(nullptr);
@@ -138,6 +151,25 @@ void setup() {
   station.getInfluxDBSettings()->setHandler([](){
     shouldSetupInfluxDb =  true;
   });
+
+  updater.setUpdateCallbacks([](const char *newVersion) {
+      drawFWUpdateInfo(&display, getStr(s_Update_found) + newVersion, getStr(s_Update_start_in));
+      delay(1000);
+    },[](const char *newVersion, int progress) {
+      drawFWUpdateProgress(&display, newVersion, progress);
+    },[](bool success, const char *err) {
+      if(success) {
+        drawFWUpdateInfo(&display, getStr(s_Update_successful), getStr(s_Update_restart_in));
+        delay(1000);
+        drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
+        Serial.println(F("restarting"));
+        station.end();
+        ESP.restart();
+      } else {
+        drawFWUpdateInfo(&display, getStr(s_Update_failed),  err);
+        delay(3000);
+      }
+    });
   
   station.begin();
 
@@ -176,8 +208,24 @@ void setup() {
 
 void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( LED, LOW);
+  
+  drawUpdateProgress(display, 0, getStr(s_Updating_time));
+  updateClock( firstStart, conf.utcOffset, conf.ntp);
 
-  drawUpdateProgress(display, 0, getStr(s_Connecting_IoT_Center));
+  drawUpdateProgress(display, 10, getStr(s_Detecting_location));
+  if (conf.detectLocationIP) {
+    WS_DEBUG_RAM("Before IPloc");
+    detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
+    setLanguage( conf.language);
+    WS_DEBUG_RAM("After IPloc");
+  }
+
+  drawUpdateProgress(display, 20, getStr(s_Checking_update));
+  if(firstStart) {
+    updater.checkUpdate();
+  }
+
+  drawUpdateProgress(display, 30, getStr(s_Connecting_IoT_Center));
   if (firstStart) {
     // TODO: better solution for updating Settings from IoT center
     auto influxDBSettings = station.getInfluxDBSettings();
@@ -189,17 +237,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     }
   }
   
-  drawUpdateProgress(display, 10, getStr(s_Detecting_location));
-    
-  if (conf.detectLocationIP) {
-    WS_DEBUG_RAM("Before IPloc");
-    detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
-    setLanguage( conf.language);
-    WS_DEBUG_RAM("After IPloc");
-  }
   
-  drawUpdateProgress(display, 20, getStr(s_Updating_time));
-  updateClock( firstStart, conf.utcOffset, conf.ntp);
 
   drawUpdateProgress(display, 50, getStr(s_Updating_weather));
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
@@ -245,6 +283,11 @@ void loop() {
     WS_DEBUG_RAM("Loop 1");
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
+
+    // Check update
+    if (lastUpdateMins % conf.updateRefreshMin == 0) {
+      updater.checkUpdate();
+    }
 
     //Sync IoT Center configuration
     if (lastUpdateMins % conf.iotRefreshMin == 0) {

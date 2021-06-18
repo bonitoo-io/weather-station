@@ -70,6 +70,7 @@ public:
 
     void begin();
     void loop();
+    void end();
     void setAPEventHandler(APEventHandler handler) { 
         _apEventHandler = handler;
     }
