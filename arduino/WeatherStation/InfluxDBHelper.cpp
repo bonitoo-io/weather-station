@@ -81,10 +81,10 @@ void writeInfluxDB( float temp, float hum, const float lat, const float lon) {
   sensor.clearFields();
   // Report temperature and humidity
 
-  sensor.addField("Temperature", temp);
-  sensor.addField("Humidity", hum);
-  sensor.addField("lat", lat, 6);
-  sensor.addField("lon", lon, 6);
+  sensor.addField(F("Temperature"), temp);
+  sensor.addField(F("Humidity"), hum);
+  sensor.addField(F("lat"), lat, 6);
+  sensor.addField(F("lon"), lon, 6);
 
   // Print what are we exactly writing
   Serial.print(F("Writing: "));
@@ -99,11 +99,11 @@ void writeInfluxDB( float temp, float hum, const float lat, const float lon) {
 
 void printInfluxDBettings(String prefix, InfluxDBSettings *s) {
     Serial.print(prefix);
-    Serial.print(" server: ");Serial.print(s->serverURL);
-    Serial.print(", token: ");Serial.print(s->authorizationToken);
-    Serial.print(", org: ");Serial.print(s->org);
-    Serial.print(", bucket: ");Serial.print(s->bucket);
-    Serial.print(", writeInterval: ");Serial.print(s->writeInterval);
+    Serial.print(F(" server: "));Serial.print(s->serverURL);
+    Serial.print(F(", token: "));Serial.print(s->authorizationToken);
+    Serial.print(F(", org: "));Serial.print(s->org);
+    Serial.print(F(", bucket: "));Serial.print(s->bucket);
+    Serial.print(F(", writeInterval: "));Serial.print(s->writeInterval);
     Serial.println();
 }
 
@@ -119,7 +119,7 @@ int InfluxDBSettings::save(JsonObject& root) {
     root[F("org")] = org;
     root[F("bucket")] = bucket;
     root[F("writeInterval")] = writeInterval;
-    printInfluxDBettings("Save", this);
+    printInfluxDBettings(F("InfluxDBSettings::Save"), this);
     return 0;
 }
 
@@ -127,8 +127,8 @@ int InfluxDBSettings::load(JsonObject& root) {
     serverURL = root[F("server")].as<const char *>();
     authorizationToken = root[F("token")].as<const char *>();
     org = root[F("org")].as<const char *>();
-    bucket = root[F("bucket")] | INFLUXDB_DEFAULT_BUCKET;
-    writeInterval = root[F("writeInterval")] | INFLUXDB_DEFAULT_WRITE_INTERVAL;
-    printInfluxDBettings("Load", this);
+    bucket = root[F("bucket")].as<const char *>() ;
+    writeInterval = root[F("writeInterval")]; 
+    printInfluxDBettings(F("InfluxDBSettings::Load"), this);
     return 1;
 }
