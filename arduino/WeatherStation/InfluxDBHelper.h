@@ -6,9 +6,9 @@
 #include "Settings.h"
 
 
-#define INFLUXDB_DEFAULT_BUCKET "iot_center"
+#define INFLUXDB_DEFAULT_BUCKET F("iot_center")
 #define INFLUXDB_DEFAULT_WRITE_INTERVAL 1
-#define INFLUXDB_SETTINGS_ENDPOINT_PATH "/api/influxDbSettings"
+#define INFLUXDB_SETTINGS_ENDPOINT_PATH "/api/influxDbSettings" //Cannot be FlashString
 
 class InfluxDBSettings : public Settings {
  public:

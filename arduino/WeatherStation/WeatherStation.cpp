@@ -59,6 +59,7 @@ void WeatherStation::begin() {
   
   _persistence.readFromFS(&_wifiSettings);
   _persistence.readFromFS(&_influxDBSettings);
+  _persistence.readFromFS(&_updaterSettings);
   
   _wifiManager.begin();
   _server.begin();

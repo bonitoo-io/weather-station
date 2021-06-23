@@ -1,4 +1,4 @@
-#define VERSION "0.48"
+#define VERSION "0.49"
 
 // Include libraries
 #include <Arduino.h>
@@ -52,9 +52,7 @@ tConfig conf = {
   0,  //humOffset
   
   IOT_CENTER_URL, //iotCenterUrl;
-  60,             //iotRefreshMin
-  60,             //updateRefreshMin;
-  true,         //updateCheckBeta
+  60             //iotRefreshMin
 };
 
 // Initialize the oled display
@@ -100,7 +98,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
 void initData() {
   if(!initialized && WiFi.isConnected()) {
     WS_DEBUG_RAM("InitData");
-    updater.init("bonitoo-io","weather-station", VERSION, conf.updateCheckBeta);
+    updater.init(station.getUpdaterSettings(), VERSION);
     
     //Initialize OLED UI
     setupOLEDUI(&ui);
@@ -285,8 +283,12 @@ void loop() {
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
 
-    // Check update
-    if (lastUpdateMins % conf.updateRefreshMin == 0) {
+    //TODO: change to an alarm like functionality
+    time_t tnow = time(nullptr);
+    struct tm timeinfo;
+    localtime_r(&tnow, &timeinfo);
+    uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
+    if (curtm == station.getUpdaterSettings()->updateTime ) {
       updater.checkUpdate();
     }
 

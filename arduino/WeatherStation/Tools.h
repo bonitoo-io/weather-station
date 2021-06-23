@@ -28,8 +28,6 @@ struct tConfig {
   int8_t humOffset;
   String iotCenterUrl;
   unsigned int iotRefreshMin;
-  unsigned int updateRefreshMin;
-  unsigned int updateCheckBeta;
 };
 
 struct tForecast {
