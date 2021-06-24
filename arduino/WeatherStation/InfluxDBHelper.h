@@ -51,13 +51,14 @@ enum ValidationStatus {
   Idle = 0,
   StartRequest,
   Running,
-  Finished
+  Finished,
+  Error
 };
 
 class InfluxDBValidateParamsEndpoint {
 public:
     InfluxDBValidateParamsEndpoint(AsyncWebServer* server);
-    ~InfluxDBValidateParamsEndpoint() {delete _validationSettings; }
+    virtual ~InfluxDBValidateParamsEndpoint() { delete _validationSettings; }
     void loop();
 private:
     void validateParams(AsyncWebServerRequest* request, JsonVariant& json);

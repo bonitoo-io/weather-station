@@ -1,22 +1,36 @@
-import React, { Fragment } from 'react';
+import React  from 'react';
+import { CircularProgress, Link, Typography } from '@material-ui/core';
 import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 
 
 import SaveIcon from '@material-ui/icons/Save';
 
-import { RestFormProps, FormActions, FormButton } from '../components';
+import { RestFormProps, FormActions, FormButton,  } from '../components';
 import { isURL } from '../validators';
-
-import { InfluxDBSettings } from './types';
+import CheckCircle from '@material-ui/icons/CheckCircle';
+import { InfluxDBSettings, ValidationStatus, ValidationStatusResponse } from './types';
+import { INFLUXDB_VALIDATE_ENDPOINT} from '../api';
 
 type InfluxDBSettingsFormProps = RestFormProps<InfluxDBSettings>;
 
-class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps> {
+const NUM_POLLS = 10
+const POLLING_FREQUENCY = 500
+const RETRY_EXCEPTION_TYPE = "retry"
 
+interface InfluxDBSettingsFormState {
+  validatingParams: boolean;
+  errorMessage?: string;
+}
 
-  constructor(props: InfluxDBSettingsFormProps) {
-    super(props);
-  }
+class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, InfluxDBSettingsFormState> {
+
+  state: InfluxDBSettingsFormState = {
+    validatingParams: false,
+  };
+
+  pollCount: number = 0;
+
+  
 
   componentDidMount() {
     ValidatorForm.addValidationRule('isURL', isURL);
@@ -25,6 +39,14 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps> {
   render() {
     const { data, handleValueChange, saveData } = this.props;
     return (
+      <>
+       <Typography variant="body2">
+       If you don't have access to an InfluxDB 2 server, &nbsp;
+        <Link href="https://docs.influxdata.com/influxdb/cloud/sign-up/" target="_blank" rel="noreferrer" variant="body2">
+          get started with InfluxDB Cloud
+        </Link>
+        .
+        </Typography>
       <ValidatorForm onSubmit={saveData} ref="InfluxDBSettingsForm">
         <TextValidator
           validators={['required', 'isURL']}
@@ -85,9 +107,89 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps> {
           <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">
             Save
           </FormButton>
+          <FormButton startIcon={<CheckCircle />} variant="contained" color="secondary" onClick={this.onValidateParams} disabled={this.state.validatingParams}>
+              {this.state.validatingParams?<CircularProgress />:<div>Validate</div>}
+          </FormButton>
         </FormActions>
       </ValidatorForm>
+      </>
     );
+  }
+
+  onValidateParams = () => {
+    this.setState({ validatingParams: true });
+    fetch(INFLUXDB_VALIDATE_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(this.props.data),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+    .then(response => {
+      return response.json()
+    })
+    .then(json => {
+      window.console.log('onValidateParams', json)
+      const status : ValidationStatusResponse = json
+      if (status.status === ValidationStatus.StartRequest) {
+        this.pollCount = 0
+        this.schedulePollValidation()
+      } else {
+        this.setState({ validatingParams: false });
+      }
+      return
+    })
+    .catch(error => {
+      this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
+      this.setState({ validatingParams: false });
+    });
+  }
+  schedulePollValidation() {
+    window.console.log('validation')
+    setTimeout(this.pollValidation, POLLING_FREQUENCY);
+  }
+
+  retryError() {
+    return {
+      name: RETRY_EXCEPTION_TYPE,
+      message: "Validation not ready, will retry in " + POLLING_FREQUENCY + "ms."
+    };
+  }
+
+  pollValidation = () => {
+    window.console.log('poll validation')
+    fetch(INFLUXDB_VALIDATE_ENDPOINT, {method: 'GET'})
+      .then(response => {
+        return response.json();
+      })
+      .then(json => {
+        window.console.log('PollValidation', json)
+        const status : ValidationStatusResponse = json
+        if (status.status === ValidationStatus.Finished) {
+          this.props.enqueueSnackbar("Success", {
+            variant: 'success',
+          });
+          this.setState({ validatingParams: false });
+          return;
+        } else if (status.status === ValidationStatus.Error) {
+           throw Error(status.message)
+        } else {
+          if (++this.pollCount < NUM_POLLS) {
+            this.schedulePollValidation();
+            throw this.retryError()
+          } else {
+            throw Error("Validation has not completed in timely manner.");
+          }
+        }
+      })
+      .catch(error => {
+        if (error.name !== RETRY_EXCEPTION_TYPE) {
+          this.props.enqueueSnackbar("Validation error: " + error.message, {
+            variant: 'error',
+          });
+          this.setState({ validatingParams: false });
+        }
+      });
   }
 }
 

@@ -121,19 +121,19 @@ class MenuAppBar extends React.Component<MenuAppBarProps, MenuAppBarState> {
           <Divider absolute />
         </Toolbar>
         <List>
-          <ListItem to='/wifi/' selected={path.startsWith('/wifi/')} button component={Link}>
+          <ListItem to='/wifi/status' selected={path.startsWith('/wifi/')} button component={Link}>
             <ListItemIcon>
               <WifiIcon />
             </ListItemIcon>
             <ListItemText primary="WiFi Connection" />
           </ListItem>
-          <ListItem to='/system/' selected={path.startsWith('/system/')} button component={Link} >
+          <ListItem to='/system/status' selected={path.startsWith('/system/')} button component={Link} >
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
             <ListItemText primary="System" />
           </ListItem>
-          <ListItem to='/influxdb/' selected={path.startsWith('/influxdb/')} button component={Link} >
+          <ListItem to='/influxdb/settings' selected={path.startsWith('/influxdb/')} button component={Link} >
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
