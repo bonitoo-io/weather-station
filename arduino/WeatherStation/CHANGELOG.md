@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.50
+ - InfluxDB server settings web UI
+ 
 ## 0.49
  - Updating from github using template file name and MD5 checksum - version 1.0.0 of ESP-GitHub-Updater is required
  
