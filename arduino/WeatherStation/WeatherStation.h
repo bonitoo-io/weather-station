@@ -49,5 +49,6 @@ private:
     WiFiStatusEndpoint _wifiStatusEndpoint;
     SystemStatusEndpoint _systemStatusEndpoint;
     SystemServiceEndpoint _systemServiceEndpoint;
+    InfluxDBValidateParamsEndpoint _influxdbValidateEndpoint;
 };
 #endif //WEATHER_STATION_H

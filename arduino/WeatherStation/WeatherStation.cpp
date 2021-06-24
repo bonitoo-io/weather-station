@@ -12,7 +12,8 @@ WeatherStation::WeatherStation():
   _influxDBSettingsEndpoint(&_server, INFLUXDB_SETTINGS_ENDPOINT_PATH, &_persistence, &_influxDBSettings),
   _wifiStatusEndpoint(&_server),
   _systemStatusEndpoint(&_server, &LittleFS),
-  _systemServiceEndpoint(&_server, &_persistence)
+  _systemServiceEndpoint(&_server, &_persistence),
+  _influxdbValidateEndpoint(&_server)
   {
 #if 1
   // Serve static resources from PROGMEM
@@ -67,6 +68,7 @@ void WeatherStation::begin() {
 
 void WeatherStation::loop() {
   _wifiManager.loop();
+  _influxdbValidateEndpoint.loop();
 }
 
 void WeatherStation::end() {
