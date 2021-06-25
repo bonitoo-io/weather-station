@@ -1,5 +1,3 @@
-#define VERSION "0.50"
-
 // Include libraries
 #include <Arduino.h>
 #include <ESPWiFi.h>
@@ -9,8 +7,9 @@
 #include "InfluxDBHelper.h"
 #include "Tools.h"
 #include "Updater.h"
+#include "DHTSensor.h"
 #include "Debug.h"
-
+#include "Version.h"
 
 /***************************
  * Begin Settings
@@ -59,11 +58,10 @@ tConfig conf = {
 SSD1306Wire display(I2C_OLED_ADDRESS, SDA_PIN, SDC_PIN);
 OLEDDisplayUi ui( &display);
 
-// Weather station backend
-WeatherStation station;
-Updater updater;
 InfluxDBHelper influxdbHelper;
-String deviceID;
+// Weather station backend
+WeatherStation station(&conf, &influxdbHelper);
+Updater updater;
 
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
@@ -74,10 +72,7 @@ bool initialized = false;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
-void setupDHT();
-float getDHTTemp(bool metric);
-float getDHTHum();
-void saveDHTTempHist(bool metric);
+
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
@@ -86,14 +81,14 @@ void drawFWUpdateInfo(OLEDDisplay *display, const String &fistLine, const String
 void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent);
 
 void updateData(OLEDDisplay *display, bool firstStart);
-bool loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
+bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
 void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
 void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
 void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey);
 void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey);
 
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID, InfluxDBHelper *influxDBHelper);
+void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const char *deviceID, InfluxDBHelper *influxDBHelper);
 
 void initData() {
   if(!initialized && WiFi.isConnected()) {
@@ -187,15 +182,9 @@ void setup() {
   display.display();
   //display.flipScreenVertically();
   //display.setContrast(100);
+  refreshDHTCachedValues(conf.useMetric);
 
-  //Generate Device ID
-  deviceID = "WS-" + WiFi.macAddress();
-  deviceID.remove(17, 1); //remove MAC separators
-  deviceID.remove(14, 1);
-  deviceID.remove(11, 1);
-  deviceID.remove(8, 1);
-  deviceID.remove(5, 1);
-
+  
   initData();
 
   WS_DEBUG_RAM("Setup 3");
@@ -225,7 +214,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   if (firstStart) {
     // TODO: better solution for updating Settings from IoT center
     auto influxDBSettings = station.getInfluxDBSettings();
-    if(loadIoTCenter(firstStart, conf.iotCenterUrl, deviceID, influxDBSettings,  conf.iotRefreshMin, conf.latitude, conf.longitude)) {
+    if(loadIoTCenter(firstStart, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, conf.latitude, conf.longitude)) {
       station.getPersistence()->writeToFS(influxDBSettings);
       influxDBSettings->notify();
     } else {
@@ -243,7 +232,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
-  influxdbHelper.update( firstStart, deviceID,  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
+  influxdbHelper.update( firstStart, getDeviceID(),  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
 
@@ -266,56 +255,60 @@ void loop() {
   }
   if(shouldSetupInfluxDb) {
     influxdbHelper.begin(station.getInfluxDBSettings());
-    influxdbHelper.update( true, deviceID,  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
+    influxdbHelper.update( true, getDeviceID(),  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
     shouldSetupInfluxDb = false;
   }
   if(!initialized) {
     initData();
   }
   // Ticker function - executed once per minute
-  if (WiFi.isConnected() && (ui.getUiState()->frameState == FIXED) && (millis() - timeSinceLastUpdate >= 1000*60)){
+  if (ui.getUiState()->frameState == FIXED && (millis() - timeSinceLastUpdate >= 1000*60)) {
     WS_DEBUG_RAM("Loop 1");
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
 
+    refreshDHTCachedValues(conf.useMetric);
+
+    if(WiFi.isConnected()) {
     //TODO: change to an alarm like functionality
-    time_t tnow = time(nullptr);
-    struct tm timeinfo;
-    localtime_r(&tnow, &timeinfo);
-    uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
-    if (curtm == station.getUpdaterSettings()->updateTime ) {
-      updater.checkUpdate();
-    }
-
-    //Sync IoT Center configuration
-    if (lastUpdateMins % conf.iotRefreshMin == 0) {
-      digitalWrite( LED, LOW);
-      // TODO: better solution for updating Settings from IoT center
-      auto influxDBSettings = station.getInfluxDBSettings();
-      if(loadIoTCenter(false, conf.iotCenterUrl, deviceID, influxDBSettings,  conf.iotRefreshMin, conf.latitude, conf.longitude)) {
-        station.getPersistence()->writeToFS(influxDBSettings);
-        influxDBSettings->notify();
+      time_t tnow = time(nullptr);
+      struct tm timeinfo;
+      localtime_r(&tnow, &timeinfo);
+      uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
+      if (curtm == station.getUpdaterSettings()->updateTime ) {
+        updater.checkUpdate();
       }
-      digitalWrite( LED, HIGH);
-    }
 
-    //Update data?
-    if (lastUpdateMins % conf.updateDataMin == 0) {
-      digitalWrite( LED, LOW);
-      updateData(&display,false);
-      digitalWrite( LED, HIGH);
-    }
+      //Sync IoT Center configuration
+      if (lastUpdateMins % conf.iotRefreshMin == 0) {
+        digitalWrite( LED, LOW);
+        // TODO: better solution for updating Settings from IoT center
+        auto influxDBSettings = station.getInfluxDBSettings();
+        if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, conf.latitude, conf.longitude)) {
+          station.getPersistence()->writeToFS(influxDBSettings);
+          influxDBSettings->notify();
+        }
+        digitalWrite( LED, HIGH);
+      }
 
-    //Write into InfluxDB
-    if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
-      digitalWrite( LED, LOW);
-      saveDHTTempHist( conf.useMetric);  //Save temperature for the chart
-      ESP.wdtFeed();
-      influxdbHelper.write( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
-      Serial.print(F("InfluxDB write "));
-      Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
-      digitalWrite( LED, HIGH);
-      WS_DEBUG_RAM("After write");
+      //Update data?
+      if (lastUpdateMins % conf.updateDataMin == 0) {
+        digitalWrite( LED, LOW);
+        updateData(&display,false);
+        digitalWrite( LED, HIGH);
+      }
+
+      //Write into InfluxDB
+      if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
+        digitalWrite( LED, LOW);
+        saveDHTTempHist( conf.useMetric);  //Save temperature for the chart
+        ESP.wdtFeed();
+        influxdbHelper.write( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
+        Serial.print(F("InfluxDB write "));
+        Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
+        digitalWrite( LED, HIGH);
+        WS_DEBUG_RAM("After write");
+      }
     }
   }
       
@@ -326,7 +319,7 @@ void loop() {
       ui.nextFrame();   //jump to the next frame
     }
     if (loops > 4)
-      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), deviceID, &influxdbHelper);  //Show configuration after 0.5s
+      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
 
     loops++;
     if (loops > 200) {  //factory reset after 20 seconds

@@ -1,3 +1,4 @@
+#include <ESPWiFi.h>
 #include "Tools.h"
 
 // English strings
@@ -40,6 +41,7 @@ const tLanguage languages[] PROGMEM = {
 };
 
 const tLanguage* pLang = languages;
+String deviceID;
 
 String getPgmStr( const char* s, uint8_t index) {
   const char * ps = s;
@@ -227,3 +229,16 @@ float convertFtoC(float f) {
 float convertCtoF(float c) {
   return c * 1.8 + 32;
 }
+
+const char *getDeviceID() {
+  if(!deviceID.length()) {
+    //Generate Device ID
+    deviceID = "WS-" + WiFi.macAddress();
+    deviceID.remove(17, 1); //remove MAC separators
+    deviceID.remove(14, 1);
+    deviceID.remove(11, 1);
+    deviceID.remove(8, 1);
+    deviceID.remove(5, 1);
+  }
+  return deviceID.c_str();
+};

@@ -1,5 +1,6 @@
 #include <OLEDDisplayUi.h>
 #include <DHT.h>
+#include "DHTSensor.h"
 #include "Tools.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
@@ -16,6 +17,22 @@ void setupDHT() {
   //clean data
   for (int i = 0; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
     tempHistory[i] = 0xffff;
+}
+
+float lastTemp = NAN;
+float lastHum = NAN;
+
+void refreshDHTCachedValues(bool metric) {
+  lastTemp = dht.readTemperature(!metric) + conf.tempOffset;
+  lastHum = dht.readHumidity() + conf.humOffset;
+}
+
+float getDHTCachedTemp() {
+  return lastTemp;
+}
+
+float getDHTCachedHum() {
+  return lastHum;
 }
 
 float getDHTTemp(bool metric) {

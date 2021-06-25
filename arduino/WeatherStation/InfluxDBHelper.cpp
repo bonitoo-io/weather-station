@@ -154,7 +154,7 @@ InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* s
 }
 
 static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message) {
-  root[F("status")] = code;
+  root[F("status")] = static_cast<int>(code);
   if(message) {
     root[F("message")] = message;
   }

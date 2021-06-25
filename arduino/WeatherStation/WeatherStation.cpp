@@ -3,7 +3,7 @@
 #include "WWWData.h"
 #include "Debug.h"
 
-WeatherStation::WeatherStation():
+WeatherStation::WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper):
   _server(80),
   _persistence(&LittleFS),
   _wifiManager(&_wifiSettings), 
@@ -11,8 +11,8 @@ WeatherStation::WeatherStation():
   _wifiSettingsEndpoint(&_server, WIFI_SETTINGS_ENDPOINT_PATH, &_persistence, &_wifiSettings),
   _influxDBSettingsEndpoint(&_server, INFLUXDB_SETTINGS_ENDPOINT_PATH, &_persistence, &_influxDBSettings),
   _wifiStatusEndpoint(&_server),
-  _systemStatusEndpoint(&_server, &LittleFS),
-  _systemServiceEndpoint(&_server, &_persistence),
+  _aboutInfoEndpoint(&_server, conf, influxDBHelper, &_influxDBSettings, &_wifiSettings),
+  _aboutServiceEndpoint(&_server, &_persistence),
   _influxdbValidateEndpoint(&_server)
   {
 #if 1

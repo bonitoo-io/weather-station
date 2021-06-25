@@ -47,7 +47,7 @@ private:
 
 #define VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH "/api/validateInfluxDBParams"
 
-enum ValidationStatus {
+enum class ValidationStatus {
   Idle = 0,
   StartRequest,
   Running,
