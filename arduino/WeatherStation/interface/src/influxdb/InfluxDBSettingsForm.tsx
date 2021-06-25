@@ -96,7 +96,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
           validators={['required','isNumber','minNumber: 1']}
           errorMessages={['Write Interval is required']}
           name="writeInterval"
-          label="Write Interval [seconds]"
+          label="Write Interval [minutes]"
           fullWidth
           variant="outlined"
           value={data.writeInterval}
