@@ -78,7 +78,6 @@ void setupDHT();
 float getDHTTemp(bool metric);
 float getDHTHum();
 void saveDHTTempHist(bool metric);
-void drawSplashScreen(OLEDDisplay *display, const char* version);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
@@ -197,9 +196,6 @@ void setup() {
   deviceID.remove(8, 1);
   deviceID.remove(5, 1);
 
-  drawSplashScreen(&display, VERSION);
-  delay(1000);
-
   initData();
 
   WS_DEBUG_RAM("Setup 3");
@@ -236,8 +232,6 @@ void updateData(OLEDDisplay *display, bool firstStart) {
       influxdbHelper.begin(influxDBSettings);
     }
   }
-  
-  
 
   drawUpdateProgress(display, 50, getStr(s_Updating_weather));
   updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);

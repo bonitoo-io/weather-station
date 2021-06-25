@@ -40,33 +40,30 @@ void setupOLEDUI(OLEDDisplayUi *ui) {
   ui->init(); // Inital UI takes care of initalising the display too
 }
 
-
-void drawSplashScreen(OLEDDisplay *display, const char* version) {
-  display->setFont(ArialMT_Plain_10);
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
-  display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nV")) + version);
-  display->display();
-}
-
-int wifiProgressCounter;
+uint32_t wifiProgressCounter;
 uint32_t wifiProgressLastDrown;
 
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid) {
   if(!wifiProgressLastDrown || (millis()-wifiProgressLastDrown >= 500)) {
     Serial.print(F("."));
+
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
+    display->setFont(ArialMT_Plain_10);
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->drawString(88, 0, getStr(s_Connecting_WiFi));
-    display->drawString(88, 15, ssid);
-    display->drawXbm(71, 30, 8, 8, wifiProgressCounter % 3 == 0 ? activeSymbole : inactiveSymbole);
-    display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
-    display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
-    display->drawString(88, 38, String(F("or wait for setup")));
-    display->drawString(88, 50, String(F("V")) + version);
     
-    display->display();
+    if (wifiProgressCounter < 3) {  //show splash screen
+      display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nV")) + version);
+    } else {  //show Wifi connecting screen
+      display->drawString(88, 0, getStr(s_Connecting_WiFi));
+      display->drawString(88, 15, ssid);
+      display->drawXbm(71, 30, 8, 8, wifiProgressCounter % 3 == 0 ? activeSymbole : inactiveSymbole);
+      display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
+      display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
+      display->drawString(88, 38, String(F("or wait for setup")));
+      display->drawString(88, 50, String(F("V")) + version);
+    }
+    display->display();    
     wifiProgressCounter++;
     wifiProgressLastDrown = millis();
   }
