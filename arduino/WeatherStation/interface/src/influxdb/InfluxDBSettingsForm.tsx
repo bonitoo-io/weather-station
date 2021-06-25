@@ -1,4 +1,4 @@
-import React  from 'react';
+import React, { RefObject }  from 'react';
 import { CircularProgress, Link, Typography } from '@material-ui/core';
 import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 
@@ -30,6 +30,13 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
 
   pollCount: number = 0;
 
+  form: RefObject<ValidatorForm>;
+
+  constructor(props: InfluxDBSettingsFormProps) {
+    super(props);
+    // create a ref to store the textInput DOM element
+    this.form = React.createRef();
+  }
   
 
   componentDidMount() {
@@ -47,7 +54,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
         </Link>
         .
         </Typography>
-      <ValidatorForm onSubmit={saveData} ref="InfluxDBSettingsForm">
+      <ValidatorForm onSubmit={saveData} ref={this.form}>
         <TextValidator
           validators={['required', 'isURL']}
           errorMessages={['Server URL is required', "Not a valid URL"]}
@@ -117,6 +124,21 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
   }
 
   onValidateParams = () => {
+    if(this.form.current) {
+      this.form.current.isFormValid(false)
+      .then(valid => {
+        if(valid) {
+          this.validateParams()
+        }
+        return
+      })
+      .catch(error => {
+        this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
+      });
+    }
+  }
+
+  validateParams = () => {
     this.setState({ validatingParams: true });
     fetch(INFLUXDB_VALIDATE_ENDPOINT, {
         method: 'POST',
