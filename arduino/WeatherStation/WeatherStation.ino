@@ -198,7 +198,7 @@ void setup() {
   deviceID.remove(5, 1);
 
   drawSplashScreen(&display, VERSION);
-  delay(500);
+  delay(1000);
 
   initData();
 

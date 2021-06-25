@@ -9,6 +9,7 @@
 float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();
 
+void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -21,7 +22,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
 bool isInfluxDBError();  
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
-FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy};
+FrameCallback frames[] = { drawAbout, drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy};
 //FrameCallback frames[] = { drawTemperatureChart};
 OverlayCallback overlays[] = { drawHeaderOverlay};
 
@@ -44,7 +45,7 @@ void drawSplashScreen(OLEDDisplay *display, const char* version) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
-  display->drawString(88, 5, String(F("Weather Station\nby InfluxData\nV")) + version);
+  display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nV")) + version);
   display->display();
 }
 
@@ -56,12 +57,15 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
     Serial.print(F("."));
     display->clear();
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(88, 0, getStr(s_Connecting_WiFi));
     display->drawString(88, 15, ssid);
     display->drawXbm(71, 30, 8, 8, wifiProgressCounter % 3 == 0 ? activeSymbole : inactiveSymbole);
     display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
     display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
-    display->drawString(88, 40, String(F("V")) + version);
+    display->drawString(88, 38, String(F("or wait for setup")));
+    display->drawString(88, 50, String(F("V")) + version);
+    
     display->display();
     wifiProgressCounter++;
     wifiProgressLastDrown = millis();
@@ -84,7 +88,7 @@ void drawAPInfo(OLEDDisplay *display, APInfo *info) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0, 24, getStr(s_Wifi_web_point));
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64, 36, info->ipAddress.toString());
+  display->drawString(64, 36, String(F("http://")) + info->ipAddress.toString());
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0, 48, getStr(s_Wifi_configure));
   display->display();
@@ -173,8 +177,8 @@ const __FlashStringHelper * wifiStatusStr(wl_status_t status) {
 
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID, InfluxDBHelper *influxDBHelper) {
   display->clear();
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawRect(0, 0, display->getWidth(), display->getHeight());
   if ( secToReset > 5) {
     display->drawString(1,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
@@ -187,6 +191,16 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     display->drawString(0, 30, String(F("FACTORY RESET IN ")) + String(secToReset) + String(F("s !")));
 
   display->display();
+}
+
+void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString((display->getWidth() / 2) + x, 6 + y, getStr(s_InfluxData_Weather_Station));
+  display->drawRect(8 + x, 18 + y, display->getWidth() - 16, 23);
+  display->drawString((display->getWidth() / 2) + x, 18 + y, getStr(s_Configure_via));
+  display->drawString((display->getWidth() / 2) + x, 28 + y, String(F("http://")) + WiFi.localIP().toString());
+  display->drawString((display->getWidth() / 2) + x, 40 + y, getStr(s_developed_by_bonitoo));
 }
 
 /*void showFont(OLEDDisplay *display, const uint8_t *fontData) {

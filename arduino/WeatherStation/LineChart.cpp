@@ -74,5 +74,6 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigne
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  
   drawLineChart( display, strTempUnit(), tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
 }
