@@ -60,7 +60,7 @@ String getMoonPhaseName( uint8_t index);
 enum tStrings {
   s_Connecting_WiFi=0, s_Connecting_IoT_Center, s_Detecting_location, s_Checking_update, s_Updating_time, s_Updating_weather, s_Calculate_moon_phase, s_Updating_forecasts, s_Connecting_InfluxDB, s_Done,
   s_Update_found, s_Update_start_in, s_Update_successful, s_Update_restart_in, s_Update_failed, s_Updating_to, s_Update_restarting, s_Wifi_AP_connect, s_Wifi_web_point, s_Wifi_configure,
-  s_InfluxData_Weather_Station, s_Configure_via, s_developed_by_bonitoo,
+  s_InfluxData_Weather_Station, s_Configure_via,
   s_In, s_Out, s_now,
   s_INDOOR, s_feel, s_hum, s_wind,
   s_Moon, s_Sun,
