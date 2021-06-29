@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.51
+ - About page
+ - Display improvement
+
 ## 0.50
  - InfluxDB server settings web UI
  
