@@ -8,7 +8,7 @@ static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first q
 static const char STR_ENG[] PROGMEM = 
 "Connecting WiFi\0" "Connecting IoT Center\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
 "Found update \0" "Starting update\0" "Update successful\0" "Restarting...\0" "Update failed \0" "Updating \0" "Restarting\0" "1. Connect to WiFi:\0" "2. Open web browser with:\0" "3. Configure WiFi network\0"
-"InfluxData Weather Station\0" "Configure via:\0"
+"Weather Station\0" "Configure via:\0"
 "In:\0" " Out:\0" "now\0"
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
 "Moon\0" "Sun\0" ;
@@ -95,7 +95,7 @@ String strTimeSuffix(time_t timestamp) {
 
 String strDate(time_t timestamp, bool shortDate) {
   struct tm* timeInfo = localtime(&timestamp);
-  char buff[20];
+  char buff[25];
  
   if (conf.useYMDdate) {
     if (shortDate)

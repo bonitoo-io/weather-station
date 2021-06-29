@@ -53,7 +53,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     
     if (wifiProgressCounter < 3) {  //show splash screen
-      display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nV")) + version);
+      display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nv")) + version);
     } else {  //show Wifi connecting screen
       display->drawString(88, 0, getStr(s_Connecting_WiFi));
       display->drawString(88, 15, ssid);
@@ -61,7 +61,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
       display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
       display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
       display->drawString(88, 38, String(F("or wait for setup")));
-      display->drawString(88, 50, String(F("V")) + version);
+      display->drawString(88, 50, String(F("v")) + version);
     }
     display->display();    
     wifiProgressCounter++;
@@ -182,7 +182,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
     display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
     display->drawString(1, 30, String(F("InfluxDB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
-    display->drawString(1, 40, String("V") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
+    display->drawString(1, 40, String("v") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
     display->drawString(1, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, String(F("FACTORY RESET IN ")) + String(secToReset) + String(F("s !")));

@@ -184,7 +184,6 @@ void InfluxDBValidateParamsEndpoint::validateParams(AsyncWebServerRequest* reque
     response->setLength();
     response->setCode(200); 
     request->send(response);
-
 }
 
 
