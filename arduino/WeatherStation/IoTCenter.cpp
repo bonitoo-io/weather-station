@@ -14,7 +14,7 @@ String loadParameter( const String& response, const __FlashStringHelper* param_p
   return response.substring( response.indexOf(":", i) + 2, response.indexOf("\n", i));
 }
 
-bool loadIoTCenter( bool firstStart, const String& iot_url, const String &deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude) {
+bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude) {
   if ( iot_url.length() == 0) //if iot_center url is not defined, exit
     return false;
   

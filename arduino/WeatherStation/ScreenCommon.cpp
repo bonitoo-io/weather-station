@@ -5,9 +5,8 @@
 #include "Tools.h"
 #include "WiFi.h"
 #include "InfluxDBHelper.h"
-extern String deviceID;
+#include "DHTSensor.h"
 
-float getDHTTemp(bool metric);
 float getCurrentWeatherTemperature();
 
 void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -173,7 +172,7 @@ const __FlashStringHelper * wifiStatusStr(wl_status_t status) {
   }
 }
 
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const String deviceID, InfluxDBHelper *influxDBHelper) {
+void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const char *deviceID, InfluxDBHelper *influxDBHelper) {
   display->clear();
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -198,7 +197,7 @@ void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16
   display->drawRect(8 + x, 18 + y, display->getWidth() - 16, 23);
   display->drawString((display->getWidth() / 2) + x, 18 + y, getStr(s_Configure_via));
   display->drawString((display->getWidth() / 2) + x, 28 + y, String(F("http://")) + WiFi.localIP().toString());
-  display->drawString((display->getWidth() / 2) + x, 40 + y, String(F("Id: ")) + deviceID);
+  display->drawString((display->getWidth() / 2) + x, 40 + y, String(F("Id: ")) + getDeviceID());
 }
 
 /*void showFont(OLEDDisplay *display, const uint8_t *fontData) {

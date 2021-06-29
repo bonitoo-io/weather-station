@@ -9,6 +9,7 @@ String strTemp( float t);
 String strHum( float h);
 String strWind( float w);
 String utf8ascii(const String s);
+const char *getDeviceID();
 
 struct tConfig {
   bool detectLocationIP;

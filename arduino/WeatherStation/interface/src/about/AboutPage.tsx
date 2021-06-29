@@ -1,64 +1,129 @@
 import React, { Component, Fragment } from 'react';
-
-import { Avatar, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Box } from '@material-ui/core';
+import { Link as RouterLink } from 'react-router-dom';
+import { Avatar, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, Link } from '@material-ui/core';
 import { List, ListItem, ListItemAvatar, ListItemText } from '@material-ui/core';
+import { Theme } from '@material-ui/core';
+import { WithTheme, withTheme } from '@material-ui/core/styles';
 
-import DevicesIcon from '@material-ui/icons/Devices';
-import MemoryIcon from '@material-ui/icons/Memory';
+import ThermostatIcon from './ThermostatIcon';
 import ShowChartIcon from '@material-ui/icons/ShowChart';
-import SdStorageIcon from '@material-ui/icons/SdStorage';
-import FolderIcon from '@material-ui/icons/Folder';
 import DataUsageIcon from '@material-ui/icons/DataUsage';
-import AppsIcon from '@material-ui/icons/Apps';
+import MemoryIcon from '@material-ui/icons/Memory';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
 
-import { RestFormProps, FormButton, ErrorButton } from '../components';
+import { RestFormProps, FormButton, ErrorButton, HighlightAvatar } from '../components';
 import { FACTORY_RESET_ENDPOINT, RESTART_ENDPOINT } from '../api';
 
-import { SystemStatus, EspPlatform } from './types';
+import { AboutInfo, AppState } from './types';
 
-interface SystemStatusFormState {
+interface AboutPageState {
   confirmRestart: boolean;
   confirmFactoryReset: boolean;
   processing: boolean;
 }
 
-type SystemStatusFormProps = RestFormProps<SystemStatus>;
+type AboutPageProps = RestFormProps<AboutInfo> & WithTheme;
 
 function formatNumber(num: number) {
   return new Intl.NumberFormat().format(num);
 }
 
-class SystemStatusForm extends Component<SystemStatusFormProps, SystemStatusFormState> {
+const day = 24*3600 
+const hour = 3600 
 
-  state: SystemStatusFormState = {
+function formatUptime(num: number) {
+  let uptime: string = ''
+  num = Math.floor(num/ 1000)
+  if(num >= day) {
+    uptime += formatNumber(Math.floor(num /day)) + 'days '
+    num %= day
+  }
+  if(num >= hour) {
+    uptime += formatNumber(Math.floor(num / hour)) + 'hours '
+    num %= hour
+  }
+  if(num >= 60) {
+    uptime += formatNumber(Math.floor(num / 60)) + 'minutes '
+    num %= 60
+  }
+  if(num > 0) {
+    uptime += formatNumber(num)  + 'seconds'
+  }
+  return uptime;
+}
+
+export const appStatusHighlight = ({ appState }: AboutInfo, theme: Theme) => {
+  switch (appState) {
+    case AppState.Ok:
+      return theme.palette.primary.main;
+    case AppState.WifiConfigNeeded:
+    case AppState.InfluxDBConfigNeeded:
+      return theme.palette.warning.main;
+    case AppState.Error:
+      return theme.palette.error.main;
+    default:
+      return theme.palette.secondary.main;
+  }
+}
+
+function appStatus(data: AboutInfo) {
+  switch(data.appState) {
+    case AppState.WifiConfigNeeded: 
+      return <Typography variant="subtitle1">
+        Weather Station requires <Link component={RouterLink}  to="/wifi/scan">WiFi configuration</Link>
+        </Typography>
+    case AppState.InfluxDBConfigNeeded:
+      return <Typography variant="subtitle1">
+        Weather Station requires <Link component={RouterLink}  to="/influxdb/settings">InfluxDB connection configuration</Link>
+        </Typography>
+    case AppState.Error:
+      return <Typography variant="subtitle1">
+        {data.error}
+      </Typography>
+    default:
+      return <Typography variant="subtitle1">
+        Working
+      </Typography>
+  }
+}
+
+
+class AboutPage extends Component<AboutPageProps, AboutPageState> {
+
+  state: AboutPageState = {
     confirmRestart: false,
     confirmFactoryReset: false,
     processing: false
   }
 
   createListItems() {
-    const { data } = this.props
+    const { data, theme } = this.props
     return (
       <Fragment>
+        <Typography variant="h5">
+        Weather Station 1.00, version {data.version}<br/>
+        </Typography>
+        <Typography variant="h6">
+        Created for <Link href="https://www.influxdata.com" target="_blank" rel="noreferrer">InfluxData</Link> by <Link href="https://bonitoo.io" target="_blank" rel="noreferrer">Bonitoo</Link>
+        </Typography>
         <ListItem >
           <ListItemAvatar>
-            <Avatar>
-              <DevicesIcon />
-            </Avatar>
+          <HighlightAvatar color={appStatusHighlight(data, theme)}>
+              <ShowChartIcon />
+            </HighlightAvatar>
           </ListItemAvatar>
-          <ListItemText primary="Device (Platform / SDK)" secondary={data.esp_platform + ' / ' + data.sdk_version} />
+          <ListItemText primary="Status" secondary={appStatus(data)} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >
           <ListItemAvatar>
             <Avatar>
-              <ShowChartIcon />
+              <ThermostatIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="CPU Frequency" secondary={data.cpu_freq_mhz + ' MHz'} />
+          <ListItemText primary="Sensor values" secondary={data.temp + '°' + (data.useMetric?'C':'F') + ' ' + data.hum + '%'} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >
@@ -67,22 +132,8 @@ class SystemStatusForm extends Component<SystemStatusFormProps, SystemStatusForm
               <MemoryIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="Heap (Free / Max Alloc)" secondary={formatNumber(data.free_heap) + ' / ' + formatNumber(data.max_alloc_heap) + ' bytes ' + (data.esp_platform === EspPlatform.ESP8266 ? '(' + data.heap_fragmentation + '% fragmentation)' : '')} />
+          <ListItemText primary="Device ID" secondary={data.deviceId} />
         </ListItem>
-        {
-          (data.esp_platform === EspPlatform.ESP32 && data.psram_size > 0) && (
-            <Fragment>
-              <Divider variant="inset" component="li" />
-              <ListItem >
-                <ListItemAvatar>
-                  <Avatar>
-                    <AppsIcon />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText primary="PSRAM (Size / Free)" secondary={formatNumber(data.psram_size) + ' / ' + formatNumber(data.free_psram) + ' bytes'} />
-              </ListItem>
-            </Fragment>)
-        }
         <Divider variant="inset" component="li" />
         <ListItem >
           <ListItemAvatar>
@@ -90,27 +141,8 @@ class SystemStatusForm extends Component<SystemStatusFormProps, SystemStatusForm
               <DataUsageIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="Sketch (Size / Free)" secondary={formatNumber(data.sketch_size) + ' / ' + formatNumber(data.free_sketch_space) + ' bytes'} />
+          <ListItemText primary="Uptime" secondary={formatUptime(data.uptime)} />
         </ListItem>
-        <Divider variant="inset" component="li" />
-        <ListItem >
-          <ListItemAvatar>
-            <Avatar>
-              <SdStorageIcon />
-            </Avatar>
-          </ListItemAvatar>
-          <ListItemText primary="Flash Chip (Size / Speed)" secondary={formatNumber(data.flash_chip_size) + ' bytes / ' + (data.flash_chip_speed / 1000000).toFixed(0) + ' MHz'} />
-        </ListItem>
-        <Divider variant="inset" component="li" />
-        <ListItem >
-          <ListItemAvatar>
-            <Avatar>
-              <FolderIcon />
-            </Avatar>
-          </ListItemAvatar>
-          <ListItemText primary="File System (Used / Total)" secondary={formatNumber(data.fs_used) + ' / ' + formatNumber(data.fs_total) + ' bytes (' + formatNumber(data.fs_total - data.fs_used) + '\xa0bytes free)'} />
-        </ListItem>
-        <Divider variant="inset" component="li" />
       </Fragment>
     );
   }
@@ -238,4 +270,4 @@ class SystemStatusForm extends Component<SystemStatusFormProps, SystemStatusForm
 
 }
 
-export default SystemStatusForm;
+export default withTheme(AboutPage);

@@ -9,6 +9,7 @@ import { withStyles, createStyles, Theme, WithTheme, WithStyles, withTheme } fro
 
 import WifiIcon from '@material-ui/icons/Wifi';
 import SettingsIcon from '@material-ui/icons/Settings';
+import InfoIcon from '@material-ui/icons/Info';
 import MenuIcon from '@material-ui/icons/Menu';
 
 import { PROJECT_NAME } from '../api';
@@ -120,18 +121,18 @@ class MenuAppBar extends React.Component<MenuAppBarProps, MenuAppBarState> {
           </Typography>
           <Divider absolute />
         </Toolbar>
+        <ListItem to='/about/about' selected={path.startsWith('/about/')} button component={Link} >
+            <ListItemIcon>
+              <InfoIcon />
+            </ListItemIcon>
+            <ListItemText primary="About" />
+          </ListItem>
         <List>
           <ListItem to='/wifi/status' selected={path.startsWith('/wifi/')} button component={Link}>
             <ListItemIcon>
               <WifiIcon />
             </ListItemIcon>
             <ListItemText primary="WiFi Connection" />
-          </ListItem>
-          <ListItem to='/system/status' selected={path.startsWith('/system/')} button component={Link} >
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="System" />
           </ListItem>
           <ListItem to='/influxdb/settings' selected={path.startsWith('/influxdb/')} button component={Link} >
             <ListItemIcon>

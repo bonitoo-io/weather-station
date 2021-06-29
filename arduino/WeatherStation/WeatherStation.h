@@ -6,13 +6,13 @@
 
 #include "WiFi.h"
 #include "FSPersistance.h"
-#include "System.h"
+#include "About.h"
 #include "InfluxDBHelper.h"
 #include "Updater.h"
 
 class WeatherStation {
 public:
-    WeatherStation();
+    WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper);
     void begin();
     void loop();
     void end();
@@ -47,8 +47,8 @@ private:
     SettingsEndpoint _wifiSettingsEndpoint;
     SettingsEndpoint _influxDBSettingsEndpoint;
     WiFiStatusEndpoint _wifiStatusEndpoint;
-    SystemStatusEndpoint _systemStatusEndpoint;
-    SystemServiceEndpoint _systemServiceEndpoint;
+    AboutInfoEndpoint _aboutInfoEndpoint;
+    AboutServiceEndpoint _aboutServiceEndpoint;
     InfluxDBValidateParamsEndpoint _influxdbValidateEndpoint;
 };
 #endif //WEATHER_STATION_H
