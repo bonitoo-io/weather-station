@@ -4,11 +4,13 @@
 #include "DHTSensor.h"
 #include "Version.h"
 
-AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, tConfig *conf, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, WiFiSettings *wifiSettings):
+AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, tConfig *conf, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
+  WiFiSettings *wifiSettings, FS* fs):
   _conf(conf),
   _influxDBHelper(influxDBHelper),
   _influxDBSettings(influxDBSettings),
-  _wifiSettings(wifiSettings) {
+  _wifiSettings(wifiSettings),
+  _fs(fs) {
   server->on(ABOUT_ENDPOINT_PATH,
              HTTP_GET,
              std::bind(&AboutInfoEndpoint::aboutHandler, this, std::placeholders::_1));
@@ -23,7 +25,6 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   root[F("temp")] = getDHTCachedTemp();
   root[F("hum")] = getDHTCachedHum();
   root[F("uptime")] = millis();
-  root[F("freeRam")] = ESP.getFreeHeap();
   AppState state = AppState::Ok;
   if(!_wifiSettings->ssid.length() || !WiFi.isConnected()) {
     state = AppState::WifiConfigNeeded;
@@ -34,6 +35,21 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
       root[F("error")] = _influxDBHelper->errorMsg();
   }
   root[F("appState")] = static_cast<int>(state);
+  root[F("freeHeap")] = ESP.getFreeHeap();
+  root[F("espPlatform")] = "esp8266";
+  root[F("maxAllocHeap")] = ESP.getMaxFreeBlockSize();
+  root[F("heapFragmentation")] = ESP.getHeapFragmentation();
+  root[F("cpuFreq")] = ESP.getCpuFreqMHz();
+  root[F("sketchSize")] = ESP.getSketchSize();
+  root[F("freeSketchSpace")] = ESP.getFreeSketchSpace();
+  root[F("sdkVersion")] = ESP.getSdkVersion();
+  root[F("flashChipSize")] = ESP.getFlashChipSize();
+  root[F("flashChipSpeed")] = ESP.getFlashChipSpeed();
+  FSInfo fs_info;
+  _fs->info(fs_info);
+  root[F("fsTotal")] = fs_info.totalBytes;
+  root[F("fsUsed")] = fs_info.usedBytes;
+
 
   response->setLength();
   request->send(response);

@@ -11,7 +11,7 @@ WeatherStation::WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper):
   _wifiSettingsEndpoint(&_server, WIFI_SETTINGS_ENDPOINT_PATH, &_persistence, &_wifiSettings),
   _influxDBSettingsEndpoint(&_server, INFLUXDB_SETTINGS_ENDPOINT_PATH, &_persistence, &_influxDBSettings),
   _wifiStatusEndpoint(&_server),
-  _aboutInfoEndpoint(&_server, conf, influxDBHelper, &_influxDBSettings, &_wifiSettings),
+  _aboutInfoEndpoint(&_server, conf, influxDBHelper, &_influxDBSettings, &_wifiSettings, &LittleFS),
   _aboutServiceEndpoint(&_server, &_persistence),
   _influxdbValidateEndpoint(&_server)
   {

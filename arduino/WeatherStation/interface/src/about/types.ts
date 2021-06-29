@@ -12,7 +12,18 @@ export interface AboutInfo {
   temp: number;
   hum: number;
   uptime: number;
-  freeRam: number;
   appState: AppState;
   error?: string;
+  espPlatform: string;
+  freeHeap: number;
+  maxAllocHeap: number;
+  heapFragmentation: number;
+  cpuFreq: number;
+  sketchSize: number;
+  freeSketchSpace: number;
+  sdkVersion: string;
+  flashChipSize: number;
+  flashChipSpeed: number;
+  fsUsed: number;
+  fsTotal: number;
 }

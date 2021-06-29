@@ -9,9 +9,14 @@ import ThermostatIcon from './ThermostatIcon';
 import ShowChartIcon from '@material-ui/icons/ShowChart';
 import DataUsageIcon from '@material-ui/icons/DataUsage';
 import MemoryIcon from '@material-ui/icons/Memory';
+import SdStorageIcon from '@material-ui/icons/SdStorage';
+import FolderIcon from '@material-ui/icons/Folder';
+import DevicesIcon from '@material-ui/icons/Devices';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
+import FilterIcon from '@material-ui/icons/Filter';
+import AlignHorizontalCenterIcon from '@material-ui/icons/FormatAlignCenter';
 
 import { RestFormProps, FormButton, ErrorButton, HighlightAvatar } from '../components';
 import { FACTORY_RESET_ENDPOINT, RESTART_ENDPOINT } from '../api';
@@ -103,7 +108,7 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
     return (
       <Fragment>
         <Typography variant="h5">
-        Weather Station 1.00, version {data.version}<br/>
+        Weather Station
         </Typography>
         <Typography variant="h6">
         Created for <Link href="https://www.influxdata.com" target="_blank" rel="noreferrer">InfluxData</Link> by <Link href="https://bonitoo.io" target="_blank" rel="noreferrer">Bonitoo</Link>
@@ -138,12 +143,78 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
         <ListItem >
           <ListItemAvatar>
             <Avatar>
-              <DataUsageIcon />
+              <AlignHorizontalCenterIcon />
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Uptime" secondary={formatUptime(data.uptime)} />
         </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <FilterIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Version" secondary={data.version} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <DevicesIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Device (Platform / SDK)" secondary={data.espPlatform + ' / ' + data.sdkVersion} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <ShowChartIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="CPU Frequency" secondary={data.cpuFreq + ' MHz'} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <MemoryIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Heap (Free / Max Alloc)" secondary={formatNumber(data.freeHeap) + ' / ' + formatNumber(data.maxAllocHeap) + ' bytes (' + data.heapFragmentation + '% fragmentation)'} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <DataUsageIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Sketch (Size / Free)" secondary={formatNumber(data.sketchSize) + ' / ' + formatNumber(data.freeSketchSpace) + ' bytes'} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <SdStorageIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Flash Chip (Size / Speed)" secondary={formatNumber(data.flashChipSize) + ' bytes / ' + (data.flashChipSpeed / 1000000).toFixed(0) + ' MHz'} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <FolderIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="File System (Used / Total)" secondary={formatNumber(data.fsUsed) + ' / ' + formatNumber(data.fsTotal) + ' bytes (' + formatNumber(data.fsTotal - data.fsUsed) + '\xa0bytes free)'} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+
       </Fragment>
+
     );
   }
 
