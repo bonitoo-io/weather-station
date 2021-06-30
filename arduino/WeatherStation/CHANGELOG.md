@@ -1,4 +1,9 @@
 # Changelog
+## 0.53
+ - Display improvements
+ - About temperature unit fix
+ - Added writing of device status 
+
 ## 0.52
  - Fixing on time update issue (#13)
 
