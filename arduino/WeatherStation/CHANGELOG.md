@@ -1,4 +1,6 @@
 # Changelog
+## 0.52
+ - Fixing on time update issue (#13)
 
 ## 0.51
  - About page
