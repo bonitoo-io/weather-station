@@ -38,7 +38,8 @@ class InfluxDBHelper {
   void update( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location, bool metric);
   void write( float temp, float hum, const float lat, const float lon);
   void loadTempHistory(const String &deviceID, bool metric);
-  static String validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken);
+  void release();
+  String validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken);
 private:
   InfluxDBSettings *_settings = nullptr;
   InfluxDBClient *_client = nullptr;
@@ -57,7 +58,7 @@ enum class ValidationStatus {
 
 class InfluxDBValidateParamsEndpoint {
 public:
-    InfluxDBValidateParamsEndpoint(AsyncWebServer* server);
+    InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper);
     virtual ~InfluxDBValidateParamsEndpoint() { delete _validationSettings; }
     void loop();
 private:
@@ -65,6 +66,7 @@ private:
     void checkStatus(AsyncWebServerRequest* request);
 private:
     InfluxDBSettings *_validationSettings;
+    InfluxDBHelper *_helper;
     ValidationStatus _status;
     String _error;
     AsyncCallbackJsonWebHandler _validateHandler;

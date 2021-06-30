@@ -13,7 +13,7 @@ void Updater::init(UpdaterSettings *settings, const char *currentVersion) {
 }
 
 
-void Updater::checkUpdate() {
+bool Updater::checkUpdate() {
   WS_DEBUG_RAM("Before GH update");
   ESPGithubUpdater ghUpdater(_settings->owner, _settings->repo, _settings->binFile);
   ghUpdater.setMD5FileName(_settings->md5File);
@@ -50,6 +50,7 @@ void Updater::checkUpdate() {
     Serial.println(ghUpdater.getLastError());
   }
   WS_DEBUG_RAM("After GH update");
+  return res;
 }
 
 void printUpdaterSettings(String prefix, UpdaterSettings *s) {

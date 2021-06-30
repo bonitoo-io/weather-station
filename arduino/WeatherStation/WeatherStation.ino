@@ -144,6 +144,10 @@ void setup() {
   station.getInfluxDBSettings()->setHandler([](){
     shouldSetupInfluxDb =  true;
   });
+  
+  station.getUpdaterSettings()->setHandler([](){
+    updater.init(station.getUpdaterSettings(), VERSION);
+  });
 
   updater.setUpdateCallbacks([](const char *newVersion) {
       drawFWUpdateInfo(&display, getStr(s_Update_found) + newVersion, getStr(s_Update_start_in));
@@ -196,9 +200,17 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (conf.detectLocationIP) {
     WS_DEBUG_RAM("Before IPloc");
+    if(!firstStart) {
+      influxdbHelper.release();
+      WS_DEBUG_RAM("After cl release");
+      delay(1000);
+    }
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
     setLanguage( conf.language);
     WS_DEBUG_RAM("After IPloc");
+    if(!firstStart) {
+      influxdbHelper.begin(station.getInfluxDBSettings());
+    }
   }
 
   drawUpdateProgress(display, 10, getStr(s_Updating_time));
@@ -206,7 +218,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 
 
   drawUpdateProgress(display, 20, getStr(s_Checking_update));
-  if(firstStart) {
+  if(firstStart && station.getUpdaterSettings()->updateTime < 2400) {
     updater.checkUpdate();
   }
 
@@ -270,13 +282,23 @@ void loop() {
     refreshDHTCachedValues(conf.useMetric);
 
     if(WiFi.isConnected()) {
-    //TODO: change to an alarm like functionality
-      time_t tnow = time(nullptr);
-      struct tm timeinfo;
-      localtime_r(&tnow, &timeinfo);
-      uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
-      if (curtm == station.getUpdaterSettings()->updateTime ) {
-        updater.checkUpdate();
+
+      if(station.getUpdaterSettings()->updateTime < 2400) {
+        //TODO: change to an alarm like functionality
+        time_t tnow = time(nullptr);
+        struct tm timeinfo;
+        localtime_r(&tnow, &timeinfo);
+        uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
+        Serial.printf("Checking updatime time: %d:%d (%d vs %d)\n", timeinfo.tm_hour, timeinfo.tm_min, curtm, station.getUpdaterSettings()->updateTime);
+        if (curtm == station.getUpdaterSettings()->updateTime ) {
+          influxdbHelper.release();
+          WS_DEBUG_RAM("After release");
+          delay(1000);
+          WS_DEBUG_RAM("After delay");
+          if(!updater.checkUpdate()) {
+            influxdbHelper.begin(station.getInfluxDBSettings());
+          }
+        }
       }
 
       //Sync IoT Center configuration
