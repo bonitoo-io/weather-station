@@ -336,7 +336,7 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
   JsonObject root = response->getRoot();
   wl_status_t status = WiFi.status();
   root[F("mode")] = WiFi.getMode();
-  root[F("status")] =status;
+  root[F("status")] = status;
   if (status == WL_CONNECTED) {
     root[F("local_ip")] = WiFi.localIP().toString();
     root[F("mac_address")] = WiFi.macAddress();

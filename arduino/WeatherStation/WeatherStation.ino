@@ -69,6 +69,7 @@ String wifiSSID;
 bool shouldSetupInfluxDb = false;
 bool shouldDrawWifiProgress = false;
 bool initialized = false;
+String resetReason;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
@@ -113,6 +114,9 @@ void setup() {
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
   Serial.println(F("Starting Weather station v" VERSION));
   WS_DEBUG_RAM("Setup 1");
+  if(ESP.getResetInfoPtr()->reason != REASON_DEEP_SLEEP_AWAKE) {
+    resetReason = ESP.getResetReason();
+  }
 #if 1  
   station.getWifiManager()->setWiFiConnectionEventHandler([](WifiConnectionEvent event, const char *ssid){
       // WiFi interrupt events, don't do anything complex, just update state variables
@@ -252,6 +256,10 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     //Save temperature for the chart
     saveDHTTempHist( conf.useMetric);
   }
+
+  influxdbHelper.writeStatus(resetReason);
+  resetReason = (char *)nullptr;
+
 
   digitalWrite( LED, HIGH);
   delay(500);

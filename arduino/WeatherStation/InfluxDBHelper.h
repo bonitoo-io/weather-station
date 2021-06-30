@@ -36,6 +36,7 @@ class InfluxDBHelper {
   }
   void begin( InfluxDBSettings *settings);
   void update( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location, bool metric);
+  void writeStatus(const String &resetReason);
   void write( float temp, float hum, const float lat, const float lon);
   void loadTempHistory(const String &deviceID, bool metric);
   void release();

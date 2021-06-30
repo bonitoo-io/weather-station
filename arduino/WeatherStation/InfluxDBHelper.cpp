@@ -1,6 +1,7 @@
 #include "InfluxDBHelper.h"
 #include <InfluxDbCloud.h>
 #include "Tools.h"
+#include "Version.h"
 
 extern int tempHistory[90];
 
@@ -69,6 +70,28 @@ void InfluxDBHelper::write( float temp, float hum, const float lat, const float 
   }
 }
 
+void InfluxDBHelper::writeStatus(const String &resetReason) {
+  if(!_client || !_client->getServerUrl().length()) {
+    return;
+  }
+
+  Point status("device_status");
+  status.addField(F("free_heap"), ESP.getFreeHeap());
+  status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
+  status.addField(F("max_alloc_heap"), ESP.getHeapFragmentation());
+  status.addTag(F("clientId"), getDeviceID());
+  status.addTag(F("device"), String(F("WS-ESP8266")));
+  status.addTag(F("version"), VERSION);
+  if(resetReason.length()) {
+    status.addTag(F("reset_reason"), resetReason);
+  }
+  Serial.print(F("Writing status: "));
+  Serial.println(_client->pointToLineProtocol(status));
+  if (!_client->writePoint(status)) {
+    Serial.print(F("InfluxDB write failed: "));
+    Serial.println(_client->getLastErrorMessage());
+  }
+}
 
 // load temperature from InfluxDB - the last 90 minutes and the selected device
 void InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
