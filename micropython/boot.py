@@ -5,7 +5,7 @@ try:
     with open('config.json', 'r') as json_file:
         CFG = load(json_file)
 except Exception as e:
-    print('Failed to load config file, no known networks selected')
+    print('Failed to load config file')
 
 
 def collect_gc():

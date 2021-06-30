@@ -93,6 +93,7 @@ def randrange(start, stop=None):
 
 
 def restart():
+    time.sleep(10)
     reset()
 
 
