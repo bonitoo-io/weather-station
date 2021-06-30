@@ -23,8 +23,12 @@ void updateCurrentWeather( const bool metric, const String& lang, const String& 
   currentWeatherClient.setLanguage(lang);
   _currentWeather.temp = NAN;
   currentWeatherClient.updateCurrent(&_currentWeather, APIKey, location);
-
-  currentWeather.temp = isnan(_currentWeather.temp) ? 0xffff : round( _currentWeather.temp);
+  if (isnan(_currentWeather.temp)) {
+    currentWeather.temp =  0xffff;
+    return;  
+  }
+  
+  currentWeather.temp =  round( _currentWeather.temp);
   currentWeather.tempMin = round( _currentWeather.tempMin);
   currentWeather.tempMax = round( _currentWeather.tempMax);
   currentWeather.description = _currentWeather.description;
@@ -45,9 +49,14 @@ void updateForecast( const bool metric, const String& lang, const String& locati
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(_forecasts, APIKey, location, MAX_FORECASTS);
 
+  if (isnan(_forecasts[0].temp)) {
+    forecasts[0].temp = 0xffff;
+    return;
+  }
+
   for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
     forecasts[i].observationTime = _forecasts[i].observationTime;
-    forecasts[i].temp = isnan(_forecasts[i].temp) ? 0xffff : round( _forecasts[i].temp);
+    forecasts[i].temp = round( _forecasts[i].temp);
     forecasts[i].iconMeteoCon = _forecasts[i].iconMeteoCon.charAt(0);
     forecasts[i].windDeg = round( _forecasts[i].windDeg);
     forecasts[i].windSpeed = round( _forecasts[i].windSpeed);
