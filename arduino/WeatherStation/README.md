@@ -2,6 +2,8 @@
 
 Weather station with OLED and WiFi (using ESP8266, SSD1306, and DHT11) with InfluxDB support
 
+<img src="oled.gif" width="30%" height="30%">
+
 ## Arduino IDE
 
 * Into "File/Preferences/Additional Boards Manager URLs:" add "http://arduino.esp8266.com/stable/package_esp8266com_index.json"
