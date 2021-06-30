@@ -7,7 +7,7 @@
 #include "InfluxDBHelper.h"
 #include "DHTSensor.h"
 
-float getCurrentWeatherTemperature();
+int getCurrentWeatherTemperature();
 
 void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);

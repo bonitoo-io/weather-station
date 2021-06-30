@@ -21,7 +21,7 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   JsonObject root = response->getRoot();
   root[F("version")] = VERSION;
   root[F("deviceId")] = getDeviceID();
-  root[F("useMetric")] = _conf->useMetric;
+  root[F("useMetric")] = _conf->useMetric?F("true"):F("false");
   root[F("temp")] = getDHTCachedTemp();
   root[F("hum")] = getDHTCachedHum();
   root[F("uptime")] = millis();

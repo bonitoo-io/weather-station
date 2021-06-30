@@ -11,7 +11,7 @@ tCurrentWeather currentWeather;
 tForecast forecasts[MAX_FORECASTS];
 
 
-float getCurrentWeatherTemperature() {
+int getCurrentWeatherTemperature() {
   return currentWeather.temp;
 }
 
@@ -21,9 +21,10 @@ void updateCurrentWeather( const bool metric, const String& lang, const String& 
   OpenWeatherMapCurrentData _currentWeather;
   currentWeatherClient.setMetric(metric);
   currentWeatherClient.setLanguage(lang);
+  _currentWeather.temp = NAN;
   currentWeatherClient.updateCurrent(&_currentWeather, APIKey, location);
 
-  currentWeather.temp = round( _currentWeather.temp);
+  currentWeather.temp = isnan(_currentWeather.temp) ? 0xffff : round( _currentWeather.temp);
   currentWeather.tempMin = round( _currentWeather.tempMin);
   currentWeather.tempMax = round( _currentWeather.tempMax);
   currentWeather.description = _currentWeather.description;
@@ -37,6 +38,7 @@ void updateCurrentWeather( const bool metric, const String& lang, const String& 
 void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
+  _forecasts[0].temp = NAN;
   forecastClient.setMetric(metric);
   forecastClient.setLanguage(lang);
   uint8_t allowedHours[] = {12};
@@ -45,7 +47,7 @@ void updateForecast( const bool metric, const String& lang, const String& locati
 
   for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
     forecasts[i].observationTime = _forecasts[i].observationTime;
-    forecasts[i].temp = round( _forecasts[i].temp);
+    forecasts[i].temp = isnan(_forecasts[i].temp) ? 0xffff : round( _forecasts[i].temp);
     forecasts[i].iconMeteoCon = _forecasts[i].iconMeteoCon.charAt(0);
     forecasts[i].windDeg = round( _forecasts[i].windDeg);
     forecasts[i].windSpeed = round( _forecasts[i].windSpeed);
@@ -55,6 +57,13 @@ void updateForecast( const bool metric, const String& lang, const String& locati
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
+
+  if (currentWeather.temp == 0xffff) {
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+    return;
+  }
+
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(conf.location));
   display->drawString(display->getWidth() + x, 38 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
@@ -77,9 +86,9 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   time_t observationTimestamp = forecasts[dayIndex].observationTime;
   struct tm* timeInfo;
   timeInfo = localtime(&observationTimestamp);
-
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  
   display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
   display->drawString(x + 20, y + 39, strTemp(forecasts[dayIndex].temp));
   
@@ -88,6 +97,12 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 }
 
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  if (forecasts[0].temp == 0xffff) {
+    display->setFont(ArialMT_Plain_10);
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+    return;
+  }
   drawForecastDetails(display, x, y, 0);
   drawForecastDetails(display, x + 44, y, 1);
   drawForecastDetails(display, x + 88, y, 2);
@@ -143,6 +158,12 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 }
 
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  if (forecasts[0].temp == 0xffff) {
+    display->setFont(ArialMT_Plain_10);
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+    return;
+  }
   drawWindForecastDetails(display, x, y, 0);
   drawWindForecastDetails(display, x + 44, y, 1);
   drawWindForecastDetails(display, x + 88, y, 2);

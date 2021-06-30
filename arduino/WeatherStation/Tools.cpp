@@ -8,7 +8,7 @@ static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first q
 static const char STR_ENG[] PROGMEM = 
 "Connecting WiFi\0" "Connecting IoT Center\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
 "Found update \0" "Starting update\0" "Update successful\0" "Restarting...\0" "Update failed \0" "Updating \0" "Restarting\0" "1. Connect to WiFi:\0" "2. Open web browser with:\0" "3. Configure WiFi network\0"
-"Weather Station\0" "Configure via:\0"
+"Weather Station\0" "Configure via:\0" "Forecast error\0"
 "In:\0" " Out:\0" "now\0"
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
 "Moon\0" "Sun\0" ;
@@ -20,7 +20,7 @@ static const char MOON_CZ[] PROGMEM = "nov\0" "dorůstající srpek\0" "první �
 static const char STR_CZ[] PROGMEM =
 "Připojuji WiFi\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Kontrola aktualizace\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
 "Dostupná aktualizace \0" "Připravuji aktualizaci\0" "Aktualizace byla úpěšná\0" "Restartuji...\0" "Aktualizace selhala \0" "Aktualizuji \0" "Restartuji...\0" "1. Připojte WiFi síť\0" "2. V prohlížeči otevřete:\0" "3. Nastavte WiFi síť\0"
-"Meteorologická stanice\0" "Nastavte přes:\0"
+"Meteorologická stanice\0" "Nastavte přes:\0" "Chyba předpovědi\0"
 "Zde:\0" " Vně:\0" "nyní\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
 "Měsíc\0" "Slunce\0";
@@ -115,16 +115,16 @@ String strTempUnit() {
   return String(conf.useMetric ? F("°C") : F("°F"));
 }
 
-String strTemp( float t) {
-  return String(t, 0) + strTempUnit();
+String strTemp( int t) {
+  return (t == 0xffff ? "??" : String(t)) + strTempUnit();
 }
 
-String strHum( float h) {
-  return String(h, 0) + String(F("%"));
+String strHum( unsigned int h) {
+  return String(h) + String(F("%"));
 }
 
-String strWind( float w) {
-  return String(w, 0) + String(conf.useMetric ? F("m/s") : F("mph"));  
+String strWind( unsigned int w) {
+  return String(w) + String(conf.useMetric ? F("m/s") : F("mph"));  
 }
 
 // Convert UTF8-string to extended ASCII
