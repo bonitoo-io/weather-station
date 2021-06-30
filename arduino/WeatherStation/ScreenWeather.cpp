@@ -54,16 +54,19 @@ void updateForecast( const bool metric, const String& lang, const String& locati
   }
 }
 
+void forecastError( OLEDDisplay *display, int16_t x, int16_t y) {
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+}
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->setFont(ArialMT_Plain_10);
-
   if (currentWeather.temp == 0xffff) {
-    display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+    forecastError( display, x ,y);
     return;
   }
-
+  
+  display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(conf.location));
   display->drawString(display->getWidth() + x, 38 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
@@ -98,9 +101,7 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   if (forecasts[0].temp == 0xffff) {
-    display->setFont(ArialMT_Plain_10);
-    display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+    forecastError( display, x ,y);
     return;
   }
   drawForecastDetails(display, x, y, 0);
@@ -159,9 +160,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   if (forecasts[0].temp == 0xffff) {
-    display->setFont(ArialMT_Plain_10);
-    display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->drawString((display->getWidth() / 2) + x, 21 + y, getStr( s_Forecast_error));
+    forecastError( display, x ,y);
     return;
   }
   drawWindForecastDetails(display, x, y, 0);

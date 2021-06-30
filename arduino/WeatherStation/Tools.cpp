@@ -116,7 +116,7 @@ String strTempUnit() {
 }
 
 String strTemp( int t) {
-  return (t == 0xffff ? "??" : String(t)) + strTempUnit();
+  return (t == 0xffff ? String(F("??")) : String(t)) + strTempUnit();
 }
 
 String strHum( unsigned int h) {

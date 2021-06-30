@@ -176,14 +176,15 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   display->clear();
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawRect(0, 0, display->getWidth(), display->getHeight());
+  display->drawHorizontalLine(0, 0, display->getWidth());
+  display->drawHorizontalLine(0, display->getHeight()-1, display->getWidth());
   if ( secToReset > 5) {
-    display->drawString(1,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
-    display->drawString(1, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(1, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
-    display->drawString(1, 30, String(F("InfluxDB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
-    display->drawString(1, 40, String("v") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
-    display->drawString(1, 50, String(F("http://")) + WiFi.localIP().toString());
+    display->drawString(0,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
+    display->drawString(0, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
+    display->drawString(0, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
+    display->drawString(0, 30, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
+    display->drawString(0, 40, String("v") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
+    display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, String(F("FACTORY RESET IN ")) + String(secToReset) + String(F("s !")));
 
