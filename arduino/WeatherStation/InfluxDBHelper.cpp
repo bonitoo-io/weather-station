@@ -10,6 +10,12 @@ InfluxDBHelper::InfluxDBHelper():_sensor("environment") {
 
 }
 
+void InfluxDBHelper::release() {
+  if(_client) {
+    delete _client;
+    _client = nullptr;
+  }
+}
 
 void InfluxDBHelper::begin(InfluxDBSettings *settings) {
   if(_client) {
@@ -95,6 +101,7 @@ void InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
 }
 
 String InfluxDBHelper::validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken) {
+  release();
   Serial.printf_P(PSTR("Validating InfluxDB params: %s, %s, %s, %s\n"),serverUrl.c_str(), org.c_str(), bucket.c_str(), authToken.c_str());
   InfluxDBClient client(serverUrl.c_str(), org.c_str(), bucket.c_str(), authToken.c_str(), InfluxDbCloud2CACert );
   FluxQueryResult res = client.query("buckets()");
@@ -103,6 +110,7 @@ String InfluxDBHelper::validateConnection(const String &serverUrl, const String 
   if(res.getError().length()) {
     Serial.printf_P(PSTR("    error: %s\n"),res.getError().c_str());
   }
+  begin(_settings);
   return res.getError();
 }
 
@@ -142,8 +150,9 @@ int InfluxDBSettings::load(JsonObject& root) {
     return 1;
 }
 
-InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server):
+InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper):
   _validationSettings(nullptr),
+  _helper(helper),
   _status(ValidationStatus::Idle),
   _validateHandler(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH, 
                     std::bind(&InfluxDBValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2),
@@ -191,7 +200,7 @@ void InfluxDBValidateParamsEndpoint::validateParams(AsyncWebServerRequest* reque
 void InfluxDBValidateParamsEndpoint::loop() {
   if(_status == ValidationStatus::StartRequest) {
     _status = ValidationStatus::Running;
-    _error = InfluxDBHelper::validateConnection(_validationSettings->serverURL, _validationSettings->org, _validationSettings->bucket, _validationSettings->authorizationToken);
+    _error = _helper->validateConnection(_validationSettings->serverURL, _validationSettings->org, _validationSettings->bucket, _validationSettings->authorizationToken);
     delete _validationSettings;
     _validationSettings = nullptr;
     if(!_error.length()) {

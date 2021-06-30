@@ -143,7 +143,7 @@ def _convert_timestamp(timestamp, precision=DEFAULT_WRITE_PRECISION):
             return timestamp + DELTA_S * const(1000000000)
 
     elif isinstance(timestamp, str):
-        raise NotImplementedError('String is not supported timestamp format')
+        raise NotImplementedError('String timestamp format is not supported')
 
     else:
         raise ValueError(timestamp)

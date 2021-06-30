@@ -10,10 +10,11 @@ WeatherStation::WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper):
   _wifiScanner(&_server),
   _wifiSettingsEndpoint(&_server, WIFI_SETTINGS_ENDPOINT_PATH, &_persistence, &_wifiSettings),
   _influxDBSettingsEndpoint(&_server, INFLUXDB_SETTINGS_ENDPOINT_PATH, &_persistence, &_influxDBSettings),
+  _updaterSettingsEndpoint(&_server, UPDATER_SETTINGS_ENDPOINT_PATH, &_persistence, &_updaterSettings),
   _wifiStatusEndpoint(&_server),
   _aboutInfoEndpoint(&_server, conf, influxDBHelper, &_influxDBSettings, &_wifiSettings, &LittleFS),
   _aboutServiceEndpoint(&_server, &_persistence),
-  _influxdbValidateEndpoint(&_server)
+  _influxdbValidateEndpoint(&_server, influxDBHelper)
   {
 #if 1
   // Serve static resources from PROGMEM

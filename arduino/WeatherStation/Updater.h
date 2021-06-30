@@ -15,6 +15,7 @@ typedef std::function<void(bool success, const char *error)> FWUpdateFinishedCal
 #define UPDATER_DEFAULT_MD5_FILE F("ws-firmware-%version%.md5")
 #define UPDATER_DEFAULT_UPDATETIME 300 //HHMM
 #define UPDATER_DEFAULT_CHECKBETA  true
+#define UPDATER_SETTINGS_ENDPOINT_PATH "/api/updaterSettings"
 
 class UpdaterSettings : public Settings {
  public:
@@ -35,7 +36,7 @@ class Updater {
  public:
   Updater();
   void init(UpdaterSettings *settings, const char *currentVersion);
-  void checkUpdate();
+  bool checkUpdate();
   void setUpdateCallbacks(FWUpdateStartedCallback startCb, FWUpdateProgressCallback progCb, FWUpdateFinishedCallback endCb) {
     _startCb = startCb;
     _progCb = progCb;
