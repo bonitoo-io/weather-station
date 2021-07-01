@@ -45,7 +45,7 @@ private:
     WiFiManager _wifiManager;
     WiFiScannerEndpoint _wifiScanner;
     SettingsEndpoint _wifiSettingsEndpoint;
-    SettingsEndpoint _influxDBSettingsEndpoint;
+    InfluxDBSettingsEndpoint _influxDBSettingsEndpoint;
     SettingsEndpoint _updaterSettingsEndpoint;
     WiFiStatusEndpoint _wifiStatusEndpoint;
     AboutInfoEndpoint _aboutInfoEndpoint;

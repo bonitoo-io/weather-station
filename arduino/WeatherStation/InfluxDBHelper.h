@@ -41,10 +41,24 @@ class InfluxDBHelper {
   void loadTempHistory(const String &deviceID, bool metric);
   void release();
   String validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken);
+  InfluxDBSettings *settings() { return _settings; }
 private:
   InfluxDBSettings *_settings = nullptr;
   InfluxDBClient *_client = nullptr;
   Point _sensor; // Data point
+};
+
+
+class InfluxDBSettingsEndpoint {
+public:
+    InfluxDBSettingsEndpoint(AsyncWebServer* server, FSPersistence *persistence, InfluxDBSettings *settings);
+private:
+    void fetchSettings(AsyncWebServerRequest* request);
+    void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
+private:
+    InfluxDBSettings *_settings;
+    FSPersistence *_persistence;
+    AsyncCallbackJsonWebHandler _updateHandler;
 };
 
 #define VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH "/api/validateInfluxDBParams"

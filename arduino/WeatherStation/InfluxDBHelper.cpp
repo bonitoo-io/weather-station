@@ -2,8 +2,10 @@
 #include <InfluxDbCloud.h>
 #include "Tools.h"
 #include "Version.h"
+#include "FSPersistance.h"
 
 extern int tempHistory[90];
+const char *Token PROGMEM = "token";
 
 static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message = nullptr);
 
@@ -155,7 +157,7 @@ InfluxDBSettings::InfluxDBSettings():
 
 int InfluxDBSettings::save(JsonObject& root) {
     root[F("server")] = serverURL;
-    root[F("token")] = authorizationToken;
+    root[FPSTR(Token)] = authorizationToken;
     root[F("org")] = org;
     root[F("bucket")] = bucket;
     root[F("writeInterval")] = writeInterval;
@@ -165,13 +167,75 @@ int InfluxDBSettings::save(JsonObject& root) {
 
 int InfluxDBSettings::load(JsonObject& root) {
     serverURL = root[F("server")].as<const char *>();
-    authorizationToken = root[F("token")].as<const char *>();
+    authorizationToken = root[FPSTR(Token)].as<const char *>();
     org = root[F("org")].as<const char *>();
     bucket = root[F("bucket")].as<const char *>() ;
     writeInterval = root[F("writeInterval")]; 
     printInfluxDBettings(F("InfluxDBSettings::Load"), this);
     return 1;
 }
+
+
+// ****************** InfluxDBSettingsEndpoint ***************************
+
+InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* server,FSPersistence *persistence, InfluxDBSettings *settings):
+    _settings(settings), _persistence(persistence),
+    _updateHandler(INFLUXDB_SETTINGS_ENDPOINT_PATH, 
+                     std::bind(&InfluxDBSettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
+                     DEFAULT_BUFFER_SIZE) {
+    _updateHandler.setMethod(HTTP_POST);
+    server->addHandler(&_updateHandler);
+    server->on(INFLUXDB_SETTINGS_ENDPOINT_PATH, HTTP_GET, std::bind(&InfluxDBSettingsEndpoint::fetchSettings, this, std::placeholders::_1));
+}
+
+String obfuscateToken(const String &token) {
+  String authToken;
+  authToken.reserve(15);
+  authToken = token.substring(0,4);
+  authToken += "******";
+  authToken += token.substring(token.length()-4);
+  return authToken;
+}
+
+void InfluxDBSettingsEndpoint::fetchSettings(AsyncWebServerRequest* request) {
+    AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
+    JsonObject jsonObject = response->getRoot().to<JsonObject>();
+    _settings->save(jsonObject);
+    if(_settings->authorizationToken.length()>4) {
+      jsonObject[FPSTR(Token)] = obfuscateToken(_settings->authorizationToken);
+    }
+
+    response->setLength();
+    request->send(response);
+}
+
+void InfluxDBSettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVariant& json) {
+    if (!json.is<JsonObject>()) {
+        request->send(400);
+        return;
+    }
+    JsonObject jsonObject = json.as<JsonObject>();
+    const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
+    if(strchr(authToken,'*')) {
+      DynamicJsonDocument doc(DEFAULT_BUFFER_SIZE);
+      JsonObject tmpObject = doc.to<JsonObject>();
+      _settings->save(tmpObject);
+      jsonObject[FPSTR(Token)] = tmpObject[FPSTR(Token)].as<const char *>();
+    }
+    //TODO: double JSON serialization
+    _settings->load(jsonObject);
+    _persistence->writeToFS(_settings);
+    AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
+    jsonObject = response->getRoot().to<JsonObject>();
+    _settings->save(jsonObject);
+    if(_settings->authorizationToken.length()>4) {
+      jsonObject[FPSTR(Token)] = obfuscateToken(_settings->authorizationToken);
+    }
+    request->onDisconnect([this]() { _settings->notify(); });
+    response->setLength();
+    request->send(response);
+}
+// ****************** InfluxDBValidateParamsEndpoint ***************************
 
 InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper):
   _validationSettings(nullptr),
@@ -205,6 +269,10 @@ void InfluxDBValidateParamsEndpoint::validateParams(AsyncWebServerRequest* reque
       JsonObject jsonObject = json.as<JsonObject>();
       _validationSettings = new InfluxDBSettings;
       _validationSettings->load(jsonObject);
+      const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
+      if(strchr(authToken,'*')) {
+        _validationSettings->authorizationToken = _helper->settings()->authorizationToken;
+      }
       request->onDisconnect([this]() {
         _status = ValidationStatus::StartRequest;
       });

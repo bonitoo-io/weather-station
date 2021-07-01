@@ -2,8 +2,6 @@
 #include "IPUtils.h"
 #include "FSPersistance.h"
 
-// ****************** WiFiSettingEndpoint ***************************
-
 SettingsEndpoint::SettingsEndpoint(AsyncWebServer* server, const char *endpointPath, FSPersistence *persistence, Settings *settings):
     _settings(settings), _persistence(persistence),
     _updateHandler(endpointPath, 
