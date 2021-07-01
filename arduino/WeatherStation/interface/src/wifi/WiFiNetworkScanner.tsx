@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-
-import { createStyles, WithStyles, Theme, withStyles, Typography, LinearProgress } from '@material-ui/core';
+import { Link as RouterLink } from 'react-router-dom';
+import { createStyles, WithStyles, Theme, withStyles, Typography, LinearProgress, Link } from '@material-ui/core';
 import PermScanWifiIcon from '@material-ui/icons/PermScanWifi';
 
 import { FormActions, FormButton, SectionContent } from '../components';
@@ -152,6 +152,9 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
     const { scanningForNetworks } = this.state;
     return (
       <SectionContent title="Network Scanner">
+        <Typography variant="subtitle1">
+          Select WiFi network from the list bellow or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link>
+        </Typography>
         {this.renderNetworkScanner()}
         <FormActions>
           <FormButton startIcon={<PermScanWifiIcon />} variant="contained" color="secondary" onClick={this.requestNetworkScan} disabled={scanningForNetworks}>
