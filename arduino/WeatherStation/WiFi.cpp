@@ -84,7 +84,8 @@ WiFiManager::WiFiManager(WiFiSettings *settings):
   _settings(settings),
   _lastConnectionAttempt(0),
   _dnsServer(nullptr),
-  _forceAPStop(false) {
+  _forceAPStop(false),
+  _connectAttempts(0) {
 #if 1    
   // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash, this is not the default.
   // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
@@ -103,7 +104,6 @@ WiFiManager::WiFiManager(WiFiSettings *settings):
   _settings->setHandler([this]() {
     Serial.println(F("Wifi settings changed, reconfigure"));
     reconfigureWiFiConnection();
-    ESP.restart();
   });
 #endif
 }
@@ -111,7 +111,7 @@ WiFiManager::WiFiManager(WiFiSettings *settings):
 void WiFiManager::reconfigureWiFiConnection() {
   // reset last connection attempt to force loop to reconnect immediately
   _lastConnectionAttempt = 0;
-
+  _connectAttempts = 0;
   // disconnect and de-configure wifi
   WiFi.disconnect(true);
 }
@@ -173,6 +173,7 @@ void WiFiManager::manageSTA() {
         }
         // attempt to connect to the network
         WiFi.begin(_settings->ssid.c_str(), _settings->password.c_str());
+        _connectAttempts++;
         notifyWifiEvent(WifiConnectionEvent::ConnectingStarted);
     }
 }
@@ -234,6 +235,8 @@ void WiFiManager::stopAP() {
     _apInfo.running = false;
     _forceAPStop = false;
     notifyAPEvent();
+    WiFi.disconnect(true);
+    ESP.restart();
 }
 
 void WiFiManager::handleDNS() {
@@ -246,8 +249,8 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
   Serial.print(F("WiFi Disconnected. Reason code="));
   Serial.println(event.reason);
   WiFi.disconnect(true);
-  if(event.reason < 200) {
-    reconfigureWiFiConnection();
+  if(_connectAttempts < 3) {
+    _lastConnectionAttempt = 0;
   }
   notifyWifiEvent(WifiConnectionEvent::ConnectingFailed);
 }

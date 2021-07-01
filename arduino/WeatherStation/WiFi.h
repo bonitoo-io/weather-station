@@ -103,6 +103,7 @@ public:
   WiFiEventHandler _onStationModeDisconnectedHandler;
   WiFiEventHandler _onStationModeGotIPHandler;
   bool _forceAPStop;
+  uint8_t _connectAttempts;
 };
 
 #if 1
