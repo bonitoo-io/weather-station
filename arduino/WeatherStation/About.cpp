@@ -32,7 +32,9 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
     state = AppState::InfluxDBConfigNeeded;
   } else if(_influxDBHelper->isError()) {
       state = AppState::Error;
-      root[F("error")] = _influxDBHelper->errorMsg();
+      String error = "InfluxDB error: ";
+      error += _influxDBHelper->errorMsg();
+      root[F("error")] = error;
   }
   root[F("appState")] = static_cast<int>(state);
   root[F("freeHeap")] = ESP.getFreeHeap();
