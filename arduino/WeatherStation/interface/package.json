@@ -1,6 +1,6 @@
 {
   "name": "WeatherStation",
-  "version": "0.25.0",
+  "version": "0.5.4",
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.11.2",

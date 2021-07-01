@@ -107,7 +107,7 @@ void initData() {
 
 void setup() {
   // Prepare serial port
-  Serial.begin(115200);
+  Serial.begin(74880);
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 

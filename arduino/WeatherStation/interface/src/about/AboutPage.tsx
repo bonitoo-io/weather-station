@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from 'react';
+  import React, { Component, Fragment } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Avatar, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, Link } from '@material-ui/core';
 import { List, ListItem, ListItemAvatar, ListItemText } from '@material-ui/core';
@@ -20,7 +20,7 @@ import AlignHorizontalCenterIcon from '@material-ui/icons/FormatAlignCenter';
 
 import { RestFormProps, FormButton, ErrorButton, HighlightAvatar } from '../components';
 import { FACTORY_RESET_ENDPOINT, RESTART_ENDPOINT } from '../api';
-
+import { AppStateContext } from '../AppStateContext';
 import { AboutInfo, AppState } from './types';
 
 interface AboutPageState {
@@ -97,6 +97,10 @@ function appStatus(data: AboutInfo) {
 
 class AboutPage extends Component<AboutPageProps, AboutPageState> {
 
+  static contextType = AppStateContext;
+  context!: React.ContextType<typeof AppStateContext>;
+
+
   state: AboutPageState = {
     confirmRestart: false,
     confirmFactoryReset: false,
@@ -105,6 +109,8 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
 
   createListItems() {
     const { data, theme } = this.props
+    this.context.wifiConfigured = data.appState !== AppState.WifiConfigNeeded
+    console.log('Set context:', this.context)
     return (
       <Fragment>
         <Typography variant="h5">
@@ -115,7 +121,7 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
         </Typography>
         <ListItem >
           <ListItemAvatar>
-          <HighlightAvatar color={appStatusHighlight(data, theme)}>
+            <HighlightAvatar color={appStatusHighlight(data, theme)}>
               <ShowChartIcon />
             </HighlightAvatar>
           </ListItemAvatar>
