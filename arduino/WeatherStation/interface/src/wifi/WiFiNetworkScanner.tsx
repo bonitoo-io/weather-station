@@ -153,7 +153,7 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
     return (
       <SectionContent title="Network Scanner">
         <Typography variant="subtitle1">
-          Select WiFi network from the list bellow or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link>
+          Select WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi newtorks supported)
         </Typography>
         {this.renderNetworkScanner()}
         <FormActions>
