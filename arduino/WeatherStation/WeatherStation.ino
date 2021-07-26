@@ -105,7 +105,6 @@ void initData() {
   }
 }
 
-
 void setup() {
   // Prepare serial port
   Serial.begin(115200);
@@ -117,33 +116,9 @@ void setup() {
   if(ESP.getResetInfoPtr()->reason != REASON_DEEP_SLEEP_AWAKE) {
     resetReason = ESP.getResetReason();
   }
-#if 1  
-  station.getWifiManager()->setWiFiConnectionEventHandler([](WifiConnectionEvent event, const char *ssid){
-      // WiFi interrupt events, don't do anything complex, just update state variables
-      switch(event) {
-        case WifiConnectionEvent::ConnectingStarted:
-          shouldDrawWifiProgress = true;
-          startWifiProgress(&display, VERSION, ssid);
-          //TODO: better solution for passing current wifi
-          wifiSSID = ssid;
-          break;
-        case WifiConnectionEvent::ConnectingSuccess:
-          shouldDrawWifiProgress = false;
-          station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
-          break;        
-      };
-  });
-  station.getWifiManager()->setAPEventHandler([](APInfo *info){
-    if(info->running) {
-      if(shouldDrawWifiProgress) {
-        shouldDrawWifiProgress = false;
-        station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
-      }
-      drawAPInfo(&display, info);
-      // Unregister after first run
-      station.getWifiManager()->setAPEventHandler(nullptr);
-    }
-  });
+
+  station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
+  station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
   
   station.getInfluxDBSettings()->setHandler([](){
     shouldSetupInfluxDb =  true;
@@ -153,28 +128,10 @@ void setup() {
     updater.init(station.getUpdaterSettings(), VERSION);
   });
 
-  updater.setUpdateCallbacks([](const char *newVersion) {
-      drawFWUpdateInfo(&display, getStr(s_Update_found) + newVersion, getStr(s_Update_start_in));
-      delay(1000);
-    },[](const char *newVersion, int progress) {
-      drawFWUpdateProgress(&display, newVersion, progress);
-    },[](bool success, const char *err) {
-      if(success) {
-        drawFWUpdateInfo(&display, getStr(s_Update_successful), getStr(s_Update_restart_in));
-        delay(1000);
-        drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
-        Serial.println(F("restarting"));
-        station.end();
-        ESP.restart();
-      } else {
-        drawFWUpdateInfo(&display, getStr(s_Update_failed),  err);
-        delay(3000);
-      }
-    });
+  updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   
   station.begin();
 
-#endif
   WS_DEBUG_RAM("Setup 2");
 
   // Configure pins
@@ -369,4 +326,58 @@ void loop() {
 
 bool isInfluxDBError() {
   return influxdbHelper.isError();
+}
+
+void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
+  // WiFi interrupt events, don't do anything complex, just update state variables
+ switch(event) {
+    case WifiConnectionEvent::ConnectingStarted:
+      shouldDrawWifiProgress = true;
+      startWifiProgress(&display, VERSION, ssid);
+      //TODO: better solution for passing current wifi
+      wifiSSID = ssid;
+      break;
+    case WifiConnectionEvent::ConnectingSuccess:
+      shouldDrawWifiProgress = false;
+      station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
+      break;        
+  };
+}
+
+void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
+  switch(event) {
+    case WifiAPEvent::APStarted:
+      if(shouldDrawWifiProgress) {
+        shouldDrawWifiProgress = false;
+        station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
+      }
+      drawAPInfo(&display, info);
+      break;
+    case WifiAPEvent::ClientConnected:
+      drawAPInfo(&display, info);
+      break;
+  }
+}
+
+void updateStartHandler(const char *newVersion) {
+  drawFWUpdateInfo(&display, getStr(s_Update_found) + newVersion, getStr(s_Update_start_in));
+  delay(1000);
+}
+
+void updateProgressHandler(const char *newVersion, int progress) {
+  drawFWUpdateProgress(&display, newVersion, progress);
+}
+
+void updateFinishedHandler(bool success, const char *err) {
+  if(success) {
+    drawFWUpdateInfo(&display, getStr(s_Update_successful), getStr(s_Update_restart_in));
+    delay(1000);
+    drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
+    Serial.println(F("restarting"));
+    station.end();
+    ESP.restart();
+  } else {
+    drawFWUpdateInfo(&display, getStr(s_Update_failed),  err);
+    delay(3000);
+  }
 }

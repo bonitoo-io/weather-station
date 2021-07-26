@@ -86,7 +86,6 @@ WiFiManager::WiFiManager(WiFiSettings *settings):
   _dnsServer(nullptr),
   _forceAPStop(false),
   _connectAttempts(0) {
-#if 1    
   // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash, this is not the default.
   // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
   if (WiFi.getMode() != WIFI_OFF) {
@@ -100,12 +99,13 @@ WiFiManager::WiFiManager(WiFiSettings *settings):
   _onStationModeDisconnectedHandler = WiFi.onStationModeDisconnected(std::bind(&WiFiManager::onStationModeDisconnected, this, std::placeholders::_1));
   _onStationModeConnectedHandler = WiFi.onStationModeConnected(std::bind(&WiFiManager::onStationModeConnected, this, std::placeholders::_1));
   _onStationModeGotIPHandler = WiFi.onStationModeGotIP(std::bind(&WiFiManager::onStationModeGotIP, this, std::placeholders::_1));
+  _onSoftAPModeStationConnectedHandler = WiFi.onSoftAPModeStationConnected(std::bind(&WiFiManager::onSoftAPModeStationConnected, this, std::placeholders::_1));
+  _onSoftAPModeStationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(std::bind(&WiFiManager::onSoftAPModeStationDisconnected, this, std::placeholders::_1));
 
   _settings->setHandler([this]() {
     Serial.println(F("Wifi settings changed, reconfigure"));
     reconfigureWiFiConnection();
   });
-#endif
 }
 
 void WiFiManager::reconfigureWiFiConnection() {
@@ -126,13 +126,18 @@ void WiFiManager::notifyWifiEvent(WifiConnectionEvent event) {
   }
 }
 
-void WiFiManager::notifyAPEvent() {
+void WiFiManager::notifyAPEvent(WifiAPEvent event) {
   if(_apEventHandler) {
-    _apEventHandler(&_apInfo);
+    _apEventHandler(event, &_apInfo);
   }
 }
 
 void WiFiManager::loop() {
+    if(_asyncEventToFire) {
+      notifyAPEvent(*_asyncEventToFire);
+      delete _asyncEventToFire;
+      _asyncEventToFire = nullptr;
+    }
     unsigned long currentMillis = millis();
     unsigned long manageElapsed = (unsigned long)(currentMillis - _lastConnectionAttempt);
     if (!_lastConnectionAttempt || manageElapsed >= WIFI_RECONNECTION_DELAY) {
@@ -206,6 +211,7 @@ void WiFiManager::startAP() {
         _apInfo.password = AP_PASSWORD;
         _apInfo.ipAddress = ipFromString(AP_LOCAL_IP);
     }
+    _apInfo.clientsCount = 0;
     Serial.println(F("Starting software access point"));
     Serial.println(F("   config: IP: " AP_LOCAL_IP " , GW IP: " AP_GATEWAY_IP ", Mask: " AP_SUBNET_MASK));
     Serial.printf_P(PSTR("         SSID: %s, Pass: " AP_PASSWORD "\n"), _apInfo.ssid.c_str());
@@ -220,7 +226,7 @@ void WiFiManager::startAP() {
         _dnsServer->start(DNS_PORT, "*", apIp);
     }
     _apInfo.running = true;
-    notifyAPEvent();
+    notifyAPEvent(WifiAPEvent::APStarted);
 }
 
 void WiFiManager::stopAP() {
@@ -234,7 +240,7 @@ void WiFiManager::stopAP() {
     WiFi.softAPdisconnect(true);
     _apInfo.running = false;
     _forceAPStop = false;
-    notifyAPEvent();
+    notifyAPEvent(WifiAPEvent::APStopped);
     WiFi.disconnect(true);
     ESP.restart();
 }
@@ -268,7 +274,20 @@ void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
   Serial.printf_P(PSTR("WiFi Got IP. localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
 }
 
-#if 1
+void WiFiManager::onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
+  Serial.println(F("WiFi AP Client connected."));
+  _apInfo.clientsCount++;
+  // APevents must be propagated async
+  _asyncEventToFire = new WifiAPEvent(WifiAPEvent::ClientConnected);
+}
+
+void WiFiManager::onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& event) {
+  Serial.println(F("WiFi AP Client disconnected."));
+  _apInfo.clientsCount--;
+  // APevents must be propagated async
+  _asyncEventToFire = new WifiAPEvent(WifiAPEvent::ClientDisconnected);
+}
+
 
 // ****************** WiFiScannerEndpoint ***************************
 
@@ -361,4 +380,3 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
   response->setLength();
   request->send(response);
 }
-#endif

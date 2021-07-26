@@ -53,15 +53,24 @@ struct APInfo {
     String ssid;
     String password;
     bool running;
+    uint8_t clientsCount;
 };
 
-enum WifiConnectionEvent {
+enum class WifiConnectionEvent {
     ConnectingStarted = 0,
     ConnectingSuccess,
     ConnectingFailed
 };
 
-typedef std::function<void(APInfo *apInfo)> APEventHandler;
+
+enum class WifiAPEvent {
+    APStarted = 0,
+    ClientConnected,
+    ClientDisconnected,
+    APStopped
+};
+
+typedef std::function<void(WifiAPEvent event, APInfo *apInfo)> APEventHandler;
 typedef std::function<void(WifiConnectionEvent event, const char *ssid)> WiFiConnectionEventHandler;
 
 class WiFiManager {
@@ -87,11 +96,14 @@ public:
   void onStationModeConnected(const WiFiEventStationModeConnected& event);
   void onStationModeDisconnected(const WiFiEventStationModeDisconnected& event);
   void onStationModeGotIP(const WiFiEventStationModeGotIP& event);
+  void onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event);
+  void onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& event);
   void notifyWifiEvent(WifiConnectionEvent event);
-  void notifyAPEvent();
+  void notifyAPEvent(WifiAPEvent event);
  private:
   WiFiSettings *_settings;
   APInfo _apInfo;
+  WifiAPEvent *_asyncEventToFire = nullptr;
   // for the management delay loop
   unsigned long _lastConnectionAttempt;
   // for the captive portal
@@ -102,6 +114,8 @@ public:
   WiFiEventHandler _onStationModeConnectedHandler;
   WiFiEventHandler _onStationModeDisconnectedHandler;
   WiFiEventHandler _onStationModeGotIPHandler;
+  WiFiEventHandler _onSoftAPModeStationConnectedHandler;
+  WiFiEventHandler _onSoftAPModeStationDisconnectedHandler;
   bool _forceAPStop;
   uint8_t _connectAttempts;
 };

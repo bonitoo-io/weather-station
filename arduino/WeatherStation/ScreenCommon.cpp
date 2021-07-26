@@ -79,8 +79,7 @@ void drawAPInfo(OLEDDisplay *display, APInfo *info) {
   display->clear();
   display->setFont(ArialMT_Plain_16);
   display->setTextAlignment(TEXT_ALIGN_LEFT);  
-
-  if ( wifi_softap_get_station_num() == 0) {    //Any connected client to Wifi?
+  if (!info->clientsCount) {    //Any connected client to Wifi?
     display->drawString(0, 0, String(F("To configure:")));
     display->drawString(0, 20, getStr(s_Wifi_AP_connect));
     display->drawString(0, 40, info->ssid);
