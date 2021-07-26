@@ -77,17 +77,21 @@ void startWifiProgress(OLEDDisplay *display, const char* version, const char *ss
 
 void drawAPInfo(OLEDDisplay *display, APInfo *info) {
   display->clear();
-  display->setFont(ArialMT_Plain_10);
+  display->setFont(ArialMT_Plain_16);
+  display->setTextAlignment(TEXT_ALIGN_LEFT);  
+
+  if ( wifi_softap_get_station_num() == 0) {    //Any connected client to Wifi?
+    display->drawString(0, 0, String(F("To configure:")));
+    display->drawString(0, 20, getStr(s_Wifi_AP_connect));
+    display->drawString(0, 40, info->ssid);
+  } else {
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    display->drawString(0, 24, getStr(s_Wifi_web_point));
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString(64, 36, String(F("http://")) + info->ipAddress.toString());
+  }
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0, 0, getStr(s_Wifi_AP_connect));
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64, 12, info->ssid);
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0, 24, getStr(s_Wifi_web_point));
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64, 36, String(F("http://")) + info->ipAddress.toString());
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0, 48, getStr(s_Wifi_configure));
+  //display->drawString(0, 48, getStr(s_Wifi_configure));
   display->display();
 }
 

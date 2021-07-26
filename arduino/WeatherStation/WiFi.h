@@ -15,10 +15,10 @@
 #define WIFI_RECONNECTION_DELAY 1000 * 30
 #define WIFI_SETTINGS_ENDPOINT_PATH "/api/wifiSettings"
 
-#define AP_SSID_PREFIX "weather-station-"
+#define AP_SSID_PREFIX "WEATHER-"
 #define AP_PASSWORD ""
-#define AP_LOCAL_IP "192.168.4.1"
-#define AP_GATEWAY_IP "192.168.4.1"
+#define AP_LOCAL_IP "1.1.1.1"
+#define AP_GATEWAY_IP "1.1.1.1"
 #define AP_SUBNET_MASK "255.255.255.0"
 #define AP_CHANNEL 1
 #define AP_SSID_HIDDEN false
