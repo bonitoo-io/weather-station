@@ -33,7 +33,7 @@ void updateCurrentWeather( const bool metric, const String& lang, const String& 
   currentWeather.tempMax = round( _currentWeather.tempMax);
   currentWeather.description = _currentWeather.description;
   currentWeather.windSpeed = round( _currentWeather.windSpeed);
-  currentWeather.iconMeteoCon = _currentWeather.iconMeteoCon.charAt(0);
+  currentWeather.iconMeteoCon = _currentWeather.iconMeteoCon;
   currentWeather.sunrise = _currentWeather.sunrise;
   currentWeather.sunset = _currentWeather.sunset;
 }
@@ -57,7 +57,7 @@ void updateForecast( const bool metric, const String& lang, const String& locati
   for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
     forecasts[i].observationTime = _forecasts[i].observationTime;
     forecasts[i].temp = round( _forecasts[i].temp);
-    forecasts[i].iconMeteoCon = _forecasts[i].iconMeteoCon.charAt(0);
+    forecasts[i].iconMeteoCon = _forecasts[i].iconMeteoCon;
     forecasts[i].windDeg = round( _forecasts[i].windDeg);
     forecasts[i].windSpeed = round( _forecasts[i].windSpeed);
   }

@@ -38,7 +38,7 @@ tConfig conf = {
   true, //detectLocationIP
   60,   //updateDataMin
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
-  "San Francisco, US", //location
+  "San Francisco,US", //location
   "en", //language
   -25200, //utcOffset in seconds
   37.7749,   //latitude
