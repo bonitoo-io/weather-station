@@ -81,11 +81,7 @@ int WiFiSettings::load(JsonObject& root) {
 // **************************  
 
 WiFiManager::WiFiManager(WiFiSettings *settings):
-  _settings(settings),
-  _lastConnectionAttempt(0),
-  _dnsServer(nullptr),
-  _forceAPStop(false),
-  _connectAttempts(0) {
+  _settings(settings) {
   // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash, this is not the default.
   // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
   if (WiFi.getMode() != WIFI_OFF) {
@@ -112,6 +108,7 @@ void WiFiManager::reconfigureWiFiConnection() {
   // reset last connection attempt to force loop to reconnect immediately
   _lastConnectionAttempt = 0;
   _connectAttempts = 0;
+  _lastDisconnectReason = 0;
   // disconnect and de-configure wifi
   WiFi.disconnect(true);
 }
@@ -141,11 +138,11 @@ void WiFiManager::loop() {
     unsigned long currentMillis = millis();
     unsigned long manageElapsed = (unsigned long)(currentMillis - _lastConnectionAttempt);
     if (!_lastConnectionAttempt || manageElapsed >= WIFI_RECONNECTION_DELAY) {
-        _lastConnectionAttempt = currentMillis;
         manageSTA();
+        _lastConnectionAttempt = currentMillis;
     }
     // try AP after only first conn attempt   
-    if (_forceAPStop || manageElapsed >= WIFI_RECONNECTION_DELAY) {
+    if ((_forceAPStop &&  _forceAPStop <= millis()) || (!_forceAPStop && manageElapsed >= WIFI_RECONNECTION_DELAY)) {
         manageAP();
     }
     handleDNS();
@@ -165,22 +162,27 @@ void WiFiManager::manageSTA() {
         manageAP();
         return;
     }
-    // Connect or reconnect as required
-    if ((WiFi.getMode() & WIFI_STA) == 0) {
-        Serial.println(F("Connecting to WiFi."));
-        if (_settings->staticIPConfig) {
-            // configure for static IP
-            WiFi.config(_settings->localIP, _settings->gatewayIP, _settings->subnetMask, _settings->dnsIP1, _settings->dnsIP2);
-        } else {
-            // configure for DHCP
-            WiFi.config(INADDR_ANY, INADDR_ANY, INADDR_ANY);
-            WiFi.hostname(_settings->hostname);
-        }
-        // attempt to connect to the network
-        WiFi.begin(_settings->ssid.c_str(), _settings->password.c_str());
-        _connectAttempts++;
-        notifyWifiEvent(WifiConnectionEvent::ConnectingStarted);
+    // Connect or reconnect as required, but don't retry on wrong password
+    if ((WiFi.getMode() & WIFI_STA) == 0 && _lastDisconnectReason != WIFI_DISCONNECT_REASON_AUTH_FAIL) { 
+        startSTA(_settings);
     }
+}
+
+void WiFiManager::startSTA(WiFiSettings *config) {
+  Serial.println(F("Connecting to WiFi."));
+  if (config->staticIPConfig) {
+      // configure for static IP
+      WiFi.config(config->localIP, config->gatewayIP, config->subnetMask, config->dnsIP1, config->dnsIP2);
+  } else {
+      // configure for DHCP
+      WiFi.config(INADDR_ANY, INADDR_ANY, INADDR_ANY);
+      WiFi.hostname(config->hostname);
+  }
+  // attempt to connect to the network
+  WiFi.begin(config->ssid.c_str(), config->password.c_str());
+  _connectAttempts++;
+  _lastDisconnectReason = 0;
+  notifyWifiEvent(WifiConnectionEvent::ConnectingStarted);
 }
 
 void WiFiManager::manageAP() {
@@ -239,7 +241,7 @@ void WiFiManager::stopAP() {
     Serial.println(F("Stopping software access point"));
     WiFi.softAPdisconnect(true);
     _apInfo.running = false;
-    _forceAPStop = false;
+    _forceAPStop = 0;
     notifyAPEvent(WifiAPEvent::APStopped);
     WiFi.disconnect(true);
     ESP.restart();
@@ -254,6 +256,7 @@ void WiFiManager::handleDNS() {
 void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnected& event) {
   Serial.print(F("WiFi Disconnected. Reason code="));
   Serial.println(event.reason);
+  _lastDisconnectReason = event.reason;
   WiFi.disconnect(true);
   if(_connectAttempts < 3) {
     _lastConnectionAttempt = 0;
@@ -266,7 +269,8 @@ void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& ev
   Serial.println(event.ssid);
   notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
   if(_apInfo.running) {
-    _forceAPStop = true;
+    // stop ap after a time, so connected client gets a HTTP reponse about successful connection
+    _forceAPStop = millis()+5000;
   }
 }
 
@@ -349,7 +353,7 @@ uint8_t WiFiScannerEndpoint::convertEncryptionType(uint8_t encryptionType) {
 
 // **************************** WiFiStatusEndpoint *********************************
 
-WiFiStatusEndpoint::WiFiStatusEndpoint(AsyncWebServer* server) {
+WiFiStatusEndpoint::WiFiStatusEndpoint(AsyncWebServer* server, WiFiManager *wifiManager):_wifiManager(wifiManager) {
   server->on(WIFI_STATUS_ENDPOINT_PATH, HTTP_GET, std::bind(&WiFiStatusEndpoint::wifiStatusHandler, this, std::placeholders::_1));
 }
 
@@ -359,6 +363,9 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
   wl_status_t status = WiFi.status();
   root[F("mode")] = WiFi.getMode();
   root[F("status")] = status;
+  if(_wifiManager->getLastDisconnectReason()) {
+    root[F("disconnect_reason")] = _wifiManager->getLastDisconnectReason();
+  }
   if (status == WL_CONNECTED) {
     root[F("local_ip")] = WiFi.localIP().toString();
     root[F("mac_address")] = WiFi.macAddress();

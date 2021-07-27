@@ -94,7 +94,7 @@ class WiFiStatusForm extends Component<WiFiStatusFormProps> {
                   <DNSIcon />
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary="DNS Server IP" secondary={this.dnsServers(data)} />
+              <ListItemText primary="DNS Servers IP" secondary={this.dnsServers(data)} />
             </ListItem>
             <Divider variant="inset" component="li" />
           </Fragment>

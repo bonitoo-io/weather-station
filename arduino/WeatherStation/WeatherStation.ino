@@ -68,6 +68,7 @@ unsigned int lastUpdateMins = 0;
 String wifiSSID;
 bool shouldSetupInfluxDb = false;
 bool shouldDrawWifiProgress = false;
+bool isAPRunning = false;
 bool initialized = false;
 String resetReason;
 
@@ -92,7 +93,7 @@ void updateForecast( const bool metric, const String& lang, const String& locati
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const char *deviceID, InfluxDBHelper *influxDBHelper);
 
 void initData() {
-  if(!initialized && WiFi.isConnected()) {
+  if(!initialized && WiFi.isConnected() && !isAPRunning) {
     WS_DEBUG_RAM("InitData");
     updater.init(station.getUpdaterSettings(), VERSION);
     
@@ -107,7 +108,7 @@ void initData() {
 
 void setup() {
   // Prepare serial port
-  Serial.begin(115200);
+  Serial.begin(74880);
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
@@ -247,14 +248,12 @@ void loop() {
     refreshDHTCachedValues(conf.useMetric);
 
     if(WiFi.isConnected()) {
-
       if(station.getUpdaterSettings()->updateTime < 2400) {
         //TODO: change to an alarm like functionality
         time_t tnow = time(nullptr);
         struct tm timeinfo;
         localtime_r(&tnow, &timeinfo);
         uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
-        Serial.printf("Checking updatime time: %d:%d (%d vs %d)\n", timeinfo.tm_hour, timeinfo.tm_min, curtm, station.getUpdaterSettings()->updateTime);
         if (curtm == station.getUpdaterSettings()->updateTime ) {
           influxdbHelper.release();
           WS_DEBUG_RAM("After release");
@@ -317,7 +316,7 @@ void loop() {
     delay(100);
   }
 
-  if(initialized && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
+  if(initialized && !isAPRunning && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
     ESP.wdtFeed();
     int remainingTimeBudget = ui.update();
     nextUIUpdate = millis()+remainingTimeBudget;
@@ -352,9 +351,13 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
         station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       }
       drawAPInfo(&display, info);
+      isAPRunning = true;
       break;
     case WifiAPEvent::ClientConnected:
       drawAPInfo(&display, info);
+      break;
+    case WifiAPEvent::APStopped:
+      isAPRunning = false;
       break;
   }
 }

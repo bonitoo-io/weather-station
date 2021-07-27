@@ -86,6 +86,7 @@ public:
      void setWiFiConnectionEventHandler(WiFiConnectionEventHandler handler) { 
         _wifiEventHandler = handler;
     }
+    int getLastDisconnectReason() const { return _lastDisconnectReason; }
  private:
   void reconfigureWiFiConnection();
   void manageSTA();
@@ -100,24 +101,26 @@ public:
   void onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& event);
   void notifyWifiEvent(WifiConnectionEvent event);
   void notifyAPEvent(WifiAPEvent event);
+  void startSTA(WiFiSettings *config);
  private:
   WiFiSettings *_settings;
   APInfo _apInfo;
   WifiAPEvent *_asyncEventToFire = nullptr;
   // for the management delay loop
-  unsigned long _lastConnectionAttempt;
+  unsigned long _lastConnectionAttempt = 0;
   // for the captive portal
-  DNSServer *_dnsServer;
-  APEventHandler _apEventHandler;
-  WiFiConnectionEventHandler _wifiEventHandler;
+  DNSServer *_dnsServer = nullptr;
+  APEventHandler _apEventHandler = nullptr;
+  WiFiConnectionEventHandler _wifiEventHandler = nullptr;
+  uint8_t _lastDisconnectReason = 0;
   // WiFi event handlers
   WiFiEventHandler _onStationModeConnectedHandler;
   WiFiEventHandler _onStationModeDisconnectedHandler;
   WiFiEventHandler _onStationModeGotIPHandler;
   WiFiEventHandler _onSoftAPModeStationConnectedHandler;
   WiFiEventHandler _onSoftAPModeStationDisconnectedHandler;
-  bool _forceAPStop;
-  uint8_t _connectAttempts;
+  uint32_t _forceAPStop = 0;
+  uint8_t _connectAttempts = 0;
 };
 
 #if 1
@@ -138,11 +141,13 @@ class WiFiScannerEndpoint {
 #define WIFI_STATUS_ENDPOINT_PATH "/api/wifiStatus"
 
 class WiFiStatusEndpoint {
- public:
-  WiFiStatusEndpoint(AsyncWebServer* server);
+  public:
+    WiFiStatusEndpoint(AsyncWebServer* server, WiFiManager *wifiManager);
 
- private:
-  void wifiStatusHandler(AsyncWebServerRequest* request);
+  private:
+    void wifiStatusHandler(AsyncWebServerRequest* request);
+  private:
+    WiFiManager *_wifiManager;
 };
 #endif
 #endif //WS_WIFI_H

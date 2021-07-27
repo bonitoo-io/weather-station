@@ -72,7 +72,6 @@ const styles = (theme: Theme) => createStyles({
 
 interface MenuAppBarState {
   mobileOpen: boolean;
-  authMenuOpen: boolean;
 }
 
 interface MenuAppBarProps extends WithTheme, WithStyles<typeof styles>, RouteComponentProps {
@@ -85,21 +84,17 @@ class MenuAppBar extends React.Component<MenuAppBarProps, MenuAppBarState> {
     super(props);
     this.state = {
       mobileOpen: false,
-      authMenuOpen: false
-    };
+    }
   }
+
 
   anchorRef: RefObject<HTMLButtonElement> = React.createRef();
 
-  handleToggle = () => {
-    this.setState({ authMenuOpen: !this.state.authMenuOpen });
-  }
 
   handleClose = (event: React.MouseEvent<Document>) => {
     if (this.anchorRef.current && this.anchorRef.current.contains(event.currentTarget)) {
       return;
     }
-    this.setState({ authMenuOpen: false });
   }
 
   handleDrawerToggle = () => {
