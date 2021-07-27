@@ -149,7 +149,6 @@ void setup() {
   //display.setContrast(100);
   refreshDHTCachedValues(conf.useMetric);
 
-  
   initData();
 
   WS_DEBUG_RAM("Setup 3");
