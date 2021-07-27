@@ -6,11 +6,11 @@ import PermScanWifiIcon from '@material-ui/icons/PermScanWifi';
 
 import { FormActions, FormButton, SectionContent } from '../components';
 import { SCAN_NETWORKS_ENDPOINT, LIST_NETWORKS_ENDPOINT } from '../api';
-
+import { AppStateContext } from '../AppStateContext';
 import WiFiNetworkSelector from './WiFiNetworkSelector';
 import { WiFiNetworkList, WiFiNetwork } from './types';
 
-const NUM_POLLS = 10
+const NUM_POLLS = 20
 const POLLING_FREQUENCY = 500
 const RETRY_EXCEPTION_TYPE = "retry"
 
@@ -151,17 +151,22 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
   render() {
     const { scanningForNetworks } = this.state;
     return (
-      <SectionContent title="Network Scanner">
-        <Typography variant="subtitle1">
-          Select WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi networks supported)
-        </Typography>
-        {this.renderNetworkScanner()}
-        <FormActions>
-          <FormButton startIcon={<PermScanWifiIcon />} variant="contained" color="secondary" onClick={this.requestNetworkScan} disabled={scanningForNetworks}>
-            Scan again&hellip;
-          </FormButton>
-        </FormActions>
-      </SectionContent>
+      <AppStateContext.Consumer>
+        {({wifiConfigured}) => (
+          <SectionContent title={wifiConfigured?"Network Scanner":"Network list"}>
+            <Typography variant="subtitle1">
+              Select WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi networks supported)
+            </Typography>
+            {this.renderNetworkScanner()}
+            <FormActions>
+              <FormButton startIcon={<PermScanWifiIcon />} variant="contained" color="secondary" onClick={this.requestNetworkScan} disabled={scanningForNetworks}>
+                Scan again&hellip;
+              </FormButton>
+            </FormActions>
+          </SectionContent>
+        )
+      }
+    </AppStateContext.Consumer>
     );
   }
 

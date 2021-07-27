@@ -29,6 +29,7 @@ export enum WiFiEncryptionType {
 export interface WiFiStatus {
   mode : WiFiMode;
   status: WiFiConnectionStatus;
+  disconnect_reason?: number;
   local_ip: string;
   mac_address: string;
   rssi: number;

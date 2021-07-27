@@ -69,7 +69,7 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   client.setInsecure();  //Ignore certificate
   JsonStreamingParser parser;
   parser.setListener(&ipListener);
-  Serial.print(F("Getting IP based regional info"));
+  Serial.println(F("Getting IP based regional info"));
 
   http.begin(client, String(F("https://ipapi.co/json")));
   http.addHeader(F("Accept"), F("application/json"));
