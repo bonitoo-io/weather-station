@@ -13,7 +13,7 @@ import { INFLUXDB_VALIDATE_ENDPOINT} from '../api';
 
 type InfluxDBSettingsFormProps = RestFormProps<InfluxDBSettings>;
 
-const NUM_POLLS = 10
+const NUM_POLLS = 20
 const POLLING_FREQUENCY = 500
 const RETRY_EXCEPTION_TYPE = "retry"
 
@@ -37,7 +37,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
     // create a ref to store the textInput DOM element
     this.form = React.createRef();
   }
-  
+
 
   componentDidMount() {
     ValidatorForm.addValidationRule('isURL', isURL);
@@ -151,7 +151,6 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
       return response.json()
     })
     .then(json => {
-      window.console.log('onValidateParams', json)
       const status : ValidationStatusResponse = json
       if (status.status === ValidationStatus.StartRequest) {
         this.pollCount = 0
@@ -167,7 +166,6 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
     });
   }
   schedulePollValidation() {
-    window.console.log('validation')
     setTimeout(this.pollValidation, POLLING_FREQUENCY);
   }
 
@@ -179,13 +177,11 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
   }
 
   pollValidation = () => {
-    window.console.log('poll validation')
     fetch(INFLUXDB_VALIDATE_ENDPOINT, {method: 'GET'})
       .then(response => {
         return response.json();
       })
       .then(json => {
-        window.console.log('PollValidation', json)
         const status : ValidationStatusResponse = json
         if (status.status === ValidationStatus.Finished) {
           this.props.enqueueSnackbar("Success", {

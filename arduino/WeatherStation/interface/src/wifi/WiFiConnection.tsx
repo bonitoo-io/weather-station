@@ -26,14 +26,12 @@ class WiFiConnection extends Component<WiFiConnectionProps, WiFiConnectionContex
   }
 
   selectNetwork = (network: WiFiNetwork) => {
-    console.log('selectNetwork', network)
     this.setState({ selectedNetwork: network });
     this.props.history.push('/wifi/settings');
   }
 
 
   deselectNetwork = () => {
-    console.log('deselectNetwork')
     this.setState({ selectedNetwork: undefined });
   }
 
@@ -42,7 +40,6 @@ class WiFiConnection extends Component<WiFiConnectionProps, WiFiConnectionContex
   };
 
   render() {
-    console.log('WC: context:', this.context)
     return (
       <WiFiConnectionContext.Provider value={this.state}>
         <AppStateContext.Consumer>

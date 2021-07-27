@@ -110,7 +110,6 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
   createListItems() {
     const { data, theme } = this.props
     this.context.wifiConfigured = data.appState !== AppState.WifiConfigNeeded
-    console.log('Set context:', this.context)
     return (
       <Fragment>
         <Typography variant="h5">

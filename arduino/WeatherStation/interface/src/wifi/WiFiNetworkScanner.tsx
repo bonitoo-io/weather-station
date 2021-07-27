@@ -10,7 +10,7 @@ import { AppStateContext } from '../AppStateContext';
 import WiFiNetworkSelector from './WiFiNetworkSelector';
 import { WiFiNetworkList, WiFiNetwork } from './types';
 
-const NUM_POLLS = 10
+const NUM_POLLS = 20
 const POLLING_FREQUENCY = 500
 const RETRY_EXCEPTION_TYPE = "retry"
 
@@ -150,7 +150,6 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
 
   render() {
     const { scanningForNetworks } = this.state;
-    console.log('WNS: context:', this.context)
     return (
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
