@@ -58,7 +58,6 @@ private:
 private:
     InfluxDBSettings *_settings;
     FSPersistence *_persistence;
-    AsyncCallbackJsonWebHandler _updateHandler;
 };
 
 #define VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH "/api/validateInfluxDBParams"
@@ -84,7 +83,6 @@ private:
     InfluxDBHelper *_helper;
     ValidationStatus _status;
     String _error;
-    AsyncCallbackJsonWebHandler _validateHandler;
 };
 
 #endif //INFLUXDB_HELPER_H

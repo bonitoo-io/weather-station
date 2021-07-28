@@ -36,20 +36,24 @@ public:
     WiFiManager *getWifiManager() {
         return &_wifiManager;
     }
+    void startServer();
+    void stopServer();
 private:
-    AsyncWebServer _server;
+    tConfig *_conf; 
+    InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;
     InfluxDBSettings _influxDBSettings;
     UpdaterSettings _updaterSettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
-    WiFiScannerEndpoint _wifiScanner;
-    SettingsEndpoint _wifiSettingsEndpoint;
-    InfluxDBSettingsEndpoint _influxDBSettingsEndpoint;
-    SettingsEndpoint _updaterSettingsEndpoint;
-    WiFiStatusEndpoint _wifiStatusEndpoint;
-    AboutInfoEndpoint _aboutInfoEndpoint;
-    AboutServiceEndpoint _aboutServiceEndpoint;
-    InfluxDBValidateParamsEndpoint _influxdbValidateEndpoint;
+    AsyncWebServer *_server = nullptr;
+    WiFiScannerEndpoint *_wifiScannerEndpoint = nullptr;
+    SettingsEndpoint *_wifiSettingsEndpoint = nullptr;
+    InfluxDBSettingsEndpoint *_influxDBSettingsEndpoint = nullptr;
+    SettingsEndpoint *_updaterSettingsEndpoint = nullptr;
+    WiFiStatusEndpoint *_wifiStatusEndpoint = nullptr;
+    AboutInfoEndpoint *_aboutInfoEndpoint = nullptr;
+    AboutServiceEndpoint *_aboutServiceEndpoint = nullptr;
+    InfluxDBValidateParamsEndpoint *_influxdbValidateEndpoint = nullptr;
 };
 #endif //WEATHER_STATION_H

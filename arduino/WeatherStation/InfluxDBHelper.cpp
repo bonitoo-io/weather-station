@@ -179,12 +179,14 @@ int InfluxDBSettings::load(JsonObject& root) {
 // ****************** InfluxDBSettingsEndpoint ***************************
 
 InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* server,FSPersistence *persistence, InfluxDBSettings *settings):
-    _settings(settings), _persistence(persistence),
-    _updateHandler(INFLUXDB_SETTINGS_ENDPOINT_PATH, 
+    _settings(settings), 
+    _persistence(persistence)
+    {
+    AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(INFLUXDB_SETTINGS_ENDPOINT_PATH, 
                      std::bind(&InfluxDBSettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
-                     DEFAULT_BUFFER_SIZE) {
-    _updateHandler.setMethod(HTTP_POST);
-    server->addHandler(&_updateHandler);
+                     DEFAULT_BUFFER_SIZE);
+    updateHandler->setMethod(HTTP_POST);
+    server->addHandler(updateHandler);
     server->on(INFLUXDB_SETTINGS_ENDPOINT_PATH, HTTP_GET, std::bind(&InfluxDBSettingsEndpoint::fetchSettings, this, std::placeholders::_1));
 }
 
@@ -240,12 +242,12 @@ void InfluxDBSettingsEndpoint::updateSettings(AsyncWebServerRequest* request, Js
 InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper):
   _validationSettings(nullptr),
   _helper(helper),
-  _status(ValidationStatus::Idle),
-  _validateHandler(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH, 
+  _status(ValidationStatus::Idle) {
+  AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH, 
                     std::bind(&InfluxDBValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2),
-                    DEFAULT_BUFFER_SIZE) {
-  _validateHandler.setMethod(HTTP_POST);
-  server->addHandler(&_validateHandler);
+                    DEFAULT_BUFFER_SIZE);
+  updateHandler->setMethod(HTTP_POST);
+  server->addHandler(updateHandler);
   server->on(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH, HTTP_GET, std::bind(&InfluxDBValidateParamsEndpoint::checkStatus, this, std::placeholders::_1));
 }
 

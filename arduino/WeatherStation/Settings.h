@@ -34,7 +34,6 @@ private:
 private:
     Settings *_settings;
     FSPersistence *_persistence;
-    AsyncCallbackJsonWebHandler _updateHandler;
 };
 
 #endif //SETTINGS_H
