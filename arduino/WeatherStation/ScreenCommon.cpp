@@ -92,6 +92,7 @@ void drawAPInfo(OLEDDisplay *display, APInfo *info) {
 }
 
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label) {
+  Serial.println( label);
   ESP.wdtFeed();  
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_CENTER);
