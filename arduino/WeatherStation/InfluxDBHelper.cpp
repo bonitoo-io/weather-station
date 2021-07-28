@@ -142,7 +142,7 @@ String InfluxDBHelper::validateConnection(const String &serverUrl, const String 
 void printInfluxDBettings(String prefix, InfluxDBSettings *s) {
     Serial.print(prefix);
     Serial.print(F(" server: "));Serial.print(s->serverURL);
-    Serial.print(F(", token: "));Serial.print(s->authorizationToken);
+    //Serial.print(F(", token: "));Serial.print(s->authorizationToken);
     Serial.print(F(", org: "));Serial.print(s->org);
     Serial.print(F(", bucket: "));Serial.print(s->bucket);
     Serial.print(F(", writeInterval: "));Serial.print(s->writeInterval);
@@ -161,7 +161,7 @@ int InfluxDBSettings::save(JsonObject& root) {
     root[F("org")] = org;
     root[F("bucket")] = bucket;
     root[F("writeInterval")] = writeInterval;
-    printInfluxDBettings(F("InfluxDBSettings::Save"), this);
+    printInfluxDBettings(F("InfluxDBSettings::save:"), this);
     return 0;
 }
 
@@ -171,7 +171,7 @@ int InfluxDBSettings::load(JsonObject& root) {
     org = root[F("org")].as<const char *>();
     bucket = root[F("bucket")].as<const char *>() ;
     writeInterval = root[F("writeInterval")]; 
-    printInfluxDBettings(F("InfluxDBSettings::Load"), this);
+    printInfluxDBettings(F("InfluxDBSettings::load:"), this);
     return 1;
 }
 

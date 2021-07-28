@@ -4,7 +4,7 @@
 void printWifiSettings(String prefix, WiFiSettings *s) {
     Serial.print(prefix);
     Serial.print(F(" ssid: "));Serial.print(s->ssid);
-    Serial.print(F(", password: "));Serial.print(s->password);
+    //Serial.print(F(", password: "));Serial.print(s->password);
     Serial.print(F(", hostname: "));Serial.print(s->hostname);
     Serial.print(F(", static_ip_config: "));Serial.print(s->staticIPConfig);
     Serial.print(F(", local_ip: "));Serial.print(s->localIP);
