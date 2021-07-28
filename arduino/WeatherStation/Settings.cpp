@@ -3,12 +3,14 @@
 #include "FSPersistance.h"
 
 SettingsEndpoint::SettingsEndpoint(AsyncWebServer* server, const char *endpointPath, FSPersistence *persistence, Settings *settings):
-    _settings(settings), _persistence(persistence),
-    _updateHandler(endpointPath, 
-                     std::bind(&SettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
-                     DEFAULT_BUFFER_SIZE) {
-    _updateHandler.setMethod(HTTP_POST);
-    server->addHandler(&_updateHandler);
+    _settings(settings), 
+    _persistence(persistence)
+     {
+    AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(endpointPath, 
+                std::bind(&SettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
+                DEFAULT_BUFFER_SIZE);
+    updateHandler->setMethod(HTTP_POST);
+    server->addHandler(updateHandler);
     server->on(endpointPath, HTTP_GET, std::bind(&SettingsEndpoint::fetchSettings, this, std::placeholders::_1));
 }
 

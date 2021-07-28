@@ -150,25 +150,29 @@ void setup() {
   //display.setContrast(100);
   refreshDHTCachedValues(conf.useMetric);
 
-  initData();
-
   WS_DEBUG_RAM("Setup 3");
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
+  WS_DEBUG_RAM("UpdateData");
   digitalWrite( LED, LOW);
-  
+
+
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (conf.detectLocationIP) {
     WS_DEBUG_RAM("Before IPloc");
+    station.stopServer();
+    WS_DEBUG_RAM("After stop server");
     if(!firstStart) {
       influxdbHelper.release();
       WS_DEBUG_RAM("After cl release");
-      delay(1000);
     }
+    delay(1000);
+    WS_DEBUG_RAM("After delay");
     detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
     setLanguage( conf.language);
     WS_DEBUG_RAM("After IPloc");
+    station.startServer();
     if(!firstStart) {
       influxdbHelper.begin(station.getInfluxDBSettings());
     }
@@ -205,6 +209,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
+
   influxdbHelper.update( firstStart, getDeviceID(),  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
@@ -216,7 +221,6 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 
   influxdbHelper.writeStatus(resetReason);
   resetReason = (char *)nullptr;
-
 
   digitalWrite( LED, HIGH);
   delay(500);
@@ -256,9 +260,12 @@ void loop() {
         if (curtm == station.getUpdaterSettings()->updateTime ) {
           influxdbHelper.release();
           WS_DEBUG_RAM("After release");
+          station.stopServer();
+          WS_DEBUG_RAM("After stop server");
           delay(1000);
           WS_DEBUG_RAM("After delay");
           if(!updater.checkUpdate()) {
+            station.startServer();
             influxdbHelper.begin(station.getInfluxDBSettings());
           }
         }
@@ -338,6 +345,7 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
     case WifiConnectionEvent::ConnectingSuccess:
       shouldDrawWifiProgress = false;
       station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
+      station.startServer();
       break;        
   };
 }
@@ -351,6 +359,7 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
       }
       drawAPInfo(&display, info);
       isAPRunning = true;
+      station.startServer();
       break;
     case WifiAPEvent::ClientConnected:
       drawAPInfo(&display, info);
