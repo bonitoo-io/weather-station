@@ -12,6 +12,7 @@ import MemoryIcon from '@material-ui/icons/Memory';
 import SdStorageIcon from '@material-ui/icons/SdStorage';
 import FolderIcon from '@material-ui/icons/Folder';
 import DevicesIcon from '@material-ui/icons/Devices';
+import WifiIcon from '@material-ui/icons/Wifi';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
@@ -112,10 +113,7 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
     this.context.wifiConfigured = data.appState !== AppState.WifiConfigNeeded
     return (
       <Fragment>
-        <Typography variant="h5">
-        Weather Station
-        </Typography>
-        <Typography variant="h6">
+        <Typography variant="subtitle1">
         Created for <Link href="https://www.influxdata.com" target="_blank" rel="noreferrer">InfluxData</Link> by <Link href="https://bonitoo.io" target="_blank" rel="noreferrer">Bonitoo</Link>
         </Typography>
         <ListItem >
@@ -316,7 +314,7 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
         this.setState({ processing: false, confirmRestart: false });
       });
   }
-
+//<Route exact path="/wifi/scan" component={WiFiNetworkScanner} />
   render() {
     return (
       <Fragment>
@@ -330,6 +328,9 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
             </FormButton>
           </Box>
           <Box flexWrap="none" padding={1} whiteSpace="nowrap">
+            <FormButton startIcon={<WifiIcon />} variant="contained" color="secondary" onClick={this.props.loadData}>
+              WiFi Configuration
+            </FormButton>
             <FormButton startIcon={<PowerSettingsNewIcon />} variant="contained" color="primary" onClick={this.onRestart}>
               Restart
             </FormButton>

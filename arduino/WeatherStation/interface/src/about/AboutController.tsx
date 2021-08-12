@@ -16,7 +16,7 @@ class AboutController extends Component<AboutProps> {
 
   render() {
     return (
-      <SectionContent title="About">
+      <SectionContent title="Weather Station Status">
         <RestFormLoader
           {...this.props}
           render={formProps => <AboutPage {...formProps} />}

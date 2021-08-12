@@ -16,7 +16,7 @@ class About extends Component<AboutProps> {
 
   render() {
     return (
-      <MenuAppBar sectionTitle="About">
+      <MenuAppBar sectionTitle="Status">
         <Switch>
           <Route exact path="/about/about" component={AboutController} />
           <Redirect to="/about/about" />
