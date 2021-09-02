@@ -109,7 +109,7 @@ class MenuAppBar extends React.Component<MenuAppBarProps, MenuAppBarState> {
       <div>
         <Toolbar>
           <Box display="flex">
-            <img src="/app/icon.png" className={classes.toolbarImage} alt={PROJECT_NAME} />
+            <img src="/app/icon.svg" className={classes.toolbarImage} alt={PROJECT_NAME} />
           </Box>
           <Typography variant="h6" color="textPrimary">
             {PROJECT_NAME}
