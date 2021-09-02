@@ -1,6 +1,7 @@
 import React from 'react';
 
 export interface AppStateContextValue {
+  loading: boolean
   wifiConfigured: boolean
 }
 

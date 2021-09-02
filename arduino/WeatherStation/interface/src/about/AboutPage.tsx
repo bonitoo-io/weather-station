@@ -12,7 +12,6 @@ import MemoryIcon from '@material-ui/icons/Memory';
 import SdStorageIcon from '@material-ui/icons/SdStorage';
 import FolderIcon from '@material-ui/icons/Folder';
 import DevicesIcon from '@material-ui/icons/Devices';
-import WifiIcon from '@material-ui/icons/Wifi';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
@@ -21,7 +20,6 @@ import AlignHorizontalCenterIcon from '@material-ui/icons/FormatAlignCenter';
 
 import { RestFormProps, FormButton, ErrorButton, HighlightAvatar } from '../components';
 import { FACTORY_RESET_ENDPOINT, RESTART_ENDPOINT } from '../api';
-import { AppStateContext } from '../AppStateContext';
 import { AboutInfo, AppState } from './types';
 
 interface AboutPageState {
@@ -98,10 +96,6 @@ function appStatus(data: AboutInfo) {
 
 class AboutPage extends Component<AboutPageProps, AboutPageState> {
 
-  static contextType = AppStateContext;
-  context!: React.ContextType<typeof AppStateContext>;
-
-
   state: AboutPageState = {
     confirmRestart: false,
     confirmFactoryReset: false,
@@ -110,7 +104,6 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
 
   createListItems() {
     const { data, theme } = this.props
-    this.context.wifiConfigured = data.appState !== AppState.WifiConfigNeeded
     return (
       <Fragment>
         <Typography variant="subtitle1">
@@ -314,7 +307,6 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
         this.setState({ processing: false, confirmRestart: false });
       });
   }
-//<Route exact path="/wifi/scan" component={WiFiNetworkScanner} />
   render() {
     return (
       <Fragment>
@@ -328,9 +320,6 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
             </FormButton>
           </Box>
           <Box flexWrap="none" padding={1} whiteSpace="nowrap">
-            <FormButton startIcon={<WifiIcon />} variant="contained" color="secondary" onClick={this.props.loadData}>
-              WiFi Configuration
-            </FormButton>
             <FormButton startIcon={<PowerSettingsNewIcon />} variant="contained" color="primary" onClick={this.onRestart}>
               Restart
             </FormButton>

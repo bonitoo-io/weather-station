@@ -54,7 +54,7 @@ class WiFiConnection extends Component<WiFiConnectionProps, WiFiConnectionContex
                 <Route exact path="/wifi/status" component={WiFiStatusController} />
                 <Route exact path="/wifi/scan" component={WiFiNetworkScanner} />
                 <Route exact path="/wifi/settings" component={WiFiSettingsController} />
-                <Redirect to="/wifi/status" />
+                <Redirect to={wifiConfigured?"/wifi/status":"/wifi/scan"}/>
               </Switch>
             </MenuAppBar>
             )
