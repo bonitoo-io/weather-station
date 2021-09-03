@@ -1,9 +1,10 @@
 # Changelog
-## 0.55rc1
+## 0.55
  - Added validation of WiFi params during initial configuration
  - Simplified on screen setup instructions
  - Removed passwords from debug output
  - Using [custom memory optimized esp8266-weather-station library fork](https://github.com/bonitoo-io/esp8266-weather-station) 
+ - Web server is shut down during updating data to save RAM
 
 ## 0.54
  - InfluxDB Settings token obfuscation
