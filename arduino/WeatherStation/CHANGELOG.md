@@ -1,4 +1,11 @@
 # Changelog
+## 0.56 [in progress]
+ - Improved WiFi setting wizard
+   - Improved on-screen instruction
+   - Initial landing page in WiFi is not working is WiFi Scanner
+ - Added readme with user guide
+ - Smoother icon
+ 
 ## 0.55
  - Added validation of WiFi params during initial configuration
  - Simplified on screen setup instructions
