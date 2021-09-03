@@ -78,15 +78,16 @@ void InfluxDBHelper::writeStatus(const String &resetReason) {
   }
 
   Point status("device_status");
-  status.addField(F("free_heap"), ESP.getFreeHeap());
-  status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
-  status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   status.addTag(F("clientId"), getDeviceID());
   status.addTag(F("device"), String(F("WS-ESP8266")));
   status.addTag(F("version"), VERSION);
   if(resetReason.length()) {
     status.addTag(F("reset_reason"), resetReason);
   }
+  status.addField(F("free_heap"), ESP.getFreeHeap());
+  status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
+  status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
+  status.addField(F("uptime"), millis()/1000.0);
   Serial.print(F("Writing status: "));
   Serial.println(_client->pointToLineProtocol(status));
   if (!_client->writePoint(status)) {

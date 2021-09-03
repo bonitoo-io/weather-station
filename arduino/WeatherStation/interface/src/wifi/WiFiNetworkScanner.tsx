@@ -153,9 +153,9 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
     return (
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
-          <SectionContent title={wifiConfigured?"Network Scanner":"Network list"}>
+          <SectionContent title={wifiConfigured?"Network Scanner":"Select WiFi network"}>
             <Typography variant="subtitle1">
-              Select WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi networks supported)
+              Weather station requires active Wifi connection. Please select a suitable WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi networks are supported) The WiFi networks are sorted from the strongest one.
             </Typography>
             {this.renderNetworkScanner()}
             <FormActions>

@@ -1,18 +1,28 @@
 import React, { Component, RefObject } from 'react';
-import { Route, Switch } from 'react-router';
 import { SnackbarProvider } from 'notistack';
 
-import { IconButton } from '@material-ui/core';
+import { IconButton, Typography } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 
 import AppRouting from './AppRouting';
 import CustomMuiTheme from './CustomMuiTheme';
-import { PROJECT_NAME } from './api';
-import { AppStateContext, AppStateContextDefaultValue } from './AppStateContext';
+import { ABOUT_INFO_ENDPOINT, PROJECT_NAME } from './api';
+import { AppStateContext, AppStateContextValue } from './AppStateContext';
+import { AboutInfo, AppState } from './about/types';
 
-class App extends Component<{}> {
+class App extends Component<{}, AppStateContextValue> {
 
   notistackRef: RefObject<any> = React.createRef();
+
+  constructor(props: any) {
+    super(props)
+    this.state = {
+      loading: true,
+      wifiConfigured: false
+    }
+    this.loadData()
+  }
+
 
   componentDidMount() {
     document.title = PROJECT_NAME;
@@ -23,9 +33,10 @@ class App extends Component<{}> {
   }
 
   render() {
+    const {loading} = this.state
     return (
       <CustomMuiTheme>
-        <AppStateContext.Provider value={AppStateContextDefaultValue}>
+        <AppStateContext.Provider value={this.state}>
           <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             ref={this.notistackRef}
             action={(key) => (
@@ -33,13 +44,38 @@ class App extends Component<{}> {
                 <CloseIcon />
               </IconButton>
             )}>
-            <Switch>
-              <Route component={AppRouting} />
-            </Switch>
+            {loading?
+            <Typography variant="subtitle1">
+              Loading..
+            </Typography>
+            :
+            <AppRouting/>
+            }
           </SnackbarProvider>
         </AppStateContext.Provider>
       </CustomMuiTheme>
     );
+  }
+
+  //            <Switch>
+//  <Route component={AppRouting} />
+  //</Switch>
+
+  loadData = () => {
+     fetch(ABOUT_INFO_ENDPOINT).then(response => {
+      if (response.status === 200) {
+        return response.json();
+      }
+      throw Error("Invalid status code: " + response.status);
+    }).then(json => {
+      const info : AboutInfo = json
+      console.log({wifiConfigured: info.appState !== AppState.WifiConfigNeeded})
+      this.setState({loading: false, wifiConfigured: info.appState !== AppState.WifiConfigNeeded})
+    }).catch(error => {
+      const errorMessage = error.message || "Unknown error";
+      this.notistackRef.current.enqueueSnackbar("Problem fetching: " + errorMessage, { variant: 'error' });
+      this.setState({loading: false}) 
+    });
   }
 }
 

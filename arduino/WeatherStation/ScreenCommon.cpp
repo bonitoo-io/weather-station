@@ -77,15 +77,17 @@ void startWifiProgress(OLEDDisplay *display, const char* version, const char *ss
 
 void drawAPInfo(OLEDDisplay *display, APInfo *info) {
   display->clear();
-  display->setFont(ArialMT_Plain_16);
+  display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0, 0, getStr(s_Wifi_configure));
 
   if (!info->clientsCount) {    //Any connected client to Wifi?
-    display->drawString(0, 20, getStr(s_Wifi_AP_connect));
+    display->drawString(0, 13, getStr(s_Wifi_AP_connect));
+    display->setFont(ArialMT_Plain_16);
     display->drawString(0, 40, info->ssid);
   } else {
-    display->drawString(0, 20, getStr(s_Wifi_web_point));
+    display->drawString(0, 13, getStr(s_Wifi_web_point));
+    display->setFont(ArialMT_Plain_16);
     display->drawString(0, 40, String(F("http://")) + info->ipAddress.toString());
   }
   display->display();

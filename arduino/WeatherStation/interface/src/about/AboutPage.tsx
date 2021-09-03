@@ -20,7 +20,6 @@ import AlignHorizontalCenterIcon from '@material-ui/icons/FormatAlignCenter';
 
 import { RestFormProps, FormButton, ErrorButton, HighlightAvatar } from '../components';
 import { FACTORY_RESET_ENDPOINT, RESTART_ENDPOINT } from '../api';
-import { AppStateContext } from '../AppStateContext';
 import { AboutInfo, AppState } from './types';
 
 interface AboutPageState {
@@ -97,10 +96,6 @@ function appStatus(data: AboutInfo) {
 
 class AboutPage extends Component<AboutPageProps, AboutPageState> {
 
-  static contextType = AppStateContext;
-  context!: React.ContextType<typeof AppStateContext>;
-
-
   state: AboutPageState = {
     confirmRestart: false,
     confirmFactoryReset: false,
@@ -109,13 +104,9 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
 
   createListItems() {
     const { data, theme } = this.props
-    this.context.wifiConfigured = data.appState !== AppState.WifiConfigNeeded
     return (
       <Fragment>
-        <Typography variant="h5">
-        Weather Station
-        </Typography>
-        <Typography variant="h6">
+        <Typography variant="subtitle1">
         Created for <Link href="https://www.influxdata.com" target="_blank" rel="noreferrer">InfluxData</Link> by <Link href="https://bonitoo.io" target="_blank" rel="noreferrer">Bonitoo</Link>
         </Typography>
         <ListItem >
@@ -316,7 +307,6 @@ class AboutPage extends Component<AboutPageProps, AboutPageState> {
         this.setState({ processing: false, confirmRestart: false });
       });
   }
-
   render() {
     return (
       <Fragment>
