@@ -129,11 +129,11 @@ class MenuAppBar extends React.Component<MenuAppBarProps, MenuAppBarState> {
             </ListItemIcon>
             <ListItemText primary="WiFi Connection" />
           </ListItem>
-          <ListItem to='/influxdb/settings' selected={path.startsWith('/influxdb/')} button component={Link} >
+          <ListItem to='/settings/influxdb' selected={path.startsWith('/settings/')} button component={Link} >
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
-            <ListItemText primary="InfluxDB Settings" />
+            <ListItemText primary="Settings" />
           </ListItem>
         </List>
       </div>

@@ -18,6 +18,9 @@ bool Updater::checkUpdate() {
   ESPGithubUpdater ghUpdater(_settings->owner, _settings->repo, _settings->binFile);
   ghUpdater.setMD5FileName(_settings->md5File);
   ghUpdater.setRestartOnUpdate(false);
+  if(!_settings->verifyCert) {
+    ghUpdater.setInsecure();
+  }
 
   Serial.printf_P(PSTR("Updater: checking  update for %s/%s, check for beta: %d\n"),_settings->owner.c_str(), _settings->repo.c_str(), _settings->checkBeta); 
   String ver = ghUpdater.getLatestVersion(_settings->checkBeta);
@@ -61,6 +64,7 @@ void printUpdaterSettings(String prefix, UpdaterSettings *s) {
     Serial.print(F(", md5File: "));Serial.print(s->md5File);
     Serial.print(F(", updateTime: "));Serial.print(s->updateTime);
     Serial.print(F(", checkBeta: "));Serial.print(s->checkBeta);
+    Serial.print(F(", verifyCert: "));Serial.print(s->verifyCert);
     Serial.println();
 }
 
@@ -70,7 +74,8 @@ UpdaterSettings::UpdaterSettings():
   binFile(UPDATER_DEFAULT_BIN_FILE),
   md5File(UPDATER_DEFAULT_MD5_FILE),
   updateTime(UPDATER_DEFAULT_UPDATETIME),
-  checkBeta(UPDATER_DEFAULT_CHECKBETA) {
+  checkBeta(UPDATER_DEFAULT_CHECKBETA),
+  verifyCert(UPDATER_DEFAULT_VERIFY_CERT) {
 }
 
 int UpdaterSettings::save(JsonObject& root) {
@@ -80,6 +85,7 @@ int UpdaterSettings::save(JsonObject& root) {
     root[F("md5File")] = md5File;
     root[F("updateTime")] = updateTime;
     root[F("checkBeta")] = checkBeta;
+    root[F("verifyCert")] = verifyCert;
     printUpdaterSettings(F("UpdaterSettings::Save"), this);
     return 0;
 }
@@ -91,6 +97,7 @@ int UpdaterSettings::load(JsonObject& root) {
     md5File = root[F("md5File")].as<const char *>();;
     updateTime = root[F("updateTime")];
     checkBeta = root[F("checkBeta")];
+    verifyCert = root[F("verifyCert")] | UPDATER_DEFAULT_VERIFY_CERT;
     printUpdaterSettings(F("UpdaterSettings::Load"), this);
     return 1;
 }
