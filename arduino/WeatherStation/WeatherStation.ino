@@ -337,10 +337,12 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
   // WiFi interrupt events, don't do anything complex, just update state variables
  switch(event) {
     case WifiConnectionEvent::ConnectingStarted:
-      shouldDrawWifiProgress = true;
-      startWifiProgress(&display, VERSION, ssid);
-      //TODO: better solution for passing current wifi
-      wifiSSID = ssid;
+      if(!shouldDrawWifiProgress) {
+        shouldDrawWifiProgress = true;
+        startWifiProgress(&display, VERSION, ssid);
+        //TODO: better solution for passing current wifi
+        wifiSSID = ssid;
+      }
       break;
     case WifiConnectionEvent::ConnectingSuccess:
       shouldDrawWifiProgress = false;
