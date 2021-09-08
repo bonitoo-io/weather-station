@@ -19,7 +19,7 @@ import FilterIcon from '@material-ui/icons/Filter';
 import AlignHorizontalCenterIcon from '@material-ui/icons/FormatAlignCenter';
 
 import { RestFormProps, FormButton, ErrorButton, HighlightAvatar } from '../components';
-import { FACTORY_RESET_ENDPOINT, RESTART_ENDPOINT } from '../api';
+import { FACTORY_RESET_ENDPOINT, formatNumber, RESTART_ENDPOINT } from '../api';
 import { AboutInfo, AppState } from './types';
 
 interface AboutPageState {
@@ -30,9 +30,7 @@ interface AboutPageState {
 
 type AboutPageProps = RestFormProps<AboutInfo> & WithTheme;
 
-function formatNumber(num: number) {
-  return new Intl.NumberFormat().format(num);
-}
+
 
 const day = 24*3600 
 const hour = 3600 

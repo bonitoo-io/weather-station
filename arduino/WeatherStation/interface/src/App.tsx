@@ -69,7 +69,6 @@ class App extends Component<{}, AppStateContextValue> {
       throw Error("Invalid status code: " + response.status);
     }).then(json => {
       const info : AboutInfo = json
-      console.log({wifiConfigured: info.appState !== AppState.WifiConfigNeeded})
       this.setState({loading: false, wifiConfigured: info.appState !== AppState.WifiConfigNeeded})
     }).catch(error => {
       const errorMessage = error.message || "Unknown error";

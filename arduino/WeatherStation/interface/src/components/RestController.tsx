@@ -4,6 +4,7 @@ import { withSnackbar, WithSnackbarProps } from 'notistack';
 
 export interface RestControllerProps<D> extends WithSnackbarProps {
   handleValueChange: (name: keyof D) => (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleDirectValueChange: (name: string, val: any) => void
 
   setData: (data: D, callback?: () => void) => void;
   saveData: () => void;
@@ -20,6 +21,13 @@ export const extractEventValue = (event: React.ChangeEvent<HTMLInputElement>) =>
       return event.target.valueAsNumber;
     case "checkbox":
       return event.target.checked;
+    case "time":
+      const time = event.target.valueAsDate
+      if(time) {
+        return time?.getHours()*100+time?.getMinutes()
+      } else {
+        return event.target.value
+      }
     default:
       return event.target.value
   }
@@ -93,7 +101,12 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
       }
 
       handleValueChange = (name: keyof D) => (event: React.ChangeEvent<HTMLInputElement>) => {
-        const data = { ...this.state.data!, [name]: extractEventValue(event) };
+        const val =  extractEventValue(event)
+        this.handleDirectValueChange(name as string, val)
+      }
+
+      handleDirectValueChange = (name: string, val: any) => {
+        const data = { ...this.state.data!, [name]: val};
         this.setState({ data });
       }
 
@@ -102,6 +115,7 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
           {...this.state}
           {...this.props as P}
           handleValueChange={this.handleValueChange}
+          handleDirectValueChange={this.handleDirectValueChange}
           setData={this.setData}
           saveData={this.saveData}
           loadData={this.loadData}

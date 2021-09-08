@@ -19,3 +19,13 @@ export interface ValidationStatusResponse {
   status: ValidationStatus;
   message?:string
 }
+
+export interface UpdateSettings {
+  owner: string;
+  repo: string;
+  binFile: string;
+  md5File: string;
+  updateTime: number;
+  checkBeta: boolean;
+  verifyCert: boolean;
+}

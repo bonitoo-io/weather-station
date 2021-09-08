@@ -9,3 +9,4 @@ export const WIFI_STATUS_ENDPOINT = ENDPOINT_ROOT + "wifiStatus";
 export const ABOUT_INFO_ENDPOINT = ENDPOINT_ROOT + "aboutInfo";
 export const RESTART_ENDPOINT = ENDPOINT_ROOT + "restart";
 export const FACTORY_RESET_ENDPOINT = ENDPOINT_ROOT + "factoryReset";
+export const UPDATE_SETTINGS_ENDPOINT = ENDPOINT_ROOT + "updaterSettings";
