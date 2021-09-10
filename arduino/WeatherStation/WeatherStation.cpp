@@ -2,17 +2,19 @@
 #include "WeatherStation.h"
 #include "WWWData.h"
 #include "Debug.h"
+#include "Migrator.h"
 
 WeatherStation::WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper):
   _conf(conf),
   _influxDBHelper(influxDBHelper),
   _persistence(&LittleFS),
-  _wifiManager(&_wifiSettings) 
+  _wifiManager(&_persistence,&_wifiSettings) 
   {
 // Enable CORS for UI development
 #if 1
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("http://localhost:3000"));
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("Accept, Content-Type, Authorization"));
+  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("POST, GET, OPTIONS, DELETE"));
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Credentials"), F("true"));
 #endif
 }
@@ -20,13 +22,28 @@ WeatherStation::WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper):
 void WeatherStation::begin() {
   // Must be called first before accessing FS
   _persistence.begin();
+  Serial.println(F("Existing configs:"));
+  _persistence.traverseConfigs([](const String &path, const String &filename){
+    Serial.print(F("  "));
+    Serial.print(path);
+    Serial.print(F("/"));
+    Serial.println(filename);
+  },F("/"));
+  Serial.println();
+
+  auto m = new Migrator(&_persistence);
+  if(!m->run()) {
+    // TODO: set to some global state
+    Serial.print(F("Migration error: "));
+    Serial.println(m->getError());
+  }
+  delete m;
   
-  _persistence.readFromFS(&_wifiSettings);
+  //_persistence.readFromFS(&_wifiSettings);
   _persistence.readFromFS(&_influxDBSettings);
   _persistence.readFromFS(&_updaterSettings);
   
   _wifiManager.begin();
-  //startServer();
 }
 
 void WeatherStation::loop() {
@@ -45,13 +62,14 @@ void WeatherStation::end() {
     Serial.println(F("Starting HTTP server."));
     _server = new AsyncWebServer(80);
     _wifiScannerEndpoint = new WiFiScannerEndpoint(_server);
-    _wifiSettingsEndpoint = new SettingsEndpoint(_server, WIFI_SETTINGS_ENDPOINT_PATH, &_persistence, &_wifiSettings);
+    _wifiSettingsEndpoint = new WiFiSettingsEndpoint(_server, &_persistence, &_wifiSettings);
     _influxDBSettingsEndpoint = new InfluxDBSettingsEndpoint(_server, &_persistence, &_influxDBSettings);
     _updaterSettingsEndpoint = new SettingsEndpoint(_server, UPDATER_SETTINGS_ENDPOINT_PATH, &_persistence, &_updaterSettings);
     _wifiStatusEndpoint = new WiFiStatusEndpoint(_server, &_wifiManager);
     _aboutInfoEndpoint = new AboutInfoEndpoint(_server, _conf, _influxDBHelper, &_influxDBSettings, &_wifiSettings, &LittleFS);
     _aboutServiceEndpoint = new AboutServiceEndpoint(_server, &_persistence);
     _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_server, _influxDBHelper);
+    _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_server, &_persistence);
     // Serve static resources from PROGMEM
     WWWData::registerRoutes(
       [this](const String& uri, const String& contentType, const uint8_t* content, size_t len) {
@@ -107,5 +125,7 @@ void WeatherStation::end() {
     _aboutServiceEndpoint = nullptr;
     delete _influxdbValidateEndpoint;
     _influxdbValidateEndpoint = nullptr;
+    delete _wiFiListSavedEndpoint;
+    _wiFiListSavedEndpoint = nullptr;
    }
  }

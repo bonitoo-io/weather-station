@@ -18,22 +18,27 @@ private:
 public:
     virtual int save(JsonObject& root) = 0;
     virtual int load(JsonObject& root) = 0;
-    virtual String filePath() = 0;
+    virtual String getFilePath() = 0;
     void setHandler(UpdateNotificationHandler handler) { _handler = handler; }
     void notify() { if(_handler) _handler(); }
 };
 
 class FSPersistence;
 
+typedef std::function<void(Settings *pSettings, JsonObject JsonObject)> DataManipulator;
+
 class SettingsEndpoint {
 public:
-    SettingsEndpoint(AsyncWebServer* server, const char *endpointPath, FSPersistence *persistence, Settings *settings);
-private:
+    SettingsEndpoint(AsyncWebServer* pServer, const char *endpointPath, FSPersistence *pPersistence, 
+        Settings *pSettings, DataManipulator fetchManipulator = nullptr, DataManipulator updateManipulator = nullptr);
+protected:
     void fetchSettings(AsyncWebServerRequest* request);
     void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
-private:
-    Settings *_settings;
-    FSPersistence *_persistence;
+protected:
+    Settings *_pSettings;
+    FSPersistence *_pPersistence;
+    DataManipulator _fetchManipulator;
+    DataManipulator _updateManipulator;
 };
 
 #endif //SETTINGS_H

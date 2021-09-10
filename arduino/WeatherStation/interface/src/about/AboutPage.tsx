@@ -78,7 +78,7 @@ function appStatus(data: AboutInfo) {
         </Typography>
     case AppState.InfluxDBConfigNeeded:
       return <Typography variant="subtitle1">
-        Weather Station requires <Link component={RouterLink}  to="/influxdb/settings">InfluxDB connection configuration</Link>
+        Weather Station requires <Link component={RouterLink}  to="/settings/influxdb">InfluxDB connection configuration</Link>
         </Typography>
     case AppState.Error:
       return <Typography variant="subtitle1">

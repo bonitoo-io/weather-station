@@ -101,6 +101,7 @@ void InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   if(!_client || !_client->getServerUrl().length()) {
     return;
   }
+  // TODO: optimize to use reserve() and subsequent concatenation
   String query = String(F("from(bucket: \"")) + _settings->bucket + String(F("\") |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == \"")) + deviceID +  String(F("\")"
   "|> filter(fn: (r) => r[\"_measurement\"] == \"environment\") |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")"
   "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)"));
@@ -179,18 +180,6 @@ int InfluxDBSettings::load(JsonObject& root) {
 
 // ****************** InfluxDBSettingsEndpoint ***************************
 
-InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* server,FSPersistence *persistence, InfluxDBSettings *settings):
-    _settings(settings), 
-    _persistence(persistence)
-    {
-    AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(INFLUXDB_SETTINGS_ENDPOINT_PATH, 
-                     std::bind(&InfluxDBSettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
-                     DEFAULT_BUFFER_SIZE);
-    updateHandler->setMethod(HTTP_POST);
-    server->addHandler(updateHandler);
-    server->on(INFLUXDB_SETTINGS_ENDPOINT_PATH, HTTP_GET, std::bind(&InfluxDBSettingsEndpoint::fetchSettings, this, std::placeholders::_1));
-}
-
 String obfuscateToken(const String &token) {
   String authToken;
   authToken.reserve(15);
@@ -200,44 +189,27 @@ String obfuscateToken(const String &token) {
   return authToken;
 }
 
-void InfluxDBSettingsEndpoint::fetchSettings(AsyncWebServerRequest* request) {
-    AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
-    JsonObject jsonObject = response->getRoot().to<JsonObject>();
-    _settings->save(jsonObject);
-    if(_settings->authorizationToken.length()>4) {
-      jsonObject[FPSTR(Token)] = obfuscateToken(_settings->authorizationToken);
-    }
-
-    response->setLength();
-    request->send(response);
+InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings):
+    SettingsEndpoint(pServer, INFLUXDB_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
+    [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
+      InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
+      if(idbSettings->authorizationToken.length()>4) {
+        jsonObject[FPSTR(Token)] = obfuscateToken(idbSettings->authorizationToken);
+      }
+    },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
+      const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
+      if(strchr(authToken,'*')) {
+        //DynamicJsonDocument doc(DEFAULT_BUFFER_SIZE);
+        //JsonObject tmpObject = doc.to<JsonObject>();
+        //_settings->save(tmpObject);
+        //jsonObject[FPSTR(Token)] = tmpObject[FPSTR(Token)].as<const char *>();
+        InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
+        jsonObject[FPSTR(Token)] = idbSettings->authorizationToken;
+      }
+    }) {
+    
 }
 
-void InfluxDBSettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVariant& json) {
-    if (!json.is<JsonObject>()) {
-        request->send(400);
-        return;
-    }
-    JsonObject jsonObject = json.as<JsonObject>();
-    const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
-    if(strchr(authToken,'*')) {
-      DynamicJsonDocument doc(DEFAULT_BUFFER_SIZE);
-      JsonObject tmpObject = doc.to<JsonObject>();
-      _settings->save(tmpObject);
-      jsonObject[FPSTR(Token)] = tmpObject[FPSTR(Token)].as<const char *>();
-    }
-    //TODO: double JSON serialization
-    _settings->load(jsonObject);
-    _persistence->writeToFS(_settings);
-    AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
-    jsonObject = response->getRoot().to<JsonObject>();
-    _settings->save(jsonObject);
-    if(_settings->authorizationToken.length()>4) {
-      jsonObject[FPSTR(Token)] = obfuscateToken(_settings->authorizationToken);
-    }
-    request->onDisconnect([this]() { _settings->notify(); });
-    response->setLength();
-    request->send(response);
-}
 // ****************** InfluxDBValidateParamsEndpoint ***************************
 
 InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper):

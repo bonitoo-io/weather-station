@@ -5,6 +5,7 @@
 #include <ESPAsyncWebServer.h>
 
 #include "WiFi.h"
+#include "WiFiSettings.h"
 #include "FSPersistance.h"
 #include "About.h"
 #include "InfluxDBHelper.h"
@@ -48,10 +49,11 @@ private:
     WiFiManager _wifiManager;
     AsyncWebServer *_server = nullptr;
     WiFiScannerEndpoint *_wifiScannerEndpoint = nullptr;
-    SettingsEndpoint *_wifiSettingsEndpoint = nullptr;
+    WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;
     InfluxDBSettingsEndpoint *_influxDBSettingsEndpoint = nullptr;
     SettingsEndpoint *_updaterSettingsEndpoint = nullptr;
     WiFiStatusEndpoint *_wifiStatusEndpoint = nullptr;
+    WiFiListSavedEndpoint *_wiFiListSavedEndpoint = nullptr;
     AboutInfoEndpoint *_aboutInfoEndpoint = nullptr;
     AboutServiceEndpoint *_aboutServiceEndpoint = nullptr;
     InfluxDBValidateParamsEndpoint *_influxdbValidateEndpoint = nullptr;
