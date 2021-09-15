@@ -19,7 +19,7 @@ AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, tConfig *conf, Infl
 void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
-  root[F("version")] = VERSION;
+  root[F("version")] = VERSION " built " __DATE__ " " __TIME__;
   root[F("deviceId")] = getDeviceID();
   root[F("useMetric")] = _conf->useMetric;
   root[F("temp")] = getDHTCachedTemp();
