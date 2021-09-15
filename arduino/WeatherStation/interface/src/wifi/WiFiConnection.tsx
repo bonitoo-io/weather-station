@@ -11,6 +11,7 @@ import WiFiNetworkScanner from './WiFiNetworkScanner';
 import { WiFiConnectionContext, WiFiConnectionContextValue} from './WiFiConnectionContext';
 
 import { WiFiNetwork } from '../wifi/types';
+import SavedNetworksList from './SavedNetworksList';
 
 type WiFiConnectionProps = RouteComponentProps
 
@@ -49,11 +50,13 @@ class WiFiConnection extends Component<WiFiConnectionProps, WiFiConnectionContex
                 <Tab value="/wifi/status" label="WiFi Status" />
                 <Tab value="/wifi/scan" label={wifiConfigured?"Scan Networks":"Select Network"}/>
                 <Tab value="/wifi/settings" label="WiFi Settings"/>
+                <Tab value="/wifi/saved" label="Saved Networks"/>
               </Tabs>
               <Switch>
                 <Route exact path="/wifi/status" component={WiFiStatusController} />
                 <Route exact path="/wifi/scan" component={WiFiNetworkScanner} />
                 <Route exact path="/wifi/settings" component={WiFiSettingsController} />
+                <Route exact path="/wifi/saved" component={SavedNetworksList} />
                 <Redirect to={wifiConfigured?"/wifi/status":"/wifi/scan"}/>
               </Switch>
             </MenuAppBar>

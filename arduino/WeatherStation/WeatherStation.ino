@@ -74,7 +74,6 @@ String resetReason;
 
 //declaring prototypes
 void setupOLEDUI(OLEDDisplayUi *ui);
-
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
@@ -112,11 +111,16 @@ void setup() {
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
-  Serial.println(F("Starting Weather station v" VERSION));
+  Serial.println(F("Starting Weather station v" VERSION " built " __DATE__ " " __TIME__));
   WS_DEBUG_RAM("Setup 1");
   if(ESP.getResetInfoPtr()->reason != REASON_DEEP_SLEEP_AWAKE) {
     resetReason = ESP.getResetReason();
   }
+
+  //Initialize OLED
+  display.init();
+  display.clear();
+  display.display();
 
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
@@ -141,11 +145,9 @@ void setup() {
   digitalWrite( LED, HIGH);
   setupDHT();
 
-  //Initialize OLED
+  
   setLanguage( conf.language);
-  display.init();
-  display.clear();
-  display.display();
+ 
   //display.flipScreenVertically();
   //display.setContrast(100);
   refreshDHTCachedValues(conf.useMetric);

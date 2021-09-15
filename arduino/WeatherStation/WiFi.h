@@ -5,15 +5,11 @@
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
-#include "Settings.h"
+#include "WiFiSettings.h"
 #include "FSPersistance.h"
 
-#define DEFAULT_WIFI_SSID ""
-#define DEFAULT_WIFI_PASSWORD ""
 
-#define WIFI_HOSTNAME_PREFIX "weather-station-"
 #define WIFI_RECONNECTION_DELAY 1000 * 30
-#define WIFI_SETTINGS_ENDPOINT_PATH "/api/wifiSettings"
 
 #define AP_SSID_PREFIX "WEATHER-"
 #define AP_PASSWORD ""
@@ -24,29 +20,8 @@
 #define AP_SSID_HIDDEN false
 #define AP_MAX_CLIENTS 4
 #define DNS_PORT 53
-#define MANAGE_NETWORK_DELAY 1000*10
-
-class WiFiSettings : public Settings {
-public:
-    // main configuration
-    String ssid;
-    String password;
-    String hostname;
-    bool staticIPConfig;
-    // optional configuration for static IP
-    IPAddress localIP;
-    IPAddress gatewayIP;
-    IPAddress subnetMask;
-    IPAddress dnsIP1;
-    IPAddress dnsIP2;
-public:
-    WiFiSettings();
-    virtual int save(JsonObject& root) override;
-    virtual int load(JsonObject& root) override;
-    virtual String filePath() override { return F(FS_CONFIG_DIRECTORY "/wifiSettings.json"); }
-private:
-    static char *DefaultHostname;
-};
+#define MANAGE_NETWORK_DELAY 1000*30
+#define SCAN_NETWORK_DELAY 1000
 
 struct APInfo {
     IPAddress ipAddress;
@@ -62,6 +37,19 @@ enum class WifiConnectionEvent {
     ConnectingFailed
 };
 
+enum class WiFiConnectingState {
+    NotConnected = 0,
+    ScanStarted,
+    ScanFinished,
+    ScanFailed,
+    ConnectingToKnown,
+    ConnectingSuccess,
+    ConnectingToHidden,
+    TestingConfig,
+    TestingConfigFailed,
+    Idle
+};
+
 
 enum class WifiAPEvent {
     APStarted = 0,
@@ -70,12 +58,21 @@ enum class WifiAPEvent {
     APStopped
 };
 
+struct WiFiNetwork
+{
+  String ssid;
+  uint8_t *bssid;
+  int32_t rssi;
+  int32_t channel;
+  bool connectSkip;
+};
+
 typedef std::function<void(WifiAPEvent event, APInfo *apInfo)> APEventHandler;
 typedef std::function<void(WifiConnectionEvent event, const char *ssid)> WiFiConnectionEventHandler;
 
 class WiFiManager {
 public:
-    WiFiManager(WiFiSettings *_settings);
+    WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings);
 
     void begin();
     void loop();
@@ -87,6 +84,7 @@ public:
         _wifiEventHandler = handler;
     }
     int getLastDisconnectReason() const { return _lastDisconnectReason; }
+    WiFiSettings *getSettings() const { return _pSettings; }
  private:
   void reconfigureWiFiConnection();
   void manageSTA();
@@ -101,9 +99,13 @@ public:
   void onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& event);
   void notifyWifiEvent(WifiConnectionEvent event);
   void notifyAPEvent(WifiAPEvent event);
-  void startSTA(WiFiSettings *config);
+  bool startSTA(WiFiSettings *pConfig, WiFiNetwork *pNetwork = nullptr);
+  void enterState(WiFiConnectingState newState, bool reconFigure = false);
+  void loadSettings(const String &ssid);
+  void cleanNetworks();
  private:
-  WiFiSettings *_settings;
+  FSPersistence *_pFsp;
+  WiFiSettings *_pSettings;
   APInfo _apInfo;
   WifiAPEvent *_asyncEventToFire = nullptr;
   // for the management delay loop
@@ -119,11 +121,18 @@ public:
   WiFiEventHandler _onStationModeGotIPHandler;
   WiFiEventHandler _onSoftAPModeStationConnectedHandler;
   WiFiEventHandler _onSoftAPModeStationDisconnectedHandler;
+  // time when ap should stop
   uint32_t _forceAPStop = 0;
   uint8_t _connectAttempts = 0;
+  uint8_t _wifiNetworkIndex = 0;
+  uint _manageDelay = MANAGE_NETWORK_DELAY;
+  std::vector<String> _savedNetworks;
+  std::vector<WiFiNetwork> _foundNetworks;
+  WiFiConnectingState _state = WiFiConnectingState::NotConnected;
+  bool _connectingToWifi = false;
+  bool _ignoreDisconnect = false;
 };
 
-#if 1
 #define SCAN_NETWORKS_ENDPOINT_PATH "/api/scanNetworks"
 #define LIST_NETWORKS_ENDPOINT_PATH "/api/listNetworks"
 
@@ -149,5 +158,28 @@ class WiFiStatusEndpoint {
   private:
     WiFiManager *_wifiManager;
 };
-#endif
+
+#define WIFI_LIST_ENDPOINT_PATH "/api/savedNetworks"
+
+class WiFiListSavedEndpoint {
+ public:
+  WiFiListSavedEndpoint(AsyncWebServer* server, FSPersistence *pFsp);
+
+ private:
+  void deleteNetwork(AsyncWebServerRequest* request);
+  void listNetworks(AsyncWebServerRequest* request);
+private:
+  FSPersistence *_pFsp;
+  std::vector<String> _savedNetworks;
+};
+
+// helpers
+std::vector<String> getKnownWiFiNetworksNames(FSPersistence *pFS);
+int getKnownWiFiNetworksCount(FSPersistence *pFS);
+std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved);
+void startScan();
+int8_t checkScanResult() ;
+void removeNetwork(FSPersistence *pFsp, const String &ssid);
+void sendError(AsyncWebServerRequest* request, const String &err);
+
 #endif //WS_WIFI_H

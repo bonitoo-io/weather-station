@@ -21,7 +21,7 @@ class InfluxDBSettings : public Settings {
   InfluxDBSettings();
   virtual int save(JsonObject& root) override;
   virtual int load(JsonObject& root) override;
-  virtual String filePath() override { return F(FS_CONFIG_DIRECTORY "/influxDbSettings.json"); }  
+  virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/influxDbSettings.json"); }  
 };
 
 
@@ -49,15 +49,9 @@ private:
 };
 
 
-class InfluxDBSettingsEndpoint {
+class InfluxDBSettingsEndpoint : public SettingsEndpoint {
 public:
-    InfluxDBSettingsEndpoint(AsyncWebServer* server, FSPersistence *persistence, InfluxDBSettings *settings);
-private:
-    void fetchSettings(AsyncWebServerRequest* request);
-    void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
-private:
-    InfluxDBSettings *_settings;
-    FSPersistence *_persistence;
+    InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings);
 };
 
 #define VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH "/api/validateInfluxDBParams"

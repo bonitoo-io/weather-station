@@ -65,3 +65,13 @@ export interface WiFiNetwork {
   channel: number;
   encryption_type: WiFiEncryptionType;
 }
+
+export interface SavedNetworkList {
+  networks: SavedNetwork[];
+}
+
+export interface SavedNetwork {
+  name: string;
+  id: number;
+  connected: boolean;
+}

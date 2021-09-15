@@ -74,152 +74,147 @@ class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFo
   render() {
     const { data, handleValueChange } = this.props;
     return (
-      <AppStateContext.Consumer>
-        {({wifiConfigured}) => (
-          <WiFiConnectionContext.Consumer>
-            {({selectedNetwork, deselectNetwork}) => (
-            <ValidatorForm onSubmit={wifiConfigured?this.saveData:this.validateAndSaveParams}>
-              <div>Selected network: {selectedNetwork?selectedNetwork.ssid:"n/a"}</div>
-              {
-                selectedNetwork ?
-                  <List>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar>
-                          {isNetworkOpen(selectedNetwork) ? <LockOpenIcon /> : <LockIcon />}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={selectedNetwork.ssid}
-                        secondary={"Security: " + networkSecurityMode(selectedNetwork) + ", Ch: " + selectedNetwork.channel}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton aria-label="Manual Config" onClick={deselectNetwork}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </List>
-                  :
-                  <TextValidator
-                    validators={['matchRegexp:^.{0,32}$']}
-                    errorMessages={['SSID must be 32 characters or less']}
-                    name="ssid"
-                    label="SSID"
-                    fullWidth
-                    variant="outlined"
-                    value={data.ssid}
-                    onChange={handleValueChange('ssid')}
-                    margin="normal"
+      <WiFiConnectionContext.Consumer>
+        {({selectedNetwork, deselectNetwork}) => (
+        <ValidatorForm onSubmit={this.validateAndSaveParams}>
+          <div>Selected network: {selectedNetwork?selectedNetwork.ssid:"n/a"}</div>
+          {
+            selectedNetwork ?
+              <List>
+                <ListItem>
+                  <ListItemAvatar>
+                    <Avatar>
+                      {isNetworkOpen(selectedNetwork) ? <LockOpenIcon /> : <LockIcon />}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={selectedNetwork.ssid}
+                    secondary={"Security: " + networkSecurityMode(selectedNetwork) + ", Ch: " + selectedNetwork.channel}
                   />
-              }
-              {
-                (!selectedNetwork || !isNetworkOpen(selectedNetwork)) &&
-                <PasswordValidator
-                  validators={['matchRegexp:^.{0,64}$']}
-                  errorMessages={['Password must be 64 characters or less']}
-                  name="password"
-                  label="Password"
-                  fullWidth
-                  variant="outlined"
-                  value={data.password}
-                  onChange={handleValueChange('password')}
-                  margin="normal"
-                />
-              }
+                  <ListItemSecondaryAction>
+                    <IconButton aria-label="Manual Config" onClick={deselectNetwork}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </List>
+              :
               <TextValidator
-                validators={['required', 'isHostname']}
-                errorMessages={['Hostname is required', "Not a valid hostname"]}
-                name="hostname"
-                label="Hostname"
+                validators={['matchRegexp:^.{0,32}$']}
+                errorMessages={['SSID must be 32 characters or less']}
+                name="ssid"
+                label="SSID"
                 fullWidth
                 variant="outlined"
-                value={data.hostname}
-                onChange={handleValueChange('hostname')}
+                value={data.ssid}
+                onChange={handleValueChange('ssid')}
                 margin="normal"
               />
-              <BlockFormControlLabel
-                control={
-                  <Checkbox
-                    value="static_ip_config"
-                    checked={data.static_ip_config}
-                    onChange={handleValueChange("static_ip_config")}
-                  />
-                }
-                label="Static IP Config?"
+          }
+          {
+            (!selectedNetwork || !isNetworkOpen(selectedNetwork)) &&
+            <PasswordValidator
+              validators={['matchRegexp:^.{0,64}$']}
+              errorMessages={['Password must be 64 characters or less']}
+              name="password"
+              label="Password"
+              fullWidth
+              variant="outlined"
+              value={data.password}
+              onChange={handleValueChange('password')}
+              margin="normal"
+            />
+          }
+          <TextValidator
+            validators={['required', 'isHostname']}
+            errorMessages={['Hostname is required', "Not a valid hostname"]}
+            name="hostname"
+            label="Hostname"
+            fullWidth
+            variant="outlined"
+            value={data.hostname}
+            onChange={handleValueChange('hostname')}
+            margin="normal"
+          />
+          <BlockFormControlLabel
+            control={
+              <Checkbox
+                value="static_ip_config"
+                checked={data.static_ip_config}
+                onChange={handleValueChange("static_ip_config")}
               />
-              {
-                data.static_ip_config &&
-                <Fragment>
-                  <TextValidator
-                    validators={['required', 'isIP']}
-                    errorMessages={['Local IP is required', 'Must be an IP address']}
-                    name="local_ip"
-                    label="Local IP"
-                    fullWidth
-                    variant="outlined"
-                    value={data.local_ip}
-                    onChange={handleValueChange('local_ip')}
-                    margin="normal"
-                  />
-                  <TextValidator
-                    validators={['required', 'isIP']}
-                    errorMessages={['Gateway IP is required', 'Must be an IP address']}
-                    name="gateway_ip"
-                    label="Gateway"
-                    fullWidth
-                    variant="outlined"
-                    value={data.gateway_ip}
-                    onChange={handleValueChange('gateway_ip')}
-                    margin="normal"
-                  />
-                  <TextValidator
-                    validators={['required', 'isIP']}
-                    errorMessages={['Subnet mask is required', 'Must be an IP address']}
-                    name="subnet_mask"
-                    label="Subnet"
-                    fullWidth
-                    variant="outlined"
-                    value={data.subnet_mask}
-                    onChange={handleValueChange('subnet_mask')}
-                    margin="normal"
-                  />
-                  <TextValidator
-                    validators={['isOptionalIP']}
-                    errorMessages={['Must be an IP address']}
-                    name="dns_ip_1"
-                    label="DNS IP #1"
-                    fullWidth
-                    variant="outlined"
-                    value={data.dns_ip_1}
-                    onChange={handleValueChange('dns_ip_1')}
-                    margin="normal"
-                  />
-                  <TextValidator
-                    validators={['isOptionalIP']}
-                    errorMessages={['Must be an IP address']}
-                    name="dns_ip_2"
-                    label="DNS IP #2"
-                    fullWidth
-                    variant="outlined"
-                    value={data.dns_ip_2}
-                    onChange={handleValueChange('dns_ip_2')}
-                    margin="normal"
-                  />
-                </Fragment>
-              }
-              <FormActions>
-                <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit" disabled={this.state.validatingParams}>
-                  {this.state.validatingParams?<CircularProgress />:<>Save</>}
-                </FormButton>
-              </FormActions>
-            </ValidatorForm>
-            )
             }
-          </WiFiConnectionContext.Consumer>
-         )
+            label="Static IP Config?"
+          />
+          {
+            data.static_ip_config &&
+            <Fragment>
+              <TextValidator
+                validators={['required', 'isIP']}
+                errorMessages={['Local IP is required', 'Must be an IP address']}
+                name="local_ip"
+                label="Local IP"
+                fullWidth
+                variant="outlined"
+                value={data.local_ip}
+                onChange={handleValueChange('local_ip')}
+                margin="normal"
+              />
+              <TextValidator
+                validators={['required', 'isIP']}
+                errorMessages={['Gateway IP is required', 'Must be an IP address']}
+                name="gateway_ip"
+                label="Gateway"
+                fullWidth
+                variant="outlined"
+                value={data.gateway_ip}
+                onChange={handleValueChange('gateway_ip')}
+                margin="normal"
+              />
+              <TextValidator
+                validators={['required', 'isIP']}
+                errorMessages={['Subnet mask is required', 'Must be an IP address']}
+                name="subnet_mask"
+                label="Subnet"
+                fullWidth
+                variant="outlined"
+                value={data.subnet_mask}
+                onChange={handleValueChange('subnet_mask')}
+                margin="normal"
+              />
+              <TextValidator
+                validators={['isOptionalIP']}
+                errorMessages={['Must be an IP address']}
+                name="dns_ip_1"
+                label="DNS IP #1"
+                fullWidth
+                variant="outlined"
+                value={data.dns_ip_1}
+                onChange={handleValueChange('dns_ip_1')}
+                margin="normal"
+              />
+              <TextValidator
+                validators={['isOptionalIP']}
+                errorMessages={['Must be an IP address']}
+                name="dns_ip_2"
+                label="DNS IP #2"
+                fullWidth
+                variant="outlined"
+                value={data.dns_ip_2}
+                onChange={handleValueChange('dns_ip_2')}
+                margin="normal"
+              />
+            </Fragment>
+          }
+          <FormActions>
+            <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit" disabled={this.state.validatingParams}>
+              {this.state.validatingParams?<CircularProgress />:<>Save</>}
+            </FormButton>
+          </FormActions>
+        </ValidatorForm>
+        )
         }
-      </AppStateContext.Consumer>
+      </WiFiConnectionContext.Consumer>
     );
   }
 
