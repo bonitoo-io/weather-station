@@ -1,3 +1,5 @@
+//Board: NodeMCU 1.0 (ESP-12E Module)
+
 // Include libraries
 #include <Arduino.h>
 #include <ESPWiFi.h>
@@ -50,7 +52,7 @@ tConfig conf = {
   0,  //tempOffset
   0,  //humOffset
   
-  IOT_CENTER_URL, //iotCenterUrl;
+  IOT_CENTER_URL, //iotCenterUrl 
   60             //iotRefreshMin
 };
 
