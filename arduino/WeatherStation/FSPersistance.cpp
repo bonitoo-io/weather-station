@@ -4,7 +4,7 @@ FSPersistence::FSPersistence(FS *fs):_fs(fs) {
     
 }
 
-void FSPersistence::readFromFS(Settings *s) {
+bool FSPersistence::readFromFS(Settings *s) {
     Serial.printf("FS: opening %s for reading",s->getFilePath().c_str());
     File settingsFile = _fs->open(s->getFilePath(), "r");
 
@@ -17,15 +17,16 @@ void FSPersistence::readFromFS(Settings *s) {
             JsonObject jsonObject = jsonDocument.as<JsonObject>();
             s->load(jsonObject);
             settingsFile.close();
-            return;
+            return true;
         }
         Serial.println(F(" deserialize error"));
         settingsFile.close();
+        return false;
     } else {
         Serial.println(F(" - not exist"));
     }
     // File doesn't exist, write defaults
-    writeToFS(s);
+    return writeToFS(s);
 }
 
 bool FSPersistence::writeToFS(Settings *s) {
@@ -50,8 +51,12 @@ bool FSPersistence::writeToFS(Settings *s) {
     return true;
 }
 
-void FSPersistence::begin() {
-    _fs->begin();
+bool FSPersistence::begin() {
+  if(!_fs->begin()) {
+    Serial.println(F(" Error mounting filesystem!"));
+    return false;
+  }
+  return true;
 }
 
 void FSPersistence::removeConfigs() {
@@ -60,8 +65,8 @@ void FSPersistence::removeConfigs() {
   }, FS_CONFIG_DIRECTORY);  
 }
 
-void FSPersistence::removeConfig(const String &getFilePath) {
-  _fs->remove(getFilePath);
+bool FSPersistence::removeConfig(const String &getFilePath) {
+  return _fs->remove(getFilePath);
 }
 
 std::vector<String> FSPersistence::listConfigs(const String &root, bool fileNameOnly) {
