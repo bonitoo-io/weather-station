@@ -33,7 +33,7 @@ class WiFiNetworkSelector extends Component<WiFiNetworkSelectorProps> {
           secondary={"Security: " + networkSecurityMode(network) + ", Ch: " + network.channel}
         />
         <ListItemIcon>
-          <Badge badgeContent={network.rssi + "db"}>
+          <Badge badgeContent={(network.rssi <= -100 ? 0 : (network.rssi >= -50 ? 100 : 2 * (network.rssi + 100))) + "%"}>
             <WifiIcon />
           </Badge>
         </ListItemIcon>
