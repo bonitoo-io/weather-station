@@ -9,10 +9,12 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 import { isNetworkOpen, networkSecurityMode } from './WiFiSecurityModes';
 import { WiFiConnectionContext } from './WiFiConnectionContext';
-import { WiFiNetwork, WiFiNetworkList } from './types';
+import { SavedNetwork, SavedNetworkList, WiFiNetwork, WiFiNetworkList } from './types';
 
 interface WiFiNetworkSelectorProps {
   networkList: WiFiNetworkList;
+  savedNetworks?: SavedNetworkList;
+  connectToSaved: (savedNetWork: SavedNetwork, network: WiFiNetwork) => void;
 }
 
 class WiFiNetworkSelector extends Component<WiFiNetworkSelectorProps> {
@@ -20,9 +22,24 @@ class WiFiNetworkSelector extends Component<WiFiNetworkSelectorProps> {
   static contextType = WiFiConnectionContext;
   context!: React.ContextType<typeof WiFiConnectionContext>;
 
+  networkClicked = (network: WiFiNetwork) => () => {
+    if(this.props.savedNetworks){
+      let sn = this.props.savedNetworks.networks.find((value)=>{
+        return value.ssid === network.ssid
+      })
+      if(sn) {
+        this.props.connectToSaved(sn, network)
+        return
+      }
+    }
+    this.context.selectNetwork(network)
+  }
+
+  
+
   renderNetwork = (network: WiFiNetwork) => {
     return (
-      <ListItem key={network.bssid} button onClick={() => this.context.selectNetwork(network)}>
+      <ListItem key={network.bssid} button onClick={ this.networkClicked(network) }>
         <ListItemAvatar>
           <Avatar>
             {isNetworkOpen(network) ? <LockOpenIcon /> : <LockIcon />}

@@ -99,7 +99,7 @@ class SavedNetworksList extends Component<SavedNetworksListProps, SavedNetworksL
           </Avatar>
         </ListItemAvatar>
         <ListItemText
-          primary={network.name}
+          primary={network.ssid}
           secondary = {network.connected?"Connected":""}
         />
         <ListItemSecondaryAction>
@@ -126,7 +126,7 @@ class SavedNetworksList extends Component<SavedNetworksListProps, SavedNetworksL
       >
         <DialogTitle>Confirm Forget</DialogTitle>
         <DialogContent dividers>
-          Are you sure you want to remove network '{network?.name}'? 
+          Are you sure you want to remove network '{network?.ssid}'? 
           {network?.connected?
           <DialogContentText>Device will disconnect from WiFi</DialogContentText>:""} 
         </DialogContent>
@@ -143,9 +143,9 @@ class SavedNetworksList extends Component<SavedNetworksListProps, SavedNetworksL
   }
 
   compareNetworks(network1: SavedNetwork, network2: SavedNetwork) {
-    if (network1.name < network2.name)
+    if (network1.ssid > network2.ssid)
       return 1;
-    if (network1.name > network2.name)
+    if (network1.ssid < network2.ssid)
       return -1;
     return 0;
   }

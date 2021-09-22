@@ -1,7 +1,7 @@
-import React, { Fragment } from 'react';
+import React, { Component, Fragment } from 'react';
 import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 
-import { Checkbox, List, ListItem, ListItemText, ListItemAvatar, ListItemSecondaryAction, CircularProgress } from '@material-ui/core';
+import { Checkbox, List, ListItem, ListItemText, ListItemAvatar, ListItemSecondaryAction, LinearProgress, Typography} from '@material-ui/core';
 
 import Avatar from '@material-ui/core/Avatar';
 import IconButton from '@material-ui/core/IconButton';
@@ -13,58 +13,74 @@ import SaveIcon from '@material-ui/icons/Save';
 import { RestFormProps, PasswordValidator, BlockFormControlLabel, FormActions, FormButton } from '../components';
 import { isIP, isHostname, optional } from '../validators';
 
-import { WiFiConnectionContext, WiFiConnectionContextValue } from './WiFiConnectionContext';
+import { WiFiConnectionContext } from './WiFiConnectionContext';
 import { isNetworkOpen, networkSecurityMode } from './WiFiSecurityModes';
-import { WiFiConnectionStatus, WiFiSettings, WiFiStatus } from './types';
-import { WIFI_SETTINGS_ENDPOINT, WIFI_STATUS_ENDPOINT } from '../api';
-import { AppStateContext } from '../AppStateContext';
+import { ConnectingStatus, WiFiSettings } from './types';
+import { CONNECT_STATUS_ENDPOINT_PATH, WIFI_SETTINGS_ENDPOINT } from '../api';
+//import { withStyles, WithStyles } from '@material-ui/styles';
+import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 
 const NUM_POLLS = 20
 const POLLING_FREQUENCY = 500
 const RETRY_EXCEPTION_TYPE = "retry"
 
-type WiFiStatusFormProps = RestFormProps<WiFiSettings>;
+const styles = (theme: Theme) => createStyles({ 
+   connectingSettings: {
+    margin: theme.spacing(0.5),
+  },
+  connectingSettingsDetails: {
+    margin: theme.spacing(4),
+    textAlign: "center"
+  },
+  connectingProgress: {
+    margin: theme.spacing(4),
+    textAlign: "center"
+  }
+});
 
-interface WiFiStatusFormState {
+
+type WiFiSettingsFormProps = RestFormProps<WiFiSettings> & WithStyles<typeof styles>;
+//type WiFiSettingsFormProps = RestFormProps<WiFiSettings> & WithTheme;
+
+interface WiFiSettingsFormState {
   validatingParams: boolean;
+  reconnectionInfo: boolean;
   errorMessage?: string;
 }
 
-class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFormState> {
+class WiFiSettingsForm extends Component<WiFiSettingsFormProps, WiFiSettingsFormState> {
 
   static contextType = WiFiConnectionContext;
   context!: React.ContextType<typeof WiFiConnectionContext>;
 
-  state: WiFiStatusFormState = {
+
+  state: WiFiSettingsFormState = {
     validatingParams: false,
+    reconnectionInfo: false,
   };
 
   pollCount: number = 0;
 
-  saveData: () => void
-
-  constructor(props: WiFiStatusFormProps, context: WiFiConnectionContextValue) {
-    super(props);
-
-    const { saveData } = this.props;
-    this.saveData = saveData;
-
-    const { selectedNetwork } = context;
-    if (selectedNetwork) {
-      const wifiSettings: WiFiSettings = {
-        ssid: selectedNetwork.ssid,
-        password: "",
-        hostname: props.data.hostname,
-        static_ip_config: false,
-      }
-      props.setData(wifiSettings);
-    }
-  }
+  saveData: () => void = () => {}
 
   componentDidMount() {
     ValidatorForm.addValidationRule('isIP', isIP);
     ValidatorForm.addValidationRule('isHostname', isHostname);
     ValidatorForm.addValidationRule('isOptionalIP', optional(isIP));
+    const { saveData } = this.props;
+    this.saveData = saveData;
+
+    const { selectedNetwork } = this.context;
+    if (selectedNetwork) {
+      const wifiSettings: WiFiSettings = {
+        ssid: selectedNetwork.ssid,
+        password: "",
+        hostname: this.props.data.hostname,
+        static_ip_config: false,
+      }
+      this.props.setData(wifiSettings);
+    }
+
   }
 
   componentWillUnmount() {
@@ -72,44 +88,60 @@ class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFo
   }
 
   render() {
-    const { data, handleValueChange } = this.props;
+    const { data, handleValueChange, classes}  = this.props;
+    const { validatingParams, reconnectionInfo } = this.state
+    if(reconnectionInfo) {
+      return (
+        <div className={classes.connectingSettings}>
+          <Typography variant="subtitle1">
+            Device was reconnected. Check display for new IP and point browser to it.
+          </Typography>
+        </div>
+      )
+    }
     return (
       <WiFiConnectionContext.Consumer>
         {({selectedNetwork, deselectNetwork}) => (
         <ValidatorForm onSubmit={this.validateAndSaveParams}>
           <div>Selected network: {selectedNetwork?selectedNetwork.ssid:"n/a"}</div>
-          {
-            selectedNetwork ?
-              <List>
-                <ListItem>
-                  <ListItemAvatar>
-                    <Avatar>
-                      {isNetworkOpen(selectedNetwork) ? <LockOpenIcon /> : <LockIcon />}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={selectedNetwork.ssid}
-                    secondary={"Security: " + networkSecurityMode(selectedNetwork) + ", Ch: " + selectedNetwork.channel}
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton aria-label="Manual Config" onClick={deselectNetwork}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              </List>
-              :
-              <TextValidator
-                validators={['matchRegexp:^.{0,32}$']}
-                errorMessages={['SSID must be 32 characters or less']}
-                name="ssid"
-                label="SSID"
-                fullWidth
-                variant="outlined"
-                value={data.ssid}
-                onChange={handleValueChange('ssid')}
-                margin="normal"
-              />
+          {validatingParams &&
+            <div className={classes.connectingSettings}>
+              <LinearProgress className={classes.connectingSettingsDetails} />
+              <Typography variant="h6" className={classes.connectingProgress}>
+                Connecting&hellip;
+              </Typography>
+          </div>}
+         {selectedNetwork ?
+            <List>
+              <ListItem>
+                <ListItemAvatar>
+                  <Avatar>
+                    {isNetworkOpen(selectedNetwork) ? <LockOpenIcon /> : <LockIcon />}
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={selectedNetwork.ssid}
+                  secondary={"Security: " + networkSecurityMode(selectedNetwork) + ", Ch: " + selectedNetwork.channel}
+                />
+                <ListItemSecondaryAction>
+                  <IconButton aria-label="Manual Config" onClick={deselectNetwork}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
+            </List>
+            :
+            <TextValidator
+              validators={['matchRegexp:^.{0,32}$']}
+              errorMessages={['SSID must be 32 characters or less']}
+              name="ssid"
+              label="SSID"
+              fullWidth
+              variant="outlined"
+              value={data.ssid}
+              onChange={handleValueChange('ssid')}
+              margin="normal"
+            />
           }
           {
             (!selectedNetwork || !isNetworkOpen(selectedNetwork)) &&
@@ -208,7 +240,7 @@ class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFo
           }
           <FormActions>
             <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit" disabled={this.state.validatingParams}>
-              {this.state.validatingParams?<CircularProgress />:<>Save</>}
+              Save
             </FormButton>
           </FormActions>
         </ValidatorForm>
@@ -242,6 +274,7 @@ class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFo
       this.setState({ validatingParams: false });
     });
   }
+
   schedulePollValidation() {
     setTimeout(this.pollValidation, POLLING_FREQUENCY);
   }
@@ -252,30 +285,31 @@ class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFo
       message: "Validation not ready, will retry in " + POLLING_FREQUENCY + "ms."
     };
   }
+
   pollValidation = () => {
-    fetch(WIFI_STATUS_ENDPOINT, {method: 'GET'})
+    fetch(CONNECT_STATUS_ENDPOINT_PATH, {method: 'GET'})
       .then(response => {
         if(response.status === 200) {
           return response.json();
-        } else {
-          throw new Error("Invalid status code " + response.status)
-        }
-      })
-      .then(json => {
-        const status : WiFiStatus = json
-        if (status.status === WiFiConnectionStatus.WIFI_STATUS_CONNECTED) {
-          this.props.enqueueSnackbar("Update successful.", {
-            variant: 'success',
-          });
-          this.setState({ validatingParams: false });
-          return;
-        } else if (!status.disconnect_reason) {
+        } else if(response.status === 202) {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
             throw this.retryError()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }
+        } else {
+          throw new Error("Invalid status code " + response.status)
+        }
+      })
+      .then(json => {
+        const status : ConnectingStatus = json
+        if (status.success) {
+          this.props.enqueueSnackbar("Update successful.", {
+            variant: 'success',
+          });
+          this.setState({ validatingParams: false });
+          return;
         } else if (status.disconnect_reason === 202) {
           throw Error("Invalid password")
         } else {
@@ -284,13 +318,17 @@ class WiFiSettingsForm extends React.Component<WiFiStatusFormProps, WiFiStatusFo
       })
       .catch(error => {
         if (error.name !== RETRY_EXCEPTION_TYPE) {
-          this.props.enqueueSnackbar("Validation error: " + error.message, {
-            variant: 'error',
-          });
-          this.setState({ validatingParams: false });
+          if(error instanceof  TypeError) {
+            this.setState({ validatingParams: false, reconnectionInfo: true });
+          } else {
+            this.props.enqueueSnackbar("Validation error: " + error.message, {
+              variant: 'error',
+            });
+            this.setState({ validatingParams: false });
+          }
         }
       });
   }
 }
 
-export default WiFiSettingsForm;
+export default withStyles(styles)(WiFiSettingsForm);

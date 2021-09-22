@@ -50,6 +50,7 @@ private:
     AsyncWebServer *_server = nullptr;
     WiFiScannerEndpoint *_wifiScannerEndpoint = nullptr;
     WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;
+    WiFiConnectionHelperEndpoint *_wifiConnectionHelperEndpoint = nullptr;
     InfluxDBSettingsEndpoint *_influxDBSettingsEndpoint = nullptr;
     SettingsEndpoint *_updaterSettingsEndpoint = nullptr;
     WiFiStatusEndpoint *_wifiStatusEndpoint = nullptr;
@@ -57,5 +58,6 @@ private:
     AboutInfoEndpoint *_aboutInfoEndpoint = nullptr;
     AboutServiceEndpoint *_aboutServiceEndpoint = nullptr;
     InfluxDBValidateParamsEndpoint *_influxdbValidateEndpoint = nullptr;
+    
 };
 #endif //WEATHER_STATION_H
