@@ -14,6 +14,8 @@
 #define WIFI_SETTINGS_ENDPOINT_PATH "/api/wifiSettings"
 #define WIFI_SETTINGS_OLD_FILE_NAME "wifiSettings.json"
 
+extern const char *StringSSID;
+
 class WiFiSettings : public Settings {
 public:
     // main configuration

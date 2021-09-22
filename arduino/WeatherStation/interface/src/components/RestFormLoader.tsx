@@ -30,7 +30,7 @@ interface RestFormLoaderProps<D> extends RestControllerProps<D> {
 export default function RestFormLoader<D>(props: RestFormLoaderProps<D>) {
   const { loading, errorMessage, loadData, render, data, ...rest } = props;
   const classes = useStyles();
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className={classes.loadingSettings}>
         <LinearProgress className={classes.loadingSettingsDetails} />
@@ -40,11 +40,11 @@ export default function RestFormLoader<D>(props: RestFormLoaderProps<D>) {
       </div>
     );
   }
-  if (errorMessage) {
+  if (errorMessage || !data) {
     return (
       <div className={classes.loadingSettings}>
         <Typography variant="h6" className={classes.loadingSettingsDetails}>
-          {errorMessage}
+          {errorMessage?errorMessage:"Problem fetching data"}
         </Typography>
         <Button variant="contained" color="secondary" className={classes.button} onClick={loadData}>
           Retry

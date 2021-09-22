@@ -42,11 +42,12 @@ enum class WiFiConnectingState {
     ScanStarted,
     ScanFinished,
     ScanFailed,
-    ConnectingToKnown,
+    ConnectingToKnown, //when conneting using saved list
     ConnectingSuccess,
     ConnectingToHidden,
     TestingConfig,
     TestingConfigFailed,
+    ConnectingToSaved, //when conencting from external request
     Idle
 };
 
@@ -70,6 +71,7 @@ struct WiFiNetwork
 typedef std::function<void(WifiAPEvent event, APInfo *apInfo)> APEventHandler;
 typedef std::function<void(WifiConnectionEvent event, const char *ssid)> WiFiConnectionEventHandler;
 
+
 class WiFiManager {
 public:
     WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings);
@@ -84,7 +86,9 @@ public:
         _wifiEventHandler = handler;
     }
     int getLastDisconnectReason() const { return _lastDisconnectReason; }
-    WiFiSettings *getSettings() const { return _pSettings; }
+    bool isConnectingToWiFi() const { return _connectingToWifi; }
+    bool isConnectTestSuccessful() const { return _connectTestSuccess; }
+    void connectToSavedNetwork(int index);
  private:
   void reconfigureWiFiConnection();
   void manageSTA();
@@ -103,11 +107,14 @@ public:
   void enterState(WiFiConnectingState newState, bool reconFigure = false);
   void loadSettings(const String &ssid);
   void cleanNetworks();
+  void setPreviousNetwork(const char *network);
  private:
   FSPersistence *_pFsp;
   WiFiSettings *_pSettings;
   APInfo _apInfo;
   WifiAPEvent *_asyncEventToFire = nullptr;
+  // Variable manage delay
+  uint _manageDelay = MANAGE_NETWORK_DELAY;
   // for the management delay loop
   unsigned long _lastConnectionAttempt = 0;
   // for the captive portal
@@ -124,13 +131,32 @@ public:
   // time when ap should stop
   uint32_t _forceAPStop = 0;
   uint8_t _connectAttempts = 0;
+  // Index to network list when searching for connetable network
   uint8_t _wifiNetworkIndex = 0;
-  uint _manageDelay = MANAGE_NETWORK_DELAY;
+  // list of save networks
   std::vector<String> _savedNetworks;
+  // list of currently found networks
   std::vector<WiFiNetwork> _foundNetworks;
   WiFiConnectingState _state = WiFiConnectingState::NotConnected;
   bool _connectingToWifi = false;
   bool _ignoreDisconnect = false;
+  // last connected network when try new
+  char *_previousNetwork = nullptr;
+  // Result of external connection attempt (TestingConfig, ConnectToSaved)
+  bool _connectTestSuccess = false;
+};
+
+#define CONNECT_TO_SAVED_ENDPOINT_PATH "/api/connectSaved"
+#define CONNECT_STATUS_ENDPOINT_PATH "/api/connectStatus"
+
+class WiFiConnectionHelperEndpoint {
+public:
+  WiFiConnectionHelperEndpoint(AsyncWebServer* server, WiFiManager *pWiFiManager);
+private:
+  void connectToSaved(AsyncWebServerRequest* request, JsonVariant& json);
+  void connectingStatus(AsyncWebServerRequest* request);
+private:
+  WiFiManager *_pWiFiManager;
 };
 
 #define SCAN_NETWORKS_ENDPOINT_PATH "/api/scanNetworks"
@@ -147,16 +173,14 @@ class WiFiScannerEndpoint {
   uint8_t convertEncryptionType(uint8_t encryptionType);
 };
 
+
 #define WIFI_STATUS_ENDPOINT_PATH "/api/wifiStatus"
 
 class WiFiStatusEndpoint {
   public:
-    WiFiStatusEndpoint(AsyncWebServer* server, WiFiManager *wifiManager);
-
+    WiFiStatusEndpoint(AsyncWebServer* server);
   private:
     void wifiStatusHandler(AsyncWebServerRequest* request);
-  private:
-    WiFiManager *_wifiManager;
 };
 
 #define WIFI_LIST_ENDPOINT_PATH "/api/savedNetworks"

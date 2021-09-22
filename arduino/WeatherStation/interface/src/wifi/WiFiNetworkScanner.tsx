@@ -5,10 +5,11 @@ import { createStyles, WithStyles, Theme, withStyles, Typography, LinearProgress
 import PermScanWifiIcon from '@material-ui/icons/PermScanWifi';
 
 import { FormActions, FormButton, SectionContent } from '../components';
-import { SCAN_NETWORKS_ENDPOINT, LIST_NETWORKS_ENDPOINT } from '../api';
+import { SCAN_NETWORKS_ENDPOINT, LIST_NETWORKS_ENDPOINT, LIST_SAVED_NETWORKS_ENDPOINT, CONNECT_TO_SAVED_ENDPOINT_PATH, CONNECT_STATUS_ENDPOINT_PATH } from '../api';
 import { AppStateContext } from '../AppStateContext';
 import WiFiNetworkSelector from './WiFiNetworkSelector';
-import { WiFiNetworkList, WiFiNetwork } from './types';
+import { WiFiNetworkList, WiFiNetwork, SavedNetworkList, SavedNetwork,  ConnectingStatus } from './types';
+import { WiFiConnectionContext } from './WiFiConnectionContext';
 
 const NUM_POLLS = 20
 const POLLING_FREQUENCY = 500
@@ -18,6 +19,9 @@ interface WiFiNetworkScannerState {
   scanningForNetworks: boolean;
   errorMessage?: string;
   networkList?: WiFiNetworkList;
+  savedNetworks?: SavedNetworkList;
+  connectingToSaved: boolean;
+  reconnectionInfo: boolean;
 }
 
 const styles = (theme: Theme) => createStyles({
@@ -38,14 +42,22 @@ type WiFiNetworkScannerProps = WithSnackbarProps & WithStyles<typeof styles>;
 
 class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkScannerState> {
 
+  static contextType = WiFiConnectionContext;
+  context!: React.ContextType<typeof WiFiConnectionContext>;
+
+  networkToSelect: WiFiNetwork | undefined;
+
   pollCount: number = 0;
 
   state: WiFiNetworkScannerState = {
     scanningForNetworks: false,
+    connectingToSaved: false,
+    reconnectionInfo: false,
   };
 
   componentDidMount() {
     this.scanNetworks();
+    this.loadSavedNetworks();
   }
 
   requestNetworkScan = () => {
@@ -121,10 +133,107 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
       });
   }
 
+  loadSavedNetworks = () => {
+    this.setState({savedNetworks: undefined})
+    fetch(LIST_SAVED_NETWORKS_ENDPOINT).then(response => {
+      if (response.status === 200) {
+        return response.json();
+      }
+      throw Error("Device returned unexpected response code: " + response.status);
+    })
+    .then(json => {
+      this.setState({savedNetworks: json})
+    }).catch(error => {
+      this.props.enqueueSnackbar("Problem loading saved networks: " + error.message, {
+        variant: 'error',
+      });
+    });
+  } 
+
+  connectToSaved = (savedNetwork: SavedNetwork, network: WiFiNetwork) => {
+    if(savedNetwork.connected) {
+      this.props.enqueueSnackbar("Already connected to " + savedNetwork.ssid, {
+        variant: 'info',
+      });
+      return
+    }
+    this.networkToSelect = network;
+    this.setState({ connectingToSaved: true });
+    fetch(CONNECT_TO_SAVED_ENDPOINT_PATH, {
+      method: 'POST',
+      body: JSON.stringify(savedNetwork),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => { 
+      if (response.status === 202) {
+        this.pollCount = 0
+        this.schedulePollValidation();
+        return;
+      }
+      throw Error("Device returned unexpected response code: " + response.status);
+    })
+   .catch(error => {
+      this.props.enqueueSnackbar("Problem connecting to network: " + error.message, {
+        variant: 'error',
+      });
+      this.setState({ connectingToSaved: false });
+    });
+  }
+
+  schedulePollValidation() {
+    setTimeout(this.pollValidation, POLLING_FREQUENCY);
+  }
+
+  pollValidation = () => {
+    fetch(CONNECT_STATUS_ENDPOINT_PATH, {method: 'GET'})
+      .then(response => {
+        if(response.status === 200) {
+          return response.json();
+        } else if(response.status === 202) {
+          if (++this.pollCount < NUM_POLLS) {
+            this.schedulePollValidation();
+            throw this.retryError()
+          } else {
+            throw Error("Validation has not completed in timely manner.");
+          }
+        } else {
+          throw new Error("Invalid status code " + response.status)
+        }
+      })
+      .then(json => {
+        const status : ConnectingStatus = json
+        if (status.success) {
+          this.props.enqueueSnackbar("Connection successful.", {
+            variant: 'success',
+          });
+          this.setState({ connectingToSaved: false });
+        } else if(this.networkToSelect) {
+          this.context.selectNetwork(this.networkToSelect)
+          return;
+        } else {
+          throw new Error("Selected network not found")
+        }
+      })
+      .catch(error => {
+        if (error.name !== RETRY_EXCEPTION_TYPE) {
+          if(error instanceof  TypeError) {
+            // Device was most probably reconnected to different network and is unreachable
+            this.setState({ connectingToSaved: false, reconnectionInfo: true, networkList: undefined });
+          } else {
+            this.props.enqueueSnackbar("Problem connecting to network: " + error.message, {
+              variant: 'error',
+            });
+            this.setState({ connectingToSaved: false });
+          }
+        }
+      });
+  }
+
   renderNetworkScanner() {
     const { classes } = this.props;
-    const { scanningForNetworks, networkList, errorMessage } = this.state;
-    if (scanningForNetworks || !networkList) {
+    const { scanningForNetworks, networkList, savedNetworks, errorMessage, reconnectionInfo, connectingToSaved } = this.state;
+    if (scanningForNetworks) {
       return (
         <div className={classes.scanningSettings}>
           <LinearProgress className={classes.scanningSettingsDetails} />
@@ -143,26 +252,51 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
         </div>
       );
     }
+    if (reconnectionInfo) {
+      return (
+        <div className={classes.scanningSettings}>
+          <Typography variant="subtitle1">
+            Device was reconnected. Check display for new IP and point browser to it.
+          </Typography>
+        </div>
+      );
+    }
     return (
-      <WiFiNetworkSelector networkList={networkList} />
+      <>
+      {connectingToSaved &&
+      <div className={classes.scanningSettings}>
+          <LinearProgress className={classes.scanningSettingsDetails} />
+          <Typography variant="h6" className={classes.scanningProgress}>
+            Connecting&hellip;
+          </Typography>
+      </div>
+      }
+      {networkList &&
+        <WiFiNetworkSelector networkList={networkList} savedNetworks={savedNetworks} connectToSaved={this.connectToSaved} />
+      }
+      </>
     );
   }
 
   render() {
-    const { scanningForNetworks } = this.state;
+    const { scanningForNetworks, reconnectionInfo } = this.state;
     return (
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
           <SectionContent title={wifiConfigured?"Network Scanner":"Select WiFi network"}>
-            <Typography variant="subtitle1">
-              Weather station requires active Wifi connection. Please select a suitable WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi networks are supported) The WiFi networks are sorted from the strongest one.
-            </Typography>
+            {!reconnectionInfo &&
+              <Typography variant="subtitle1">
+                Weather station requires active Wifi connection. Please select a suitable WiFi network or <Link component={RouterLink}  to="/wifi/settings">manually enter SSID</Link> (only 2.4GHz WiFi networks are supported) The WiFi networks are sorted from the strongest one.
+              </Typography>
+            }
             {this.renderNetworkScanner()}
+            {!reconnectionInfo &&
             <FormActions>
               <FormButton startIcon={<PermScanWifiIcon />} variant="contained" color="secondary" onClick={this.requestNetworkScan} disabled={scanningForNetworks}>
                 Scan again&hellip;
               </FormButton>
             </FormActions>
+          }
           </SectionContent>
         )
       }
