@@ -37,17 +37,8 @@
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
 tConfig conf = {
-  true, //detectLocationIP
   60,   //updateDataMin
   OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
-  "San Francisco,US", //location
-  "en", //language
-  -25200, //utcOffset in seconds
-  37.7749,   //latitude
-  -122.4194,    //longitude
-  false, //useMetric
-  false, //use24hour
-  true, //useYMDdate
   "pool.ntp.org,time.nis.gov,time.google.com", //ntp
   0,  //tempOffset
   0,  //humOffset
@@ -62,7 +53,7 @@ OLEDDisplayUi ui( &display);
 
 InfluxDBHelper influxdbHelper;
 // Weather station backend
-WeatherStation station(&conf, &influxdbHelper);
+WeatherStation station(&influxdbHelper);
 Updater updater;
 
 unsigned long timeSinceLastUpdate = 0;
@@ -85,11 +76,11 @@ void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
-void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude);
+bool detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings);
 void updateClock( bool firstStart, int utc_offset, const String ntp);
 void updateAstronomy(bool firstStart, const float lat, const float lon);
-void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey);
-void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey);
+void updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey);
+void updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
 
 void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const char *deviceID, InfluxDBHelper *influxDBHelper);
 
@@ -106,6 +97,8 @@ void initData() {
     initialized = true;
   }
 }
+
+bool bForceUpdate = false;
 
 void setup() {
   // Prepare serial port
@@ -147,12 +140,15 @@ void setup() {
   digitalWrite( LED, HIGH);
   setupDHT();
 
-  
-  setLanguage( conf.language);
- 
-  //display.flipScreenVertically();
-  //display.setContrast(100);
-  refreshDHTCachedValues(conf.useMetric);
+  RegionalSettings *pRegionalSettings = station.getRegionalSettings();
+  pRegionalSettings->setHandler([pRegionalSettings](){
+    if(pRegionalSettings->detectAutomatically) {
+      bForceUpdate = true;
+    } else {
+      setLanguage( pRegionalSettings->language.c_str());  
+      refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
+    }
+  });
 
   WS_DEBUG_RAM("Setup 3");
 }
@@ -163,7 +159,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 
 
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
-  if (conf.detectLocationIP) {
+  if (station.getRegionalSettings()->detectAutomatically) {
     WS_DEBUG_RAM("Before IPloc");
     station.stopServer();
     WS_DEBUG_RAM("After stop server");
@@ -173,8 +169,12 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     }
     delay(1000);
     WS_DEBUG_RAM("After delay");
-    detectLocationFromIP( firstStart, conf.location, conf.utcOffset, conf.language, conf.use24hour, conf.useYMDdate, conf.useMetric, conf.latitude, conf.longitude); //Load location data from IP
-    setLanguage( conf.language);
+    //Load location data from IP
+    if(detectLocationFromIP( firstStart, station.getRegionalSettings())) {
+      station.saveRegionalSettings();
+      setLanguage( station.getRegionalSettings()->language.c_str());
+    }
+    
     WS_DEBUG_RAM("After IPloc");
     station.startServer();
     if(!firstStart) {
@@ -183,7 +183,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
 
   drawUpdateProgress(display, 10, getStr(s_Updating_time));
-  updateClock( firstStart, conf.utcOffset, conf.ntp);
+  updateClock( firstStart, station.getRegionalSettings()->utcOffset, conf.ntp);
 
 
   drawUpdateProgress(display, 20, getStr(s_Checking_update));
@@ -195,7 +195,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   if (firstStart) {
     // TODO: better solution for updating Settings from IoT center
     auto influxDBSettings = station.getInfluxDBSettings();
-    if(loadIoTCenter(firstStart, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, conf.latitude, conf.longitude)) {
+    if(loadIoTCenter(firstStart, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
       station.getPersistence()->writeToFS(influxDBSettings);
       influxDBSettings->notify();
     } else {
@@ -204,23 +204,23 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
 
   drawUpdateProgress(display, 50, getStr(s_Updating_weather));
-  updateCurrentWeather( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
+  updateCurrentWeather( station.getRegionalSettings(), conf.openweatherApiKey);
   
   drawUpdateProgress(display, 60, getStr(s_Calculate_moon_phase));
-  updateAstronomy( firstStart, conf.latitude, conf.longitude);
+  updateAstronomy( firstStart, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude);
   
   drawUpdateProgress(display, 70, getStr(s_Updating_forecasts));
-  updateForecast( conf.useMetric, conf.language, conf.location, conf.openweatherApiKey);
+  updateForecast(station.getRegionalSettings(), conf.openweatherApiKey);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
 
-  influxdbHelper.update( firstStart, getDeviceID(),  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
+  influxdbHelper.update( firstStart, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
 
   drawUpdateProgress(display, 100, getStr(s_Done));
 
   if (firstStart) {
     //Save temperature for the chart
-    saveDHTTempHist( conf.useMetric);
+    saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);
   }
 
   influxdbHelper.writeStatus(resetReason);
@@ -240,7 +240,7 @@ void loop() {
   }
   if(shouldSetupInfluxDb) {
     influxdbHelper.begin(station.getInfluxDBSettings());
-    influxdbHelper.update( true, getDeviceID(),  WiFi.SSID(), VERSION, conf.location, conf.useMetric);
+    influxdbHelper.update( true, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location,station.getRegionalSettings()->useMetricUnits);
     shouldSetupInfluxDb = false;
   }
   if(!initialized) {
@@ -252,7 +252,7 @@ void loop() {
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
 
-    refreshDHTCachedValues(conf.useMetric);
+    refreshDHTCachedValues(station.getRegionalSettings()->useMetricUnits);
 
     if(WiFi.isConnected()) {
       if(station.getUpdaterSettings()->updateTime < 2400) {
@@ -280,7 +280,7 @@ void loop() {
         digitalWrite( LED, LOW);
         // TODO: better solution for updating Settings from IoT center
         auto influxDBSettings = station.getInfluxDBSettings();
-        if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, conf.latitude, conf.longitude)) {
+        if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
           station.getPersistence()->writeToFS(influxDBSettings);
           influxDBSettings->notify();
         }
@@ -288,18 +288,19 @@ void loop() {
       }
 
       //Update data?
-      if (lastUpdateMins % conf.updateDataMin == 0) {
+      if (lastUpdateMins % conf.updateDataMin == 0 || bForceUpdate) {
         digitalWrite( LED, LOW);
         updateData(&display,false);
         digitalWrite( LED, HIGH);
+        bForceUpdate = false;
       }
 
       //Write into InfluxDB
       if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
         digitalWrite( LED, LOW);
-        saveDHTTempHist( conf.useMetric);  //Save temperature for the chart
+        saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);  //Save temperature for the chart
         ESP.wdtFeed();
-        influxdbHelper.write( getDHTTemp( true), getDHTHum(), conf.latitude, conf.longitude);  //aways save in celsius
+        influxdbHelper.write( getDHTTemp( true), getDHTHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude);  //aways save in celsius
         Serial.print(F("InfluxDB write "));
         Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
         digitalWrite( LED, HIGH);

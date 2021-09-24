@@ -2,6 +2,7 @@
 #include <DHT.h>
 #include "DHTSensor.h"
 #include "Tools.h"
+#include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
@@ -61,7 +62,7 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->drawString(64 + x, 6 + y, getStr(s_INDOOR));
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp(getDHTHic(conf.useMetric)));
+  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp(getDHTHic(station.getRegionalSettings()->useMetricUnits)));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(120 + x, 38 + y, getStr(s_hum));
@@ -69,7 +70,7 @@ void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   
-  display->drawString(8 + x, 15 + y, strTemp(getDHTTemp(conf.useMetric)));
+  display->drawString(8 + x, 15 + y, strTemp(getDHTTemp(station.getRegionalSettings()->useMetricUnits)));
   display->drawString(80 + x, 15 + y, strHum(getDHTHum()));
 
   display->setFont(Meteocons_Plain_21);

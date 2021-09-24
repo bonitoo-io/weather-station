@@ -32,8 +32,8 @@ public:
     SettingsEndpoint(AsyncWebServer* pServer, const char *endpointPath, FSPersistence *pPersistence, 
         Settings *pSettings, DataManipulator fetchManipulator = nullptr, DataManipulator updateManipulator = nullptr);
 protected:
-    void fetchSettings(AsyncWebServerRequest* request);
-    void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
+    virtual void fetchSettings(AsyncWebServerRequest* request);
+    virtual void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
 protected:
     Settings *_pSettings;
     FSPersistence *_pPersistence;

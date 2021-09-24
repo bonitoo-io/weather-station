@@ -3,6 +3,7 @@
 #include <ESPHTTPClient.h>
 #include <JsonStreamingParser.h>
 #include <JsonListener.h>
+#include "RegionalSettings.h"
 
 class tIPListener: public JsonListener {
   String _key;
@@ -61,7 +62,8 @@ bool findCountry( const char* country, const char* list) {
   return false;
 }
 
-void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, char* lang, bool& b24h, bool& bYMD, bool& metric, float& latitude, float& longitude) {
+bool detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings) {
+  bool changed = false;
   BearSSL::WiFiClientSecure client;
   HTTPClient http;
   tIPListener ipListener;
@@ -89,44 +91,54 @@ void detectLocationFromIP( bool firstStart, String& location, int& utc_offset, c
   }
   http.end();
   if (httpCode != HTTP_CODE_OK)
-    return;
+    return false;
 
   //Process utc_offset
-  int utc_offset_old = utc_offset;
   bool minus = ipListener.utc_offset.charAt(0) == '-';
   if (minus || (ipListener.utc_offset.charAt(0) == '+'))  //remove sign
     ipListener.utc_offset.remove(0,1);
   //minutes - the last two characters;
-  utc_offset = ipListener.utc_offset.substring( ipListener.utc_offset.length() - 2).toInt() * 60;
+  int utc_offset = ipListener.utc_offset.substring( ipListener.utc_offset.length() - 2).toInt() * 60;
   ipListener.utc_offset.remove(ipListener.utc_offset.length() - 2, 2);
   //hours
   utc_offset += ipListener.utc_offset.toInt() * 60 * 60;
   if (minus)
     utc_offset = -utc_offset;
   
-  if (!firstStart && (utc_offset_old != utc_offset)) { //if utc offset is changed during refresh
+  if (!firstStart && (pRegionalSettings->utcOffset != utc_offset)) { //if utc offset is changed during refresh
     Serial.print( F("UTC offset changed from "));
-    Serial.println( String(utc_offset_old) + String(F( " to ")) + String(utc_offset));
+    Serial.println( String(pRegionalSettings->utcOffset) + String(F( " to ")) + String(utc_offset));
+    pRegionalSettings->utcOffset = utc_offset;
   }
 
   //Return other detected location values
-  String country;
-  country = ipListener.country;
+  String country = ipListener.country;
   country.toUpperCase();
-  latitude = ipListener.latitude;
-  longitude = ipListener.longitude;
-  location = ipListener.city + "," + country;
+  String location = ipListener.city + "," + country;
+  if(pRegionalSettings->location != location) {
+    Serial.print( F("Location changed from "));
+    Serial.print(pRegionalSettings->location);
+    Serial.print( F(" to "));
+    Serial.println(location);
+   
+    pRegionalSettings->location = location;
+    pRegionalSettings->latitude = ipListener.latitude;
+    pRegionalSettings->longitude = ipListener.longitude;
+    pRegionalSettings->utcOffset = utc_offset;  
 
-  if ( ipListener.lang == "cs")    //replace cs->cz code for weather
-    ipListener.lang = "cz";
-  strncpy( lang, ipListener.lang.c_str(), 2);
-  
-  //24-hours vs 12-hours clock detection
-  b24h = !findCountry(country.c_str(), Countries12h);
+    if ( ipListener.lang == "cs")    //replace cs->cz code for weather
+      ipListener.lang = "cz";
+    pRegionalSettings->language = ipListener.lang;
+    
+    //24-hours vs 12-hours clock detection
+    pRegionalSettings->use24Hours = !findCountry(country.c_str(), Countries12h);
 
-  //Celsius vs Fahrenheit detection
-  metric = !findCountry(country.c_str(), CountriesFahrenheit);
-  
-  //Date format YMD vs DMY
-  bYMD = findCountry(country.c_str(), CountriesDateYMD);
+    //Celsius vs Fahrenheit detection
+    pRegionalSettings->useMetricUnits = !findCountry(country.c_str(), CountriesFahrenheit);
+    
+    //Date format YMD vs DMY
+    pRegionalSettings->useYMDFormat = findCountry(country.c_str(), CountriesDateYMD);
+    changed = true;
+  }
+  return changed;
 }

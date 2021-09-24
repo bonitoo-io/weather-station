@@ -1,5 +1,6 @@
 #include <ESPWiFi.h>
 #include "Tools.h"
+#include "WeatherStation.h"
 
 // English strings
 static const char DAYS_ENG[] PROGMEM = "Sun\0" "Mon\0" "Tue\0" "Wed\0" "Thu\0" "Fri\0" "Sat\0";
@@ -55,8 +56,11 @@ String getPgmStr( const char* s, uint8_t index) {
 
 void setLanguage( const char* lang) {
   //Default language is en
-  if ( strcmp( lang, "cz") == 0)
+  if ( strcmp( lang, "cz") == 0) {
     pLang = &languages[1];
+  } else {
+    pLang = &languages[0];
+  }
   
   //Add other languages
   //....
@@ -82,22 +86,22 @@ String strTime(time_t timestamp, bool shortTime) {
   struct tm *timeInfo = localtime(&timestamp);
   char buf[9];
   if (shortTime)
-    sprintf_P(buf, PSTR("%2d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
+    sprintf_P(buf, PSTR("%2d:%02d"), station.getRegionalSettings()->use24Hours ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
   else  
-    sprintf_P(buf, PSTR("%02d:%02d:%02d"), conf.use24hour ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
+    sprintf_P(buf, PSTR("%02d:%02d:%02d"), station.getRegionalSettings()->use24Hours? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
   return String(buf);
 }
 
 String strTimeSuffix(time_t timestamp) {
   struct tm *timeInfo = localtime(&timestamp);  
-  return conf.use24hour ? "" : String(timeInfo->tm_hour>=12?F("pm"):F("am"));
+  return station.getRegionalSettings()->use24Hours ? "" : String(timeInfo->tm_hour>=12?F("pm"):F("am"));
 }
 
 String strDate(time_t timestamp, bool shortDate) {
   struct tm* timeInfo = localtime(&timestamp);
   char buff[25];
  
-  if (conf.useYMDdate) {
+  if (station.getRegionalSettings()->useYMDFormat) {
     if (shortDate)
       sprintf_P(buff, PSTR("%s %04d/%2d/%2d"), getDayName( timeInfo->tm_wday), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
     else  
@@ -112,7 +116,7 @@ String strDate(time_t timestamp, bool shortDate) {
 }
 
 String strTempUnit() {
-  return String(conf.useMetric ? F("°C") : F("°F"));
+  return String(station.getRegionalSettings()->useMetricUnits ? F("°C") : F("°F"));
 }
 
 String strTemp( int t) {
@@ -124,7 +128,7 @@ String strHum( unsigned int h) {
 }
 
 String strWind( unsigned int w) {
-  return String(w) + String(conf.useMetric ? F("m/s") : F("mph"));  
+  return String(w) + String(station.getRegionalSettings()->useMetricUnits? F("m/s") : F("mph"));  
 }
 
 // Convert UTF8-string to extended ASCII

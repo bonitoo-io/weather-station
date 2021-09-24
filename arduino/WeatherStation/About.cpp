@@ -4,12 +4,12 @@
 #include "DHTSensor.h"
 #include "Version.h"
 
-AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, tConfig *conf, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
-  WiFiSettings *wifiSettings, FS* fs):
-  _conf(conf),
+AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
+  WiFiSettings *wifiSettings, RegionalSettings *pRegionalSettings, FS* fs):
   _influxDBHelper(influxDBHelper),
   _influxDBSettings(influxDBSettings),
   _wifiSettings(wifiSettings),
+  _pRegionalSettings(pRegionalSettings),
   _fs(fs) {
   server->on(ABOUT_ENDPOINT_PATH,
              HTTP_GET,
@@ -21,7 +21,7 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   JsonObject root = response->getRoot();
   root[F("version")] = VERSION " built " __DATE__ " " __TIME__;
   root[F("deviceId")] = getDeviceID();
-  root[F("useMetric")] = _conf->useMetric;
+  root[F("useMetric")] = _pRegionalSettings->useMetricUnits;
   root[F("temp")] = getDHTCachedTemp();
   root[F("hum")] = getDHTCachedHum();
   root[F("uptime")] = millis();

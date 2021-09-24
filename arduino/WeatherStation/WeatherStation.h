@@ -10,10 +10,21 @@
 #include "About.h"
 #include "InfluxDBHelper.h"
 #include "Updater.h"
+#include "RegionalSettings.h"
+
+/*
+TODO:
+instantiate regional settings
+instantiate endpoint
+accomodate RegionalSettings in main code
+create generic validation endpoint using templates
+validate city
+when changed to autodection, detect in next cycle?
+*/
 
 class WeatherStation {
 public:
-    WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper);
+    WeatherStation(InfluxDBHelper *influxDBHelper);
     void begin();
     void loop();
     void end();
@@ -30,6 +41,10 @@ public:
         return &_updaterSettings;
     }
 
+    RegionalSettings *getRegionalSettings() {
+        return &_regionalSettings;
+    }
+
     FSPersistence *getPersistence() {
         return &_persistence;
     }
@@ -39,12 +54,13 @@ public:
     }
     void startServer();
     void stopServer();
+    void saveRegionalSettings();
 private:
-    tConfig *_conf; 
     InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;
     InfluxDBSettings _influxDBSettings;
     UpdaterSettings _updaterSettings;
+    RegionalSettings _regionalSettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
     AsyncWebServer *_server = nullptr;
@@ -58,6 +74,10 @@ private:
     AboutInfoEndpoint *_aboutInfoEndpoint = nullptr;
     AboutServiceEndpoint *_aboutServiceEndpoint = nullptr;
     InfluxDBValidateParamsEndpoint *_influxdbValidateEndpoint = nullptr;
-    
+    SettingsEndpoint *_pRegionalSettingsEndpoint = nullptr;
+    RegionalSettingsValidateEndpoint *_pRegionalSettingsValidateEndpoint = nullptr;
 };
+
+extern WeatherStation station;
+
 #endif //WEATHER_STATION_H

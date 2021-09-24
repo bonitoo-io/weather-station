@@ -3,8 +3,10 @@
 #include <OpenWeatherMapForecast.h>
 
 #include "Tools.h"
+#include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
+#include "RegionalSettings.h"
 
 tCurrentWeather currentWeather;
 #define MAX_FORECASTS 3
@@ -16,13 +18,13 @@ int getCurrentWeatherTemperature() {
 }
 
 
-void updateCurrentWeather( const bool metric, const String& lang, const String& location, const String& APIKey) {
+void updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapCurrent currentWeatherClient;
   OpenWeatherMapCurrentData _currentWeather;
-  currentWeatherClient.setMetric(metric);
-  currentWeatherClient.setLanguage(lang);
+  currentWeatherClient.setMetric(pRegionalSettings->useMetricUnits);
+  currentWeatherClient.setLanguage(pRegionalSettings->language);
   _currentWeather.temp = NAN;
-  currentWeatherClient.updateCurrent(&_currentWeather, APIKey, location);
+  currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
   if (isnan(_currentWeather.temp)) {
     currentWeather.temp =  0xffff;
     return;  
@@ -39,15 +41,15 @@ void updateCurrentWeather( const bool metric, const String& lang, const String& 
 }
 
 
-void updateForecast( const bool metric, const String& lang, const String& location, const String& APIKey) {
+void updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
   _forecasts[0].temp = NAN;
-  forecastClient.setMetric(metric);
-  forecastClient.setLanguage(lang);
+  forecastClient.setMetric(pRegionalSettings->useMetricUnits);
+  forecastClient.setLanguage(pRegionalSettings->language);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
-  forecastClient.updateForecasts(_forecasts, APIKey, location, MAX_FORECASTS);
+  forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS);
 
   if (isnan(_forecasts[0].temp)) {
     forecasts[0].temp = 0xffff;
@@ -77,7 +79,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth() + x, 7 + y, utf8ascii(conf.location));
+  display->drawString(display->getWidth() + x, 7 + y, utf8ascii(station.getRegionalSettings()->location));
   display->drawString(display->getWidth() + x, 38 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 38 + y, utf8ascii(currentWeather.description));

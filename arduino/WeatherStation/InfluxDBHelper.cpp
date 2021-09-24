@@ -7,8 +7,6 @@
 extern int tempHistory[90];
 const char *Token PROGMEM = "token";
 
-static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message = nullptr);
-
 InfluxDBHelper::InfluxDBHelper():_sensor("environment") {
 
 }
@@ -213,88 +211,29 @@ InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPer
 // ****************** InfluxDBValidateParamsEndpoint ***************************
 
 InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper):
+  ValidateParamsEndpoint(server, VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH),
   _validationSettings(nullptr),
-  _helper(helper),
-  _status(ValidationStatus::Idle) {
-  AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH, 
-                    std::bind(&InfluxDBValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2),
-                    DEFAULT_BUFFER_SIZE);
-  updateHandler->setMethod(HTTP_POST);
-  server->addHandler(updateHandler);
-  server->on(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH, HTTP_GET, std::bind(&InfluxDBValidateParamsEndpoint::checkStatus, this, std::placeholders::_1));
+  _helper(helper)
+  {
+
 }
 
-static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message) {
-  root[F("status")] = static_cast<int>(code);
-  if(message) {
-    root[F("message")] = message;
-  }
-}
-
-void InfluxDBValidateParamsEndpoint::validateParams(AsyncWebServerRequest* request, JsonVariant& json) {
-    if (!json.is<JsonObject>()) {
-        request->send(400);
-        return;
-    }
-    ValidationStatus responseState = _status;
-    if(_status == ValidationStatus::Idle || _status >= ValidationStatus::Finished) {
-      if(_validationSettings) {
-        delete _validationSettings;
-      }
-      JsonObject jsonObject = json.as<JsonObject>();
-      _validationSettings = new InfluxDBSettings;
-      _validationSettings->load(jsonObject);
-      const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
-      if(strchr(authToken,'*')) {
-        _validationSettings->authorizationToken = _helper->settings()->authorizationToken;
-      }
-      request->onDisconnect([this]() {
-        _status = ValidationStatus::StartRequest;
-      });
-      responseState = ValidationStatus::StartRequest;
-    }
-    AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
-    JsonObject responseJson = response->getRoot().to<JsonObject>();    
-    writeResponseData(responseJson, responseState);
-    response->setLength();
-    response->setCode(200); 
-    request->send(response);
-}
-
-
-
-void InfluxDBValidateParamsEndpoint::loop() {
-  if(_status == ValidationStatus::StartRequest) {
-    _status = ValidationStatus::Running;
-    _error = _helper->validateConnection(_validationSettings->serverURL, _validationSettings->org, _validationSettings->bucket, _validationSettings->authorizationToken);
+void InfluxDBValidateParamsEndpoint::saveParams(JsonVariant& json) {
+ if(_validationSettings) {
     delete _validationSettings;
-    _validationSettings = nullptr;
-    if(!_error.length()) {
-      _status = ValidationStatus::Finished;
-    } else {
-      _status = ValidationStatus::Error;
-    }
+  }
+  JsonObject jsonObject = json.as<JsonObject>();
+  _validationSettings = new InfluxDBSettings;
+  _validationSettings->load(jsonObject);
+  const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
+  if(strchr(authToken,'*')) {
+    _validationSettings->authorizationToken = _helper->settings()->authorizationToken;
   }
 }
 
-void  InfluxDBValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request) {
-  AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
-  JsonObject jsonObject = response->getRoot().to<JsonObject>();
-  if (_status < ValidationStatus::Finished) {
-    writeResponseData(jsonObject, _status);
-  } else {
-    if(_status == ValidationStatus::Error && _error.length() && _error[0] == '{') {
-      DynamicJsonDocument doc(DEFAULT_BUFFER_SIZE);
-      deserializeJson(doc, _error.c_str());
-      _error = doc[F("message")].as<const char *>();
-    }
-    writeResponseData(jsonObject,_status, _status == ValidationStatus::Error?_error.c_str():nullptr);
-    request->onDisconnect([this]() {
-      _status = ValidationStatus::Idle;
-      _error = (char *)nullptr;
-    });
-  }
-  response->setLength();
-  response->setCode(200);
-  request->send(response);
+void InfluxDBValidateParamsEndpoint::runValidation() {
+  _error = _helper->validateConnection(_validationSettings->serverURL, _validationSettings->org, _validationSettings->bucket, _validationSettings->authorizationToken);
+  delete _validationSettings;
+  _validationSettings = nullptr;
 }
+

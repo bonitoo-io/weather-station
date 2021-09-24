@@ -12,18 +12,8 @@ String utf8ascii(const String s);
 const char *getDeviceID();
 
 struct tConfig {
-  bool detectLocationIP;
   unsigned int updateDataMin;
   String openweatherApiKey;
-// Go to https://openweathermap.org/find?q= and search for a location  
-  String location;
-  char language[3];
-  int utcOffset;  //in seconds
-  float latitude;
-  float longitude;
-  bool useMetric;
-  bool use24hour;
-  bool useYMDdate;
   String ntp;
   int8_t tempOffset;
   int8_t humOffset;
