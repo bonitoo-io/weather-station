@@ -7,6 +7,7 @@
 #include "InfluxDBHelper.h"
 #include "WiFi.h"
 #include "InfluxDBHelper.h"
+#include "RegionalSettings.h"
 #include <LittleFS.h>
 
 #define ABOUT_ENDPOINT_PATH "/api/aboutInfo"
@@ -20,14 +21,14 @@ enum class AppState {
 
 class AboutInfoEndpoint {
  public:
-  AboutInfoEndpoint(AsyncWebServer *server, tConfig *conf, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
-    WiFiSettings *wifiSettings, FS* fs);
+  AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
+    WiFiSettings *wifiSettings, RegionalSettings *pRegionalSettings, FS* fs);
 
  private:
-  tConfig *_conf;
   InfluxDBHelper *_influxDBHelper;
   InfluxDBSettings *_influxDBSettings;
   WiFiSettings *_wifiSettings;
+  RegionalSettings *_pRegionalSettings;
   FS* _fs;
   void aboutHandler(AsyncWebServerRequest* request);
 };

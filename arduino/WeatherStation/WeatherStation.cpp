@@ -3,9 +3,9 @@
 #include "WWWData.h"
 #include "Debug.h"
 #include "Migrator.h"
+#include "Tools.h"
 
-WeatherStation::WeatherStation(tConfig *conf, InfluxDBHelper *influxDBHelper):
-  _conf(conf),
+WeatherStation::WeatherStation(InfluxDBHelper *influxDBHelper):
   _influxDBHelper(influxDBHelper),
   _persistence(&LittleFS),
   _wifiManager(&_persistence,&_wifiSettings) 
@@ -39,9 +39,9 @@ void WeatherStation::begin() {
   }
   delete m;
   
-  //_persistence.readFromFS(&_wifiSettings);
   _persistence.readFromFS(&_influxDBSettings);
   _persistence.readFromFS(&_updaterSettings);
+  _persistence.readFromFS(&_regionalSettings);
   
   _wifiManager.begin();
 }
@@ -50,6 +50,9 @@ void WeatherStation::loop() {
   _wifiManager.loop();
   if(_influxdbValidateEndpoint) {
     _influxdbValidateEndpoint->loop();
+  }
+  if(_pRegionalSettingsValidateEndpoint) {
+    _pRegionalSettingsValidateEndpoint->loop();
   }
 }
 
@@ -67,10 +70,12 @@ void WeatherStation::end() {
     _updaterSettingsEndpoint = new SettingsEndpoint(_server, UPDATER_SETTINGS_ENDPOINT_PATH, &_persistence, &_updaterSettings);
     _wifiStatusEndpoint = new WiFiStatusEndpoint(_server);
     _wifiConnectionHelperEndpoint = new WiFiConnectionHelperEndpoint(_server, &_wifiManager);
-    _aboutInfoEndpoint = new AboutInfoEndpoint(_server, _conf, _influxDBHelper, &_influxDBSettings, &_wifiSettings, &LittleFS);
+    _aboutInfoEndpoint = new AboutInfoEndpoint(_server, _influxDBHelper, &_influxDBSettings, &_wifiSettings, &_regionalSettings, &LittleFS);
     _aboutServiceEndpoint = new AboutServiceEndpoint(_server, &_persistence);
     _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_server, _influxDBHelper);
     _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_server, &_persistence);
+    _pRegionalSettingsEndpoint = new SettingsEndpoint(_server, REGIONAL_SETTINGS_ENDPOINT_PATH, &_persistence, &_regionalSettings);
+    _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &conf);
     // Serve static resources from PROGMEM
     WWWData::registerRoutes(
       [this](const String& uri, const String& contentType, const uint8_t* content, size_t len) {
@@ -130,5 +135,11 @@ void WeatherStation::end() {
     _influxdbValidateEndpoint = nullptr;
     delete _wiFiListSavedEndpoint;
     _wiFiListSavedEndpoint = nullptr;
+    delete _pRegionalSettingsEndpoint;
+    _pRegionalSettingsEndpoint = nullptr;
    }
+ }
+
+ void WeatherStation::saveRegionalSettings() {
+   _persistence.writeToFS(&_regionalSettings);
  }

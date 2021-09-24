@@ -1,5 +1,6 @@
 #include <OLEDDisplayUi.h>
 #include "Tools.h"
+#include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
@@ -102,9 +103,9 @@ void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
   display->drawString(64 + x, 8 + y, strDate(now, true));
 
   display->setFont(DSEG7_Classic_Bold_21);
-  display->drawString(64 + x - (conf.use24hour ? 0 : 4), 20 + y, strTime(now, false));
+  display->drawString(64 + x - (station.getRegionalSettings()->use24Hours ? 0 : 4), 20 + y, strTime(now, false));
 
-  if (!conf.use24hour) {
+  if (!station.getRegionalSettings()->use24Hours) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
     display->drawString(display->getWidth() + x, 18 + y, strTimeSuffix(now));

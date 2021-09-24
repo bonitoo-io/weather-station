@@ -1,5 +1,6 @@
 #include <OLEDDisplayUi.h>
 #include <ESPWiFi.h>
+#include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 #include "Tools.h"
@@ -143,7 +144,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->drawString(display->getStringWidth(F("00:00")), 52, strTimeSuffix(now));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth(), 54, getStr(s_In) + strTemp(getDHTTemp( conf.useMetric)) + getStr(s_Out) + strTemp(getCurrentWeatherTemperature()));
+  display->drawString(display->getWidth(), 54, getStr(s_In) + strTemp(getDHTTemp( station.getRegionalSettings()->useMetricUnits)) + getStr(s_Out) + strTemp(getCurrentWeatherTemperature()));
 
   int8_t quality = getWifiSignal();
   for (int8_t i = 0; i < 4; i++) {
@@ -186,7 +187,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     display->drawString(0, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
     display->drawString(0, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
     display->drawString(0, 30, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
-    display->drawString(0, 40, String("v") + version + String(F("; tz: ")) + String(conf.utcOffset) + String(F(" ")) + conf.language);
+    display->drawString(0, 40, String("v") + version + String(F("; tz: ")) + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + station.getRegionalSettings()->language);
     display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, String(F("FACTORY RESET IN ")) + String(secToReset) + String(F("s !")));

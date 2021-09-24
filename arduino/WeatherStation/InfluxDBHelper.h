@@ -5,6 +5,7 @@
 
 #include "Settings.h"
 #include <InfluxDbClient.h>
+#include "Validation.h"
 
 #define INFLUXDB_DEFAULT_BUCKET F("iot_center")
 #define INFLUXDB_DEFAULT_WRITE_INTERVAL 1
@@ -56,27 +57,17 @@ public:
 
 #define VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH "/api/validateInfluxDBParams"
 
-enum class ValidationStatus {
-  Idle = 0,
-  StartRequest,
-  Running,
-  Finished,
-  Error
-};
 
-class InfluxDBValidateParamsEndpoint {
+class InfluxDBValidateParamsEndpoint : public ValidateParamsEndpoint {
 public:
     InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper);
     virtual ~InfluxDBValidateParamsEndpoint() { delete _validationSettings; }
-    void loop();
-private:
-    void validateParams(AsyncWebServerRequest* request, JsonVariant& json);
-    void checkStatus(AsyncWebServerRequest* request);
+protected:
+  virtual void saveParams(JsonVariant& json) override;
+  virtual void runValidation() override;
 private:
     InfluxDBSettings *_validationSettings;
     InfluxDBHelper *_helper;
-    ValidationStatus _status;
-    String _error;
 };
 
 #endif //INFLUXDB_HELPER_H

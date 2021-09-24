@@ -29,3 +29,16 @@ export interface UpdateSettings {
   checkBeta: boolean;
   verifyCert: boolean;
 }
+
+export interface RegionalSettings {
+  detectAutomatically: boolean;
+  location: string;
+  language: string;
+  // in seconds
+  utcOffset: number;
+  latitude: number;
+  longitude: number;
+  useMetricUnits: boolean;
+  use24Hours: boolean;
+  useYMDFormat: boolean;
+}
