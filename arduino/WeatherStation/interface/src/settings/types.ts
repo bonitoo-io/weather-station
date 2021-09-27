@@ -28,6 +28,7 @@ export interface UpdateSettings {
   updateTime: number;
   checkBeta: boolean;
   verifyCert: boolean;
+  use24Hours: boolean;
 }
 
 export interface RegionalSettings {

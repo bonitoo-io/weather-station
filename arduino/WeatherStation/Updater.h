@@ -3,6 +3,7 @@
 
 #include "Settings.h"
 #include <ESPGithubUpdater.h>
+#include "RegionalSettings.h"
 
 typedef std::function<void(const char *newVersion, int progress)> FWUpdateProgressCallback;
 typedef std::function<void(const char *newVersion)> FWUpdateStartedCallback;
@@ -50,6 +51,14 @@ class Updater {
   FWUpdateStartedCallback _startCb = nullptr;
   FWUpdateProgressCallback _progCb = nullptr;
   FWUpdateFinishedCallback _endCb = nullptr;
+};
+
+class UpdaterSettingEnpoint : public SettingsEndpoint {
+ public:
+  UpdaterSettingEnpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, 
+        UpdaterSettings *pSettings, RegionalSettings *pRegionalSettings);
+ protected:
+  RegionalSettings *_pRegionalSettings;
 };
 
 #endif //UPDATER_H

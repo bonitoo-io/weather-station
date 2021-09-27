@@ -101,3 +101,12 @@ int UpdaterSettings::load(JsonObject& root) {
     printUpdaterSettings(F("UpdaterSettings::Load"), this);
     return 1;
 }
+
+UpdaterSettingEnpoint::UpdaterSettingEnpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, 
+        UpdaterSettings *pSettings, RegionalSettings *pRegionalSettings)
+  :SettingsEndpoint(pServer, UPDATER_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
+  [this](Settings *, JsonObject jsonObject) {
+    jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
+  }),
+  _pRegionalSettings(pRegionalSettings) { }
+

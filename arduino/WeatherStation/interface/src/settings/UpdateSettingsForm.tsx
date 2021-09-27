@@ -1,11 +1,11 @@
 import React from 'react';
-import { Checkbox, FormControlLabel} from '@material-ui/core';
+import { Checkbox } from '@material-ui/core';
 import { ValidatorForm } from 'react-material-ui-form-validator';
 
 
 import SaveIcon from '@material-ui/icons/Save';
 
-import { RestFormProps, FormActions, FormButton,  } from '../components';
+import { RestFormProps, FormActions, FormButton, BlockFormControlLabel,  } from '../components';
 import { UpdateSettings, } from './types';
 import { TimePicker, MuiPickersUtilsProvider  } from '@material-ui/pickers'
 import { MaterialUiPickersDate  } from '@material-ui/pickers/typings/date'
@@ -40,12 +40,11 @@ class UpdateSettingsForm extends React.Component<UpdateSettingsFormProps> {
           <TimePicker
             label="Update time"
             value={updateTime}
-            ampm={false}
+            ampm={!data.use24Hours}
             onChange={this.changeTime(handleDirectValueChange)}
           />
         </MuiPickersUtilsProvider>
-        <div>
-        <FormControlLabel
+        <BlockFormControlLabel
           value="start"
           control={
             <Checkbox
@@ -57,9 +56,7 @@ class UpdateSettingsForm extends React.Component<UpdateSettingsFormProps> {
           label="Update to beta releases"
           labelPlacement="end"
         />
-        </div>
-        <div>
-        <FormControlLabel
+        <BlockFormControlLabel
           value="start"
           control={
             <Checkbox
@@ -71,7 +68,6 @@ class UpdateSettingsForm extends React.Component<UpdateSettingsFormProps> {
           label="Verify Github certificate"
           labelPlacement="end"
         />
-        </div>
         <FormActions>
           <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">
             Save

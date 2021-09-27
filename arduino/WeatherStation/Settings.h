@@ -16,6 +16,7 @@ class Settings {
 private:
     UpdateNotificationHandler _handler;
 public:
+    virtual ~Settings() {};
     virtual int save(JsonObject& root) = 0;
     virtual int load(JsonObject& root) = 0;
     virtual String getFilePath() = 0;

@@ -68,7 +68,7 @@ private:
     WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;
     WiFiConnectionHelperEndpoint *_wifiConnectionHelperEndpoint = nullptr;
     InfluxDBSettingsEndpoint *_influxDBSettingsEndpoint = nullptr;
-    SettingsEndpoint *_updaterSettingsEndpoint = nullptr;
+    UpdaterSettingEnpoint *_updaterSettingsEndpoint = nullptr;
     WiFiStatusEndpoint *_wifiStatusEndpoint = nullptr;
     WiFiListSavedEndpoint *_wiFiListSavedEndpoint = nullptr;
     AboutInfoEndpoint *_aboutInfoEndpoint = nullptr;

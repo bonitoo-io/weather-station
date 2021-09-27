@@ -67,7 +67,7 @@ void WeatherStation::end() {
     _wifiScannerEndpoint = new WiFiScannerEndpoint(_server);
     _wifiSettingsEndpoint = new WiFiSettingsEndpoint(_server, &_persistence, &_wifiSettings);
     _influxDBSettingsEndpoint = new InfluxDBSettingsEndpoint(_server, &_persistence, &_influxDBSettings);
-    _updaterSettingsEndpoint = new SettingsEndpoint(_server, UPDATER_SETTINGS_ENDPOINT_PATH, &_persistence, &_updaterSettings);
+    _updaterSettingsEndpoint = new UpdaterSettingEnpoint(_server, &_persistence, &_updaterSettings, &_regionalSettings);
     _wifiStatusEndpoint = new WiFiStatusEndpoint(_server);
     _wifiConnectionHelperEndpoint = new WiFiConnectionHelperEndpoint(_server, &_wifiManager);
     _aboutInfoEndpoint = new AboutInfoEndpoint(_server, _influxDBHelper, &_influxDBSettings, &_wifiSettings, &_regionalSettings, &LittleFS);
