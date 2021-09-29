@@ -149,7 +149,7 @@ void setup() {
       refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
     }
   });
-
+  refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
   WS_DEBUG_RAM("Setup 3");
 }
 
