@@ -3,7 +3,7 @@ import { Switch, Route, Redirect } from 'react-router';
 
 
 import WiFiConnection from './wifi/WiFiConnection';
-import About from './about/About';
+import Device from './device/Device';
 import Settings from './settings/Settings'
 import { AppStateContext } from './AppStateContext';
 
@@ -19,10 +19,10 @@ class AppRouting extends Component {
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
           <Switch>
-            <Route exact path="/about/*" component={About} />
+            <Route exact path="/device/*" component={Device} />
             <Route exact path="/wifi/*" component={WiFiConnection} />
             <Route exact path="/settings/*" component={Settings } />
-            <Redirect to={wifiConfigured?"/about/about":"/wifi/scan"} />
+            <Redirect to={wifiConfigured?"/device/about":"/wifi/scan"} />
           </Switch>
           )
         }
