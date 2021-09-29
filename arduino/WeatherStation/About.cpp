@@ -19,7 +19,7 @@ AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *inf
 void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
-  root[F("version")] = VERSION " built " __DATE__ " " __TIME__;
+  root[F("version")] = getLongVersion();
   root[F("deviceId")] = getDeviceID();
   root[F("useMetric")] = _pRegionalSettings->useMetricUnits;
   root[F("temp")] = getDHTCachedTemp();

@@ -405,3 +405,9 @@ void fwUploadFinishedHandler() {
   station.end();
   ESP.restart();
 }
+
+// Implementation must be in ino to have this compiled and updated always
+const char *getLongVersion() {
+  static const char *version = VERSION " built " __DATE__ " " __TIME__;
+  return version;
+}

@@ -3,4 +3,6 @@
 
 #define VERSION "0.55"
 
+const char *getLongVersion();
+
 #endif //VERSION_H
