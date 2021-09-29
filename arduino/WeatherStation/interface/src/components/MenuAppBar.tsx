@@ -116,11 +116,11 @@ class MenuAppBar extends React.Component<MenuAppBarProps, MenuAppBarState> {
           </Typography>
           <Divider absolute />
         </Toolbar>
-        <ListItem to='/about/about' selected={path.startsWith('/about/')} button component={Link} >
+        <ListItem to='/device/about' selected={path.startsWith('/device/')} button component={Link} >
             <ListItemIcon>
               <InfoIcon />
             </ListItemIcon>
-            <ListItemText primary="Status" />
+            <ListItemText primary="Device" />
           </ListItem>
         <List>
           <ListItem to='/wifi/status' selected={path.startsWith('/wifi/')} button component={Link}>

@@ -11,16 +11,7 @@
 #include "InfluxDBHelper.h"
 #include "Updater.h"
 #include "RegionalSettings.h"
-
-/*
-TODO:
-instantiate regional settings
-instantiate endpoint
-accomodate RegionalSettings in main code
-create generic validation endpoint using templates
-validate city
-when changed to autodection, detect in next cycle?
-*/
+#include "UploadFirmware.h"
 
 class WeatherStation {
 public:
@@ -55,6 +46,7 @@ public:
     void startServer();
     void stopServer();
     void saveRegionalSettings();
+    void setFWUploadFinishedCallback(FWUploadFinishedCallback callback) { _fwUploadFinishedCallback = callback; }
 private:
     InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;
@@ -76,6 +68,8 @@ private:
     InfluxDBValidateParamsEndpoint *_influxdbValidateEndpoint = nullptr;
     SettingsEndpoint *_pRegionalSettingsEndpoint = nullptr;
     RegionalSettingsValidateEndpoint *_pRegionalSettingsValidateEndpoint = nullptr;
+    UploadFirmwareEndpoint *_pUploadFirmwareEndpoint = nullptr; 
+    FWUploadFinishedCallback _fwUploadFinishedCallback = nullptr;
 };
 
 extern WeatherStation station;

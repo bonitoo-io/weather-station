@@ -54,6 +54,9 @@ void WeatherStation::loop() {
   if(_pRegionalSettingsValidateEndpoint) {
     _pRegionalSettingsValidateEndpoint->loop();
   }
+  if(_pUploadFirmwareEndpoint) {
+    _pUploadFirmwareEndpoint->loop();
+  }
 }
 
 void WeatherStation::end() {
@@ -76,6 +79,8 @@ void WeatherStation::end() {
     _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_server, &_persistence);
     _pRegionalSettingsEndpoint = new SettingsEndpoint(_server, REGIONAL_SETTINGS_ENDPOINT_PATH, &_persistence, &_regionalSettings);
     _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &conf);
+    _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
+    _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
     // Serve static resources from PROGMEM
     WWWData::registerRoutes(
       [this](const String& uri, const String& contentType, const uint8_t* content, size_t len) {
@@ -137,6 +142,8 @@ void WeatherStation::end() {
     _wiFiListSavedEndpoint = nullptr;
     delete _pRegionalSettingsEndpoint;
     _pRegionalSettingsEndpoint = nullptr;
+    delete _pUploadFirmwareEndpoint;
+    _pUploadFirmwareEndpoint = nullptr;
    }
  }
 

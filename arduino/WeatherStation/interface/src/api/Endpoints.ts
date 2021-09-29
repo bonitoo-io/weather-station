@@ -15,3 +15,4 @@ export const FACTORY_RESET_ENDPOINT = ENDPOINT_ROOT + "factoryReset";
 export const UPDATE_SETTINGS_ENDPOINT = ENDPOINT_ROOT + "updaterSettings";
 export const REGIONAL_SETTINGS_ENDPOINT = ENDPOINT_ROOT + "regionalSettings";
 export const REGIONAL_SETTINGS_VALIDATE_ENDPOINT = ENDPOINT_ROOT + "regionalSettingsCheckValidation";
+export const UPLOAD_FIRMWARE_ENDPOINT = ENDPOINT_ROOT + "uploadFirmware";

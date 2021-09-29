@@ -8,7 +8,7 @@ import AppRouting from './AppRouting';
 import CustomMuiTheme from './CustomMuiTheme';
 import { ABOUT_INFO_ENDPOINT, PROJECT_NAME } from './api';
 import { AppStateContext, AppStateContextValue } from './AppStateContext';
-import { AboutInfo, AppState } from './about/types';
+import { AboutInfo, AppState } from './device/types';
 
 class App extends Component<{}, AppStateContextValue> {
 

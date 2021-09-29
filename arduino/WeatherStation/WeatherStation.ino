@@ -129,7 +129,7 @@ void setup() {
   });
 
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
-  
+  station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
 
   WS_DEBUG_RAM("Setup 2");
@@ -386,16 +386,22 @@ void updateProgressHandler(const char *newVersion, int progress) {
   drawFWUpdateProgress(&display, newVersion, progress);
 }
 
+// Finished automatic download firmware
 void updateFinishedHandler(bool success, const char *err) {
   if(success) {
     drawFWUpdateInfo(&display, getStr(s_Update_successful), getStr(s_Update_restart_in));
     delay(1000);
-    drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
-    Serial.println(F("restarting"));
-    station.end();
-    ESP.restart();
+    fwUploadFinishedHandler();
   } else {
     drawFWUpdateInfo(&display, getStr(s_Update_failed),  err);
     delay(3000);
   }
+}
+
+// Finished upload firmware via web
+void fwUploadFinishedHandler() {
+  drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
+  Serial.println(F("restarting"));
+  station.end();
+  ESP.restart();
 }
