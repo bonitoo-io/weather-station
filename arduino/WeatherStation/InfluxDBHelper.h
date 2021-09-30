@@ -7,9 +7,14 @@
 #include <InfluxDbClient.h>
 #include "Validation.h"
 
+#define INFLUXDB_DEFAULT_SERVER_URL ""
+#define INFLUXDB_DEFAULT_ORG ""
 #define INFLUXDB_DEFAULT_BUCKET F("iot_center")
+#define INFLUXDB_DEFAULT_TOKEN ""
 #define INFLUXDB_DEFAULT_WRITE_INTERVAL 1
 #define INFLUXDB_SETTINGS_ENDPOINT_PATH "/api/influxDbSettings" //Cannot be FlashString
+
+#include "custom_dev.h"
 
 class InfluxDBSettings : public Settings {
  public:

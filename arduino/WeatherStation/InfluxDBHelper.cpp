@@ -150,9 +150,11 @@ void printInfluxDBettings(String prefix, InfluxDBSettings *s) {
 }
  
 InfluxDBSettings::InfluxDBSettings():
+  serverURL(INFLUXDB_DEFAULT_SERVER_URL),
+  authorizationToken(INFLUXDB_DEFAULT_TOKEN),
+  org(INFLUXDB_DEFAULT_ORG),
   bucket(INFLUXDB_DEFAULT_BUCKET),
   writeInterval(INFLUXDB_DEFAULT_WRITE_INTERVAL) {
-
 }
 
 int InfluxDBSettings::save(JsonObject& root) {

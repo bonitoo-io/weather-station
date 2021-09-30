@@ -103,6 +103,12 @@ bool bForceUpdate = false;
 void setup() {
   // Prepare serial port
   Serial.begin(74880);
+    //Initialize OLED
+  display.init();
+  display.clear();
+  display.display();
+  delay(1000);
+
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
@@ -111,11 +117,6 @@ void setup() {
   if(ESP.getResetInfoPtr()->reason != REASON_DEEP_SLEEP_AWAKE) {
     resetReason = ESP.getResetReason();
   }
-
-  //Initialize OLED
-  display.init();
-  display.clear();
-  display.display();
 
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
