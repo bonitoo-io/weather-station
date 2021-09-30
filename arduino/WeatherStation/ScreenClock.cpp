@@ -4,7 +4,7 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
-void updateClock( bool firstStart, int utc_offset, const String ntp) {
+bool updateClock( bool firstStart, int utc_offset, const String &ntp) {
   //Convert ntp comma separated list to array
   char ntpbuff[50];
   char *ntparr[3];
@@ -31,6 +31,7 @@ void updateClock( bool firstStart, int utc_offset, const String ntp) {
     Serial.print(F("Synchronized time: "));
     Serial.println(ctime(&now));
   }
+  return time(nullptr) > 1000000000ul;
 }
 
 

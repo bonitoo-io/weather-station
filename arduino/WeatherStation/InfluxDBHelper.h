@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include <InfluxDbClient.h>
 #include "Validation.h"
+#include "ServiceState.h"
 
 #define INFLUXDB_DEFAULT_SERVER_URL ""
 #define INFLUXDB_DEFAULT_ORG ""
@@ -42,7 +43,9 @@ class InfluxDBHelper {
   }
   void begin( InfluxDBSettings *settings);
   void update( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location, bool metric);
-  void writeStatus(const String &resetReason);
+  void registerResetInfo(const String &resetReason, ServicesStatusTracker *servicesTracker);
+  void writeResetInfo();
+  void writeStatus(ServicesStatusTracker *servicesTracker);
   void write( float temp, float hum, const float lat, const float lon);
   void loadTempHistory(const String &deviceID, bool metric);
   void release();
@@ -52,6 +55,7 @@ private:
   InfluxDBSettings *_settings = nullptr;
   InfluxDBClient *_client = nullptr;
   Point _sensor; // Data point
+  Point *_pResetInfo = nullptr;
 };
 
 

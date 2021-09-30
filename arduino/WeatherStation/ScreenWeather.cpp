@@ -18,7 +18,7 @@ int getCurrentWeatherTemperature() {
 }
 
 
-void updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey) {
+bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapCurrent currentWeatherClient;
   OpenWeatherMapCurrentData _currentWeather;
   currentWeatherClient.setMetric(pRegionalSettings->useMetricUnits);
@@ -27,7 +27,7 @@ void updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
   if (isnan(_currentWeather.temp)) {
     currentWeather.temp =  0xffff;
-    return;  
+    return false;  
   }
   
   currentWeather.temp =  round( _currentWeather.temp);
@@ -38,10 +38,11 @@ void updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   currentWeather.iconMeteoCon = _currentWeather.iconMeteoCon;
   currentWeather.sunrise = _currentWeather.sunrise;
   currentWeather.sunset = _currentWeather.sunset;
+  return true;
 }
 
 
-void updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) {
+bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
   _forecasts[0].temp = NAN;
@@ -53,7 +54,7 @@ void updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
 
   if (isnan(_forecasts[0].temp)) {
     forecasts[0].temp = 0xffff;
-    return;
+    return false;
   }
 
   for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
@@ -63,6 +64,7 @@ void updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
     forecasts[i].windDeg = round( _forecasts[i].windDeg);
     forecasts[i].windSpeed = round( _forecasts[i].windSpeed);
   }
+  return true;
 }
 
 void forecastError( OLEDDisplay *display, int16_t x, int16_t y) {

@@ -70,7 +70,7 @@ void InfluxDBHelper::write( float temp, float hum, const float lat, const float 
   }
 }
 
-void InfluxDBHelper::writeStatus(const String &resetReason) {
+void InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
   if(!_client || !_client->getServerUrl().length()) {
     return;
   }
@@ -79,18 +79,55 @@ void InfluxDBHelper::writeStatus(const String &resetReason) {
   status.addTag(F("clientId"), getDeviceID());
   status.addTag(F("device"), String(F("WS-ESP8266")));
   status.addTag(F("version"), VERSION);
-  if(resetReason.length()) {
-    status.addTag(F("reset_reason"), resetReason);
-  }
   status.addField(F("free_heap"), ESP.getFreeHeap());
   status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
   status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   status.addField(F("uptime"), millis()/1000.0);
+  servicesTracker->toPoint(&status);
   Serial.print(F("Writing status: "));
   Serial.println(_client->pointToLineProtocol(status));
   if (!_client->writePoint(status)) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
+  }
+  if(_pResetInfo) {
+    writeResetInfo();
+  }
+}
+
+void InfluxDBHelper::registerResetInfo(const String &resetReason, ServicesStatusTracker *servicesTracker) {
+  if(_pResetInfo) {
+    delete _pResetInfo;
+  }
+  _pResetInfo = new Point("device_status");
+  _pResetInfo->addTag(F("clientId"), getDeviceID());
+  _pResetInfo->addTag(F("device"), String(F("WS-ESP8266")));
+  _pResetInfo->addTag(F("version"), VERSION);
+  _pResetInfo->addTag(F("reset_reason"), resetReason);
+  _pResetInfo->addField(F("free_heap"), ESP.getFreeHeap());
+  _pResetInfo->addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
+  _pResetInfo->addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
+  for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
+    ServiceStatistic &stat = servicesTracker->getServiceStatics((SyncServices)i);
+    if(stat.state == ServiceState::SyncStarted) {
+      _pResetInfo->addTag(F("crashed"), getServiceName((SyncServices)i));
+      servicesTracker->serviceStatisticToPoint((SyncServices)i, _pResetInfo);
+    }
+  }
+}
+
+void InfluxDBHelper::writeResetInfo() {
+  if(!_client || !_client->getServerUrl().length() || !_pResetInfo) {
+    return;
+  }
+  Serial.print(F("Writing reset info: "));
+  Serial.println(_client->pointToLineProtocol(*_pResetInfo));
+  if (!_client->writePoint(*_pResetInfo)) {
+    Serial.print(F("InfluxDB write failed: "));
+    Serial.println(_client->getLastErrorMessage());
+  } else {
+    delete _pResetInfo;
+    _pResetInfo = nullptr;
   }
 }
 

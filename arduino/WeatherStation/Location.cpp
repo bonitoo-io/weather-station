@@ -62,8 +62,8 @@ bool findCountry( const char* country, const char* list) {
   return false;
 }
 
-bool detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings) {
-  bool changed = false;
+// Returns 0 in case of failure, 1- ok, city not changed, 2 - ok, city changed
+int detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings) {
   BearSSL::WiFiClientSecure client;
   HTTPClient http;
   tIPListener ipListener;
@@ -91,7 +91,7 @@ bool detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings)
   }
   http.end();
   if (httpCode != HTTP_CODE_OK)
-    return false;
+    return 0;
 
   //Process utc_offset
   bool minus = ipListener.utc_offset.charAt(0) == '-';
@@ -105,10 +105,12 @@ bool detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings)
   if (minus)
     utc_offset = -utc_offset;
   
+  bool changed = false;
   if (!firstStart && (pRegionalSettings->utcOffset != utc_offset)) { //if utc offset is changed during refresh
     Serial.print( F("UTC offset changed from "));
     Serial.println( String(pRegionalSettings->utcOffset) + String(F( " to ")) + String(utc_offset));
     pRegionalSettings->utcOffset = utc_offset;
+    changed = true;
   }
 
   //Return other detected location values
@@ -140,5 +142,5 @@ bool detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings)
     pRegionalSettings->useYMDFormat = findCountry(country.c_str(), CountriesDateYMD);
     changed = true;
   }
-  return changed;
+  return changed?2:1;
 }
