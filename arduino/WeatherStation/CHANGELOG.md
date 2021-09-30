@@ -1,11 +1,19 @@
 # Changelog
-## 0.56 [in progress]
+## 0.56 [2021-09-30]
  - Improved WiFi setting wizard
    - Improved on-screen instruction
-   - Initial landing page in WiFi is not working is WiFi Scanner
+   - Initial landing page when WiFi is not working is WiFi Scanner
+   - WiFi signal strength is shown in percents
  - Added readme with user guide
- - Smoother icon
- 
+ - Smoother app icon
+ - Added Updater Settings
+ - Added WiFi network management
+   - Each connected network is remembered
+ - Added Regional Settings
+   - Possibility to disable location detection
+   - Manual setting of regional parameters
+ - Allowing upload firmware via web interface
+  
 ## 0.55
  - Added validation of WiFi params during initial configuration
  - Simplified on screen setup instructions
