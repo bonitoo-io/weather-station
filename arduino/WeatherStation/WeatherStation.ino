@@ -333,6 +333,7 @@ void loop() {
           } else {
             servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
           }
+          servicesTracker.save();
           station.startServer();
           influxdbHelper.begin(station.getInfluxDBSettings());
           // update status of updater service, which runs only once
@@ -354,6 +355,7 @@ void loop() {
         } else {
           servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
         }
+        servicesTracker.save();
         digitalWrite( LED, HIGH);
       }
 
