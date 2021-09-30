@@ -3,12 +3,12 @@ import React, { Component } from 'react';
 import {restController, RestControllerProps, RestFormLoader, SectionContent } from '../components';
 import { ABOUT_INFO_ENDPOINT } from '../api';
 
-import AboutPage from './AboutPage';
+import StatusPage from './StatusPage';
 import { AboutInfo } from './types';
 
-type AboutProps = RestControllerProps<AboutInfo>;
+type StatusProps = RestControllerProps<AboutInfo>;
 
-class AboutController extends Component<AboutProps> {
+class StatusController extends Component<StatusProps> {
 
   componentDidMount() {
     this.props.loadData();
@@ -16,10 +16,10 @@ class AboutController extends Component<AboutProps> {
 
   render() {
     return (
-      <SectionContent title="About Weather Station">
+      <SectionContent title="Weather Station Status">
         <RestFormLoader
           {...this.props}
-          render={formProps => <AboutPage {...formProps} />}
+          render={formProps => <StatusPage {...formProps} />}
         />
       </SectionContent>
     );
@@ -27,4 +27,4 @@ class AboutController extends Component<AboutProps> {
 
 }
 
-export default restController(ABOUT_INFO_ENDPOINT, AboutController);
+export default restController(ABOUT_INFO_ENDPOINT, StatusController);

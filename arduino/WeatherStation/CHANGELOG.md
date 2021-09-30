@@ -1,4 +1,8 @@
 # Changelog
+## 0.57 [in progress]
+ - Split Status page to About and Status 
+   - Added automatic refresh to Status page
+
 ## 0.56 [2021-09-30]
  - Improved WiFi setting wizard
    - Improved on-screen instruction
