@@ -150,6 +150,7 @@ void setup() {
       refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
     }
   });
+  setLanguage( pRegionalSettings->language.c_str());  
   refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
   WS_DEBUG_RAM("Setup 3");
 }
