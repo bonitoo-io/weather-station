@@ -51,6 +51,12 @@ class ProgmemGenerator {
             writeStream.write(includes);
           }
 
+          const writeVariables = () => {
+            writeStream.write('\n')
+            writeStream.write('const char *htmlBuildTime = __DATE__ " " __TIME__;\n')
+            writeStream.write('\n')
+          }
+
           const writeFile = (relativeFilePath, buffer) => {
             const variable = "ESP_REACT_DATA_" + fileInfo.length;
             const mimeType = mime.lookup(relativeFilePath);
@@ -110,6 +116,7 @@ ${indent.repeat(2)}}
 
           writeHeader();
           writeIncludes();
+          writeVariables();
           writeFiles();
           writeWWWClass();
 
