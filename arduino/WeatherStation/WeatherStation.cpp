@@ -87,12 +87,21 @@ void WeatherStation::end() {
         ArRequestHandlerFunction requestHandler = [uri,contentType, content, len](AsyncWebServerRequest* request) {
           Serial.print(F("Serving "));
           Serial.print(uri);
+          Serial.print(F(" of len "));
+          Serial.print(len);
           uint32_t s = millis();
-          AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
-          response->addHeader(F("Content-Encoding"), F("gzip"));
-          request->send(response);
+          if (request->header("If-Modified-Since").equals(htmlBuildTime)) {
+            // send not modified
+            request->send(304);
+          } else {
+            AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
+            response->addHeader(F("Content-Encoding"), F("gzip"));
+            response->addHeader(F("Last-Modified"), htmlBuildTime);
+            request->send(response);
+          }
           Serial.print(F(" in "));
-          Serial.println(millis()-s);
+          Serial.print(millis()-s);
+          Serial.println(F("ms"));
           WS_DEBUG_RAM("  RAM");
         };
         _server->on(uri.c_str(), HTTP_GET, requestHandler);

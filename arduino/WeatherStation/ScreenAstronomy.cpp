@@ -11,7 +11,7 @@ time_t moonSet;
 uint8_t moonPhase;
 char moonAgeImage;
 
-void updateAstronomy(bool firstStart, const float lat, const float lon) {
+bool updateAstronomy(bool firstStart, const float lat, const float lon) {
   // 'now' has to be UTC, lat/lng in degrees not raadians
   SunMoonCalc smCalc = SunMoonCalc(time(nullptr), lat, lon);
   SunMoonCalc::Result sunMoonData = smCalc.calculateSunAndMoonData();
@@ -24,6 +24,7 @@ void updateAstronomy(bool firstStart, const float lat, const float lon) {
     currentWeather.sunrise = sunMoonData.sun.rise;
     currentWeather.sunset = sunMoonData.sun.set;
   }
+  return true;
 }
 
 
