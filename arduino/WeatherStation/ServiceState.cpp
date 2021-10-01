@@ -61,25 +61,26 @@ void ServicesStatusTracker::reset() {
   }
 }
 
-void ServicesStatusTracker::toPoint(Point *point) {
-  for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
-      serviceStatisticToPoint((SyncServices)i, point);
+
+void ServicesStatusTracker::serviceStatisticToPoint(SyncServices service, Point *point) {
+  point->addField(F("state"),(uint8_t) _statistics.services[service].state);
+  if(_statistics.services[service].state != ServiceState::NotRun) {
+    point->addField(F("before_mem_free"), _statistics.services[service].memBefore.freeMem);
+    point->addField(F("before_mem_max_free_block"), _statistics.services[service].memBefore.maxFreeBlock);
+    point->addField(F("before_mem_framentation"), _statistics.services[service].memBefore.heapFragmentation);
+    if(_statistics.services[service].state != ServiceState::SyncStarted) {
+      point->addField(F("after_mem_free"), _statistics.services[service].memAfter.freeMem);
+      point->addField(F("after_mem_max_free_block"), _statistics.services[service].memAfter.maxFreeBlock);
+      point->addField(F("after_mem_framentation"), _statistics.services[service].memAfter.heapFragmentation);
+    }
   }
 }
 
-void ServicesStatusTracker::serviceStatisticToPoint(SyncServices service, Point *point) {
-  const __FlashStringHelper *serviceName = FPSTR(getServiceName(service));
-  point->addField(String(serviceName)+F("_state"),(uint8_t) _statistics.services[service].state);
-  if(_statistics.services[service].state != ServiceState::NotRun) {
-    point->addField(String(serviceName)+F("_before_mem_free"), _statistics.services[service].memBefore.freeMem);
-    point->addField(String(serviceName)+F("_before_mem_max_free_block"), _statistics.services[service].memBefore.maxFreeBlock);
-    point->addField(String(serviceName)+F("_before_mem_framentation"), _statistics.services[service].memBefore.heapFragmentation);
-    if(_statistics.services[service].state != ServiceState::SyncStarted) {
-      point->addField(String(serviceName)+F("_after_mem_free"), _statistics.services[service].memAfter.freeMem);
-      point->addField(String(serviceName)+F("_after_mem_max_free_block"), _statistics.services[service].memAfter.maxFreeBlock);
-      point->addField(String(serviceName)+F("_after_mem_framentation"), _statistics.services[service].memAfter.heapFragmentation);
-    }
-  }
+Point *ServicesStatusTracker::serviceStatisticToPoint(SyncServices service) {
+  Point *point = new Point(F("service_status"));
+  point->addTag(F("service"), String(FPSTR(getServiceName(service))));
+  serviceStatisticToPoint(service, point);
+  return point;
 }
 
 void ServicesStatusTracker::printStatistics() {

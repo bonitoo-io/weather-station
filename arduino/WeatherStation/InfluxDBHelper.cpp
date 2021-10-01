@@ -32,12 +32,18 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   if(!_client || !_client->getServerUrl().length()) {
     return;
   }
+  
+  WriteOptions wo;
+  uint16_t batchSize = SyncServices::ServiceLastMark+3;
+  wo.batchSize(batchSize).bufferSize(batchSize*4);
+  wo.addDefaultTag(String(F("clientId")), deviceID);
+  wo.addDefaultTag(String(F("Device")), String(F("WS-ESP8266")));
+  wo.addDefaultTag(String(F("Version")), version);
+  wo.addDefaultTag(String(F("Location")), location);
+  wo.addDefaultTag(String(F("WiFi")), wifi);
+  _client->setWriteOptions(wo);
+
   _sensor.clearTags();
-  _sensor.addTag(String(F("clientId")), deviceID);
-  _sensor.addTag(String(F("Device")), String(F("WS-ESP8266")));
-  _sensor.addTag(String(F("Version")), version);
-  _sensor.addTag(String(F("Location")), location);
-  _sensor.addTag(String(F("WiFi")), wifi);
   _sensor.addTag(String(F("TemperatureSensor")), String(F("DHT11")));
   _sensor.addTag(String(F("HumiditySensor")), String(F("DHT11")));
   _sensor.addTag(String(F("TemperatureUnit")), String(F("C")));
@@ -62,9 +68,9 @@ void InfluxDBHelper::write( float temp, float hum, const float lat, const float 
    // Print what are we exactly writing
   Serial.print(F("Writing: "));
   Serial.println(_client->pointToLineProtocol(_sensor));
-
+  _client->writePoint(_sensor);
   // Write point
-  if (!_client->writePoint(_sensor)) {
+  if (!_client->flushBuffer()) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
   }
@@ -76,22 +82,30 @@ void InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
   }
 
   Point status("device_status");
-  status.addTag(F("clientId"), getDeviceID());
-  status.addTag(F("device"), String(F("WS-ESP8266")));
-  status.addTag(F("version"), VERSION);
   status.addField(F("free_heap"), ESP.getFreeHeap());
   status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
   status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   status.addField(F("uptime"), millis()/1000.0);
-  servicesTracker->toPoint(&status);
-  Serial.print(F("Writing status: "));
+  
+  Serial.print(F("Writing device status: "));
   Serial.println(_client->pointToLineProtocol(status));
-  if (!_client->writePoint(status)) {
-    Serial.print(F("InfluxDB write failed: "));
-    Serial.println(_client->getLastErrorMessage());
+  _client->writePoint(status);
+
+  for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
+    Point *point = servicesTracker->serviceStatisticToPoint((SyncServices)i);
+    Serial.print(F("Writing service status: "));
+    Serial.println(_client->pointToLineProtocol(*point));
+    _client->writePoint(*point);
+    delete point;
   }
+
   if(_pResetInfo) {
     writeResetInfo();
+  }
+
+  if (!_client->flushBuffer()) {
+    Serial.print(F("InfluxDB write failed: "));
+    Serial.println(_client->getLastErrorMessage());
   }
 }
 
@@ -100,9 +114,6 @@ void InfluxDBHelper::registerResetInfo(const String &resetReason, ServicesStatus
     delete _pResetInfo;
   }
   _pResetInfo = new Point("device_status");
-  _pResetInfo->addTag(F("clientId"), getDeviceID());
-  _pResetInfo->addTag(F("device"), String(F("WS-ESP8266")));
-  _pResetInfo->addTag(F("version"), VERSION);
   _pResetInfo->addTag(F("reset_reason"), resetReason);
   _pResetInfo->addField(F("free_heap"), ESP.getFreeHeap());
   _pResetInfo->addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());

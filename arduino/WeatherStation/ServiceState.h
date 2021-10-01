@@ -52,9 +52,8 @@ class ServicesStatusTracker {
   void save(bool print = false);
   // Reset all values to initial
   void reset();
-  // Store values to line protocol
-  void toPoint(Point *point);
   void serviceStatisticToPoint(SyncServices service, Point *point);
+  Point *serviceStatisticToPoint(SyncServices service);
   void printStatistics();
   ServiceStatistic& getServiceStatics(SyncServices service) { return _statistics.services[service]; }
 private:
