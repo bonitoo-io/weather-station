@@ -30,6 +30,7 @@ type StatusPageProps = RestFormProps<AboutInfo> & WithTheme;
 
 const DAY = 24*3600 
 const HOUR = 3600 
+const REFRESH_FREQUENCY = 30000
 
 function formatUptime(num: number) {
   let uptime: string = ''
@@ -87,8 +88,6 @@ function appStatus(data: AboutInfo) {
   }
 }
 
-const REFRESH_FREQUENCY = 30000
-
 class StatusPage extends Component<StatusPageProps, StatusPageState> {
 
   state: StatusPageState = {
@@ -97,8 +96,16 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
     processing: false
   }
 
+  timerId: NodeJS.Timeout | undefined;
+
   componentDidMount = () => {
-    this.scheduleRefresh()
+    this.timerId = setInterval(this.refresh, REFRESH_FREQUENCY)
+  }
+
+  componentWillUnmount = () => {
+    if(this.timerId) {
+      clearInterval(this.timerId);
+    }
   }
 
   createListItems() {
@@ -294,11 +301,6 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
 
   refresh = () => {
     this.props.loadData()
-    this.scheduleRefresh()
-  }
-
-  scheduleRefresh() {
-    setTimeout(this.refresh, REFRESH_FREQUENCY);
   }
 
 }
