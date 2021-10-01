@@ -14,7 +14,7 @@ const styles = makeStyles(
     siteErrorPagePanel: {
       textAlign: "center",
       padding: "280px 0 40px 0",
-      backgroundImage: 'url("/app/icon.png")',
+      backgroundImage: 'url("/app/icon.svg")',
       backgroundRepeat: "no-repeat",
       backgroundPosition: "50% 40px",
       backgroundSize: "200px auto",
