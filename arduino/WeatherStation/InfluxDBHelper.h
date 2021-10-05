@@ -28,6 +28,7 @@ class InfluxDBSettings : public Settings {
   InfluxDBSettings();
   virtual int save(JsonObject& root) override;
   virtual int load(JsonObject& root) override;
+  virtual void print(const __FlashStringHelper *title) override;
   virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/influxDbSettings.json"); }  
 };
 
@@ -44,18 +45,22 @@ class InfluxDBHelper {
   void begin( InfluxDBSettings *settings);
   void update( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location, bool metric);
   void registerResetInfo(const String &resetReason, ServicesStatusTracker *servicesTracker);
-  void writeResetInfo();
-  void writeStatus(ServicesStatusTracker *servicesTracker);
-  void write( float temp, float hum, const float lat, const float lon);
-  void loadTempHistory(const String &deviceID, bool metric);
-  void release();
+  bool writeResetInfo();
+  bool writeStatus(ServicesStatusTracker *servicesTracker);
+  bool write( float temp, float hum, const float lat, const float lon);
+  bool loadTempHistory(const String &deviceID, bool metric);
+  bool release();
   String validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken);
   InfluxDBSettings *settings() { return _settings; }
+  bool wasReleased() const { return _wasReleased; }
 private:
   InfluxDBSettings *_settings = nullptr;
   InfluxDBClient *_client = nullptr;
   Point _sensor; // Data point
   Point *_pResetInfo = nullptr;
+  bool _wasReleased = false;
+  // simple sync mechanism
+  volatile uint8_t _lock = 0;
 };
 
 

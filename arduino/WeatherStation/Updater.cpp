@@ -56,18 +56,6 @@ bool Updater::checkUpdate() {
   return res;
 }
 
-void printUpdaterSettings(String prefix, UpdaterSettings *s) {
-    Serial.print(prefix);
-    Serial.print(F(" owner: "));Serial.print(s->owner);
-    Serial.print(F(", repo: "));Serial.print(s->repo);
-    Serial.print(F(", binFile: "));Serial.print(s->binFile);
-    Serial.print(F(", md5File: "));Serial.print(s->md5File);
-    Serial.print(F(", updateTime: "));Serial.print(s->updateTime);
-    Serial.print(F(", checkBeta: "));Serial.print(s->checkBeta);
-    Serial.print(F(", verifyCert: "));Serial.print(s->verifyCert);
-    Serial.println();
-}
-
 UpdaterSettings::UpdaterSettings():
   owner(UPDATER_DEFAULT_OWNER),
   repo(UPDATER_DEFAULT_REPO),
@@ -78,16 +66,28 @@ UpdaterSettings::UpdaterSettings():
   verifyCert(UPDATER_DEFAULT_VERIFY_CERT) {
 }
 
+void UpdaterSettings::print(const __FlashStringHelper *title) {
+  Serial.print(title);
+  Serial.print(F(" owner: "));Serial.print(owner);
+  Serial.print(F(", repo: "));Serial.print(repo);
+  Serial.print(F(", binFile: "));Serial.print(binFile);
+  Serial.print(F(", md5File: "));Serial.print(md5File);
+  Serial.print(F(", updateTime: "));Serial.print(updateTime);
+  Serial.print(F(", checkBeta: "));Serial.print(checkBeta);
+  Serial.print(F(", verifyCert: "));Serial.print(verifyCert);
+  Serial.println();
+}
+
 int UpdaterSettings::save(JsonObject& root) {
-    root[F("owner")] = owner;
-    root[F("repo")] = repo;
-    root[F("binFile")] = binFile;
-    root[F("md5File")] = md5File;
-    root[F("updateTime")] = updateTime;
-    root[F("checkBeta")] = checkBeta;
-    root[F("verifyCert")] = verifyCert;
-    printUpdaterSettings(F("UpdaterSettings::Save"), this);
-    return 0;
+  root[F("owner")] = owner;
+  root[F("repo")] = repo;
+  root[F("binFile")] = binFile;
+  root[F("md5File")] = md5File;
+  root[F("updateTime")] = updateTime;
+  root[F("checkBeta")] = checkBeta;
+  root[F("verifyCert")] = verifyCert;
+  print(F("UpdaterSettings::Save"));
+  return 0;
 }
 
 int UpdaterSettings::load(JsonObject& root) {
@@ -98,7 +98,7 @@ int UpdaterSettings::load(JsonObject& root) {
     updateTime = root[F("updateTime")];
     checkBeta = root[F("checkBeta")];
     verifyCert = root[F("verifyCert")] | UPDATER_DEFAULT_VERIFY_CERT;
-    printUpdaterSettings(F("UpdaterSettings::Load"), this);
+    print(F("UpdaterSettings::Load"));
     return 1;
 }
 

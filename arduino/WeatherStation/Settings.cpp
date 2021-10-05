@@ -42,7 +42,22 @@ void SettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVarian
     AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
     jsonObject = response->getRoot().to<JsonObject>();
     _pSettings->save(jsonObject);
+    if(_fetchManipulator) {
+        _fetchManipulator(_pSettings, jsonObject);
+    }
     request->onDisconnect([this]() { _pSettings->notify(); });
     response->setLength();
     request->send(response);
+}
+
+
+const char *ReplaceMark = "******";
+
+String obfuscateToken(const String &token, int cut) {
+  String authToken;
+  authToken.reserve(strlen(ReplaceMark)+cut*2+1);
+  authToken = token.substring(0,cut);
+  authToken += ReplaceMark;
+  authToken += token.substring(token.length()-cut);
+  return authToken;
 }

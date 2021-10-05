@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 
 import { CssBaseline } from '@material-ui/core';
-import { MuiThemeProvider, createMuiTheme, StylesProvider } from '@material-ui/core/styles';
+import { MuiThemeProvider, createTheme, StylesProvider } from '@material-ui/core/styles';
 import { blueGrey, indigo, orange, red, green } from '@material-ui/core/colors';
 
-const theme = createMuiTheme({
+const theme = createTheme({
   palette: {
     primary: indigo,
     secondary: blueGrey,

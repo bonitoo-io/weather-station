@@ -4,17 +4,17 @@
 const char *StringSSID PROGMEM = "ssid";
 const char *StringPassword PROGMEM = "password";
 
-void printWifiSettings(String prefix, WiFiSettings *s) {
-    Serial.print(prefix);
-    Serial.print(F(" ssid: "));Serial.print(s->ssid);
-    //Serial.print(F(", password: "));Serial.print(s->password);
-    Serial.print(F(", hostname: "));Serial.print(s->hostname);
-    Serial.print(F(", static_ip_config: "));Serial.print(s->staticIPConfig);
-    Serial.print(F(", local_ip: "));Serial.print(s->localIP);
-    Serial.print(F(", gateway_ip: "));Serial.print(s->gatewayIP);
-    Serial.print(F(", subnet_mask: "));Serial.print(s->subnetMask);
-    Serial.print(F(", dns_ip_1: "));Serial.print(s->dnsIP1);
-    Serial.print(F(", dns_ip_2: "));Serial.print(s->dnsIP2);
+void WiFiSettings::print(const __FlashStringHelper *title) {
+    Serial.print(title);
+    Serial.print(F(" ssid: "));Serial.print(ssid);
+    //Serial.print(F(", password: "));Serial.print(password);
+    Serial.print(F(", hostname: "));Serial.print(hostname);
+    Serial.print(F(", static_ip_config: "));Serial.print(staticIPConfig);
+    Serial.print(F(", local_ip: "));Serial.print(localIP);
+    Serial.print(F(", gateway_ip: "));Serial.print(gatewayIP);
+    Serial.print(F(", subnet_mask: "));Serial.print(subnetMask);
+    Serial.print(F(", dns_ip_1: "));Serial.print(dnsIP1);
+    Serial.print(F(", dns_ip_2: "));Serial.print(dnsIP2);
     Serial.println();
 }
 
@@ -50,7 +50,7 @@ int WiFiSettings::save(JsonObject& root) {
     writeIP(root, F("subnet_mask"), subnetMask);
     writeIP(root, F("dns_ip_1"), dnsIP1);
     writeIP(root, F("dns_ip_2"), dnsIP2);
-    printWifiSettings("Save WiFi settings", this);
+    print(F("Save WiFi settings"));
     return 0;
 }
 
@@ -77,7 +77,7 @@ int WiFiSettings::load(JsonObject& root) {
   if (staticIPConfig && (!isIPSet(localIP) || !isIPSet(gatewayIP) || !isIPSet(subnetMask))) {
     staticIPConfig = false;
   }
-  printWifiSettings("Load WiFi settings", this);
+  print(F("Load WiFi settings"));
   return 1;
 }
 
@@ -85,17 +85,17 @@ int WiFiSettings::load(JsonObject& root) {
 WiFiSettingsEndpoint::WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, Settings *pSettings):
     SettingsEndpoint(pServer, WIFI_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
-      //WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
-      // if(wifiSettings->password.length()>4) {
-      //   jsonObject[FPSTR(StringPassword)] = obfuscateToken((wifiSettings->password);
-      // }
+      WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
+      if(wifiSettings->password.length()>2) {
+        jsonObject[FPSTR(StringPassword)] = obfuscateToken(wifiSettings->password, 2);
+      }
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
       const char *ssid = jsonObject[FPSTR(StringSSID)].as<const char *>();
       wifiSettings->setFilePath(String(F(WIFI_CONFIG_DIRECTORY "/")) + ssid);
-      // const char *pass = jsonObject[FPSTR(StringPassword)].as<const char *>();
-      // if(strchr(pass,'*')) {
-      //   jsonObject[FPSTR(StringPassword)] = wifiSettings->password;
-      // }
+      const char *pass = jsonObject[FPSTR(StringPassword)].as<const char *>();
+      if(strstr(pass, ReplaceMark)) {
+        jsonObject[FPSTR(StringPassword)] = wifiSettings->password;
+      }
     }) {}
 

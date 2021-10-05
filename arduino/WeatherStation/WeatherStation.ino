@@ -13,6 +13,7 @@
 #include "Debug.h"
 #include "Version.h"
 #include "ServiceState.h"
+#include "ScreenCommon.h"
 
 /***************************
  * Begin Settings
@@ -38,11 +39,11 @@
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
 tConfig conf = {
-  60,   //updateDataMin
-  OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
-  "pool.ntp.org,time.nis.gov,time.google.com", //ntp
-  0,  //tempOffset
-  0,  //humOffset
+//  60,   //updateDataMin
+//  OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
+//  "pool.ntp.org,time.nis.gov,time.google.com", //ntp
+//  0,  //tempOffset
+//  0,  //humOffset
   
   IOT_CENTER_URL, //iotCenterUrl 
   60             //iotRefreshMin
@@ -67,14 +68,7 @@ bool isAPRunning = false;
 bool initialized = false;
 String resetReason;
 
-//declaring prototypes
-void setupOLEDUI(OLEDDisplayUi *ui);
-void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
-void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
-void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
-void drawAPInfo(OLEDDisplay *display, APInfo *info);
-void drawFWUpdateInfo(OLEDDisplay *display, const String &fistLine, const String &secondLine);
-void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent);
+
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -84,15 +78,13 @@ bool updateAstronomy(bool firstStart, const float lat, const float lon);
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey);
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
 
-void showConfiguration(OLEDDisplay *display, int secToReset, const char* version, long lastUpdate, const char *deviceID, InfluxDBHelper *influxDBHelper);
-
 void initData() {
   if(!initialized && WiFi.isConnected() && !isAPRunning) {
     WS_DEBUG_RAM("InitData");
     updater.init(station.getUpdaterSettings(), VERSION);
     
     //Initialize OLED UI
-    setupOLEDUI(&ui);
+    initOLEDUI(&ui, station.getAdvancedSettings());
     if(resetReason.length()) {
       influxdbHelper.registerResetInfo(resetReason, &servicesTracker);
       resetReason = (char *)nullptr;
@@ -139,6 +131,21 @@ void setup() {
     updater.init(station.getUpdaterSettings(), VERSION);
   });
 
+  RegionalSettings *pRegionalSettings = station.getRegionalSettings();
+  pRegionalSettings->setHandler([pRegionalSettings](){
+    if(pRegionalSettings->detectAutomatically) {
+      bForceUpdate = true;
+    } else {
+      setLanguage( pRegionalSettings->language.c_str());  
+      refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
+    }
+  });
+
+  station.getAdvancedSettings()->setHandler([](){
+      configureUI(&ui, station.getAdvancedSettings());
+      bForceUpdate = true;
+  });
+
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
@@ -151,15 +158,6 @@ void setup() {
   digitalWrite( LED, HIGH);
   setupDHT();
 
-  RegionalSettings *pRegionalSettings = station.getRegionalSettings();
-  pRegionalSettings->setHandler([pRegionalSettings](){
-    if(pRegionalSettings->detectAutomatically) {
-      bForceUpdate = true;
-    } else {
-      setLanguage( pRegionalSettings->language.c_str());  
-      refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
-    }
-  });
   setLanguage( pRegionalSettings->language.c_str());  
   refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
   WS_DEBUG_RAM("Setup 3");
@@ -205,7 +203,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   drawUpdateProgress(display, 10, getStr(s_Updating_time));
   servicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncStarted);
   servicesTracker.save();
-  if(updateClock( firstStart, station.getRegionalSettings()->utcOffset, conf.ntp)) {
+  if(updateClock( firstStart, station.getRegionalSettings()->utcOffset, station.getAdvancedSettings()->ntpServers)) {
     servicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncOk);
   } else {
     servicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncFailed);
@@ -245,7 +243,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   drawUpdateProgress(display, 50, getStr(s_Updating_weather));
   servicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncStarted);
   servicesTracker.save();
-  if(updateCurrentWeather( station.getRegionalSettings(), conf.openweatherApiKey)) {
+  if(updateCurrentWeather( station.getRegionalSettings(), station.getAdvancedSettings()->openWeatherAPIKey)) {
     servicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncOk);
   } else {
     servicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncFailed);
@@ -263,7 +261,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   drawUpdateProgress(display, 70, getStr(s_Updating_forecasts));
   servicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncStarted);
   servicesTracker.save();
-  if(updateForecast(station.getRegionalSettings(), conf.openweatherApiKey)) {
+  if(updateForecast(station.getRegionalSettings(), station.getAdvancedSettings()->openWeatherAPIKey)) {
     servicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncOk);
   } else {
     servicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncFailed);
@@ -305,7 +303,7 @@ void loop() {
     initData();
   }
   // Ticker function - executed once per minute
-  if (ui.getUiState()->frameState == FIXED && (millis() - timeSinceLastUpdate >= 1000*60)) {
+  if (ui.getUiState()->frameState == FIXED && (millis() - timeSinceLastUpdate >= 1000*60) || bForceUpdate) {
     WS_DEBUG_RAM("Loop 1");
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
@@ -359,8 +357,12 @@ void loop() {
         digitalWrite( LED, HIGH);
       }
 
+      if(influxdbHelper.wasReleased()) {
+        influxdbHelper.begin(station.getInfluxDBSettings());
+      }
+
       //Update data?
-      if (lastUpdateMins % conf.updateDataMin == 0 || bForceUpdate) {
+      if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || bForceUpdate) {
         digitalWrite( LED, LOW);
         updateData(&display,false);
         digitalWrite( LED, HIGH);
@@ -388,7 +390,7 @@ void loop() {
       ui.nextFrame();   //jump to the next frame
     }
     if (loops > 4)
-      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (conf.updateDataMin - ((lastUpdateMins % conf.updateDataMin)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
+      showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (station.getAdvancedSettings()->updateDataInterval - ((lastUpdateMins % station.getAdvancedSettings()->updateDataInterval)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
 
     loops++;
     if (loops > 200) {  //factory reset after 20 seconds

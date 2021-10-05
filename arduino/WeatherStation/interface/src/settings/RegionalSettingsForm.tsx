@@ -10,7 +10,6 @@ import { RestFormProps, BlockFormControlLabel, FormActions, FormButton } from '.
 
 import { RegionalSettings, ValidationStatus, ValidationStatusResponse } from './types';
 import { REGIONAL_SETTINGS_VALIDATE_ENDPOINT } from '../api';
-//import { withStyles, WithStyles } from '@material-ui/styles';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 
 const NUM_POLLS = 20
@@ -39,6 +38,10 @@ interface RegionalSettingsFormState {
   errorMessage?: string;
 }
 
+const UTCOffsetErrorText = 'Must be a number between -50400 (-14 hours) and 50400 (+14 hours)'
+const LatitudeErrorText = 'Must be a number between -90 and 90'
+const LongitudeErrorText = 'Must be a number between -180 and 180'
+
 class RegionalSettingsForm extends Component<RegionalSettingsFormProps, RegionalSettingsFormState> {
 
   pollCount: number = 0;
@@ -59,6 +62,8 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
     this.saveData = saveData;
   }
 
+  
+
   render() {
     const { data, handleValueChange, classes}  = this.props;
     const { validatingParams } = this.state
@@ -69,7 +74,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
             <div className={classes.connectingSettings}>
               <LinearProgress className={classes.connectingSettingsDetails} />
               <Typography variant="h6" className={classes.connectingProgress}>
-                Connecting&hellip;
+                Validating&hellip;
               </Typography>
           </div>}
           <BlockFormControlLabel
@@ -112,7 +117,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
             </SelectValidator>
             <TextValidator
               validators={['required', 'isNumber', 'minNumber:-50400', 'maxNumber:50400']}
-              errorMessages={['UTC Offset is required', 'Must be a number between -50400 (-14 hours) and 50400 (+14 hours)']}
+              errorMessages={['UTC Offset is required', UTCOffsetErrorText, UTCOffsetErrorText, UTCOffsetErrorText]}
               name="utcOffset"
               label="UTC Offset (in seconds)"
               fullWidth
@@ -124,7 +129,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
             />
             <TextValidator
               validators={['required', 'isFloat', 'minFloat:-90', 'maxFloat:90']}
-              errorMessages={['Latitude', 'Must be a number between -90 and 90']}
+              errorMessages={['Latitude is required', LatitudeErrorText, LatitudeErrorText, LatitudeErrorText]}
               name="latitude"
               label="Latitude"
               fullWidth
@@ -136,7 +141,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
             />
             <TextValidator
               validators={['required', 'isFloat', 'minFloat:-180.0', 'maxFloat:180.0']}
-              errorMessages={['Longitude', 'Must be a number between -180 and 180']}
+              errorMessages={['Longitude is required', LongitudeErrorText, LongitudeErrorText, LongitudeErrorText ]}
               name="longitude"
               label="Longitude"
               fullWidth

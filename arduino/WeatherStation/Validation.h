@@ -4,6 +4,8 @@
 
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+#include "RegionalSettings.h"
+#include "AdvancedSettings.h"
 
 enum class ValidationStatus {
   Idle = 0,
@@ -32,5 +34,29 @@ protected:
     String _error;
 };
 
+
+class RegionalSettingsValidateEndpoint : public ValidateParamsEndpoint {
+public:
+    RegionalSettingsValidateEndpoint(AsyncWebServer* server, AdvancedSettings *pAdvSetting);
+    virtual ~RegionalSettingsValidateEndpoint() { delete _pSettings; }
+protected:
+  virtual void saveParams(JsonVariant& json) override;
+  virtual void runValidation() override;
+private:
+  AdvancedSettings *_pAdvSetting;
+  RegionalSettings *_pSettings = nullptr;
+};
+
+class AdvancedSettingsValidateEndpoint : public ValidateParamsEndpoint {
+public:
+    AdvancedSettingsValidateEndpoint(AsyncWebServer* server, RegionalSettings *pRegSetting);
+    virtual ~AdvancedSettingsValidateEndpoint() { delete _pSettings; }
+protected:
+  virtual void saveParams(JsonVariant& json) override;
+  virtual void runValidation() override;
+private:
+  AdvancedSettings *_pSettings = nullptr;
+  RegionalSettings *_pRegSettings;
+};
 
 #endif // WS_VALIDATION_HELPER_H

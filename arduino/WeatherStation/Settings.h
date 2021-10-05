@@ -19,6 +19,7 @@ public:
     virtual ~Settings() {};
     virtual int save(JsonObject& root) = 0;
     virtual int load(JsonObject& root) = 0;
+    virtual void print(const __FlashStringHelper *title) = 0;
     virtual String getFilePath() = 0;
     void setHandler(UpdateNotificationHandler handler) { _handler = handler; }
     void notify() { if(_handler) _handler(); }
@@ -32,6 +33,7 @@ class SettingsEndpoint {
 public:
     SettingsEndpoint(AsyncWebServer* pServer, const char *endpointPath, FSPersistence *pPersistence, 
         Settings *pSettings, DataManipulator fetchManipulator = nullptr, DataManipulator updateManipulator = nullptr);
+    virtual ~SettingsEndpoint() {};
 protected:
     virtual void fetchSettings(AsyncWebServerRequest* request);
     virtual void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
@@ -41,5 +43,9 @@ protected:
     DataManipulator _fetchManipulator;
     DataManipulator _updateManipulator;
 };
+
+extern const char *ReplaceMark;
+// Obfuscates at least 4 letters long token by placing ReplaceMark after first 4 chars and adds last 4 chars of the token
+String obfuscateToken(const String &token, int cut = 4);
 
 #endif //SETTINGS_H

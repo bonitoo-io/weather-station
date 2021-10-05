@@ -1,6 +1,7 @@
 #include "Validation.h"
 #include <AsyncJson.h>
 #include "Settings.h"
+#include <OpenWeatherMapCurrent.h>
 
 static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message = nullptr);
 
@@ -80,4 +81,61 @@ void  ValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request) {
   response->setLength();
   response->setCode(200);
   request->send(response);
+}
+
+
+RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(AsyncWebServer* server, AdvancedSettings *pAdvSetting):
+  ValidateParamsEndpoint(server, REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH),
+  _pAdvSetting(pAdvSetting) {}
+
+void RegionalSettingsValidateEndpoint::saveParams(JsonVariant& json) {
+ if(_pSettings) {
+    delete _pSettings;
+  }
+  JsonObject jsonObject = json.as<JsonObject>();
+  _pSettings = new RegionalSettings;
+  _pSettings->load(jsonObject);
+}
+
+void RegionalSettingsValidateEndpoint::runValidation() {
+  OpenWeatherMapCurrentData data;
+  OpenWeatherMapCurrent client;
+  Serial.printf_P(PSTR(" Running regional validation: location: %s, lang %s, metrics: %d\n"),_pSettings->location.c_str(),_pSettings->language.c_str(), _pSettings->useMetricUnits);
+  client.setLanguage(_pSettings->language);
+  client.setMetric(_pSettings->useMetricUnits);
+  client.updateCurrent(&data, _pAdvSetting->openWeatherAPIKey, _pSettings->location);
+  if(!data.cityName.length()) {
+    _error = F("City not found");
+  }
+  delete _pSettings;
+  _pSettings = nullptr;
+}
+
+AdvancedSettingsValidateEndpoint::AdvancedSettingsValidateEndpoint(AsyncWebServer* server, RegionalSettings *pRegSettings):
+  ValidateParamsEndpoint(server, ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH),
+  _pRegSettings(pRegSettings) {}
+
+void AdvancedSettingsValidateEndpoint::saveParams(JsonVariant& json) {
+ if(_pSettings) {
+    delete _pSettings;
+  }
+  JsonObject jsonObject = json.as<JsonObject>();
+  _pSettings = new AdvancedSettings;
+  _pSettings->load(jsonObject);
+}
+
+void AdvancedSettingsValidateEndpoint::runValidation() {
+  if(!strstr(_pSettings->openWeatherAPIKey.c_str(), ReplaceMark)) {
+    OpenWeatherMapCurrentData data;
+    OpenWeatherMapCurrent client;
+    Serial.printf_P(PSTR(" Running advanced settings openeweathermap validation: location: %s, lang %s, metrics: %d\n"),_pRegSettings->location.c_str(),_pRegSettings->language.c_str(), _pRegSettings->useMetricUnits);
+    client.setLanguage(_pRegSettings->language);
+    client.setMetric(_pRegSettings->useMetricUnits);
+    client.updateCurrent(&data, _pSettings->openWeatherAPIKey, _pRegSettings->location);
+    if(!data.cityName.length()) {
+      _error = F("Invalid API key");
+    }
+    delete _pSettings;
+    _pSettings = nullptr;
+  }
 }

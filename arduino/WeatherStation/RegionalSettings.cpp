@@ -1,17 +1,16 @@
 #include "RegionalSettings.h"
-#include <OpenWeatherMapCurrent.h>
 
-void printRegionalSettings(String prefix, RegionalSettings *s) {
-    Serial.print(prefix);
-    Serial.print(F(" detectAutomatically: "));Serial.print(s->detectAutomatically);
-    Serial.print(F(", location: "));Serial.print(s->location);
-    Serial.print(F(", language: "));Serial.print(s->language);
-    Serial.print(F(", utcOffset: "));Serial.print(s->utcOffset);
-    Serial.print(F(", latitude: "));Serial.print(s->latitude);
-    Serial.print(F(", longitude: "));Serial.print(s->longitude);
-    Serial.print(F(", useMetricUnits: "));Serial.print(s->useMetricUnits);
-    Serial.print(F(", use24Hours: "));Serial.print(s->use24Hours);
-    Serial.print(F(", useYMDFormat: "));Serial.print(s->useYMDFormat);
+void RegionalSettings::print(const __FlashStringHelper *title) {
+    Serial.print(title);
+    Serial.print(F(" detectAutomatically: "));Serial.print(detectAutomatically);
+    Serial.print(F(", location: "));Serial.print(location);
+    Serial.print(F(", language: "));Serial.print(language);
+    Serial.print(F(", utcOffset: "));Serial.print(utcOffset);
+    Serial.print(F(", latitude: "));Serial.print(latitude);
+    Serial.print(F(", longitude: "));Serial.print(longitude);
+    Serial.print(F(", useMetricUnits: "));Serial.print(useMetricUnits);
+    Serial.print(F(", use24Hours: "));Serial.print(use24Hours);
+    Serial.print(F(", useYMDFormat: "));Serial.print(useYMDFormat);
     Serial.println();
 }
 
@@ -40,7 +39,7 @@ int RegionalSettings::save(JsonObject& root) {
     root[F("use24Hours")] = use24Hours;
     root[F("useYMDFormat")] = useYMDFormat;
 
-    printRegionalSettings("Save Regional settings", this);
+    print(F("Save Regional settings"));
     return 0;
 }
 
@@ -55,33 +54,6 @@ int RegionalSettings::load(JsonObject& root) {
   use24Hours = root[F("use24Hours")];
   useYMDFormat = root[F("useYMDFormat")];
 
-  printRegionalSettings("Load Regional settings", this);
+  print(F("Load Regional settings"));
   return 0;
-}
-
-RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(AsyncWebServer* server, tConfig *pConf):
-  ValidateParamsEndpoint(server, REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH),
-  _pConf(pConf) {}
-
-void RegionalSettingsValidateEndpoint::saveParams(JsonVariant& json) {
- if(_pSettings) {
-    delete _pSettings;
-  }
-  JsonObject jsonObject = json.as<JsonObject>();
-  _pSettings = new RegionalSettings;
-  _pSettings->load(jsonObject);
-}
-
-void RegionalSettingsValidateEndpoint::runValidation() {
-  OpenWeatherMapCurrentData data;
-  OpenWeatherMapCurrent client;
-  Serial.printf_P(PSTR(" Running regional validation: location: %s, lang %s, metrics: %d\n"),_pSettings->location.c_str(),_pSettings->language.c_str(), _pSettings->useMetricUnits);
-  client.setLanguage(_pSettings->language);
-  client.setMetric(_pSettings->useMetricUnits);
-  client.updateCurrent(&data, _pConf->openweatherApiKey, _pSettings->location);
-  if(!data.cityName.length()) {
-    _error = F("City not found");
-  }
-  delete _pSettings;
-  _pSettings = nullptr;
 }

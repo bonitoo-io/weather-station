@@ -12,11 +12,11 @@ String utf8ascii(const String s);
 const char *getDeviceID();
 
 struct tConfig {
-  unsigned int updateDataMin;
-  String openweatherApiKey;
-  String ntp;
-  int8_t tempOffset;
-  int8_t humOffset;
+//  unsigned int updateDataMin;
+//  String openweatherApiKey;
+//  String ntp;
+//  int8_t tempOffset;
+//  int8_t humOffset;
   String iotCenterUrl;
   unsigned int iotRefreshMin;
 };

@@ -24,8 +24,8 @@ float lastTemp = NAN;
 float lastHum = NAN;
 
 void refreshDHTCachedValues(bool metric) {
-  lastTemp = dht.readTemperature(!metric) + conf.tempOffset;
-  lastHum = dht.readHumidity() + conf.humOffset;
+  lastTemp = dht.readTemperature(!metric) + station.getAdvancedSettings()->tempOffset;
+  lastHum = dht.readHumidity() + station.getAdvancedSettings()->humOffset;
 }
 
 float getDHTCachedTemp() {
@@ -37,11 +37,11 @@ float getDHTCachedHum() {
 }
 
 float getDHTTemp(bool metric) {
-  return dht.readTemperature(!metric) + conf.tempOffset;
+  return dht.readTemperature(!metric) + station.getAdvancedSettings()->tempOffset;
 }
 
 float getDHTHum() {
-  return dht.readHumidity() + conf.humOffset;
+  return dht.readHumidity() + station.getAdvancedSettings()->humOffset;
 }
 
 float getDHTHic(bool metric) {

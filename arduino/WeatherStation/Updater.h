@@ -32,6 +32,7 @@ class UpdaterSettings : public Settings {
   UpdaterSettings();
   virtual int save(JsonObject& root) override;
   virtual int load(JsonObject& root) override;
+  virtual void print(const __FlashStringHelper *title) override;
   virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/updaterSettings.json"); }  
 };
 

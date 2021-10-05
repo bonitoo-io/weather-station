@@ -90,8 +90,9 @@ int detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings) 
     Serial.println( httpCode);
   }
   http.end();
-  if (httpCode != HTTP_CODE_OK)
+  if (httpCode != HTTP_CODE_OK) {
     return 0;
+  }
 
   //Process utc_offset
   bool minus = ipListener.utc_offset.charAt(0) == '-';
