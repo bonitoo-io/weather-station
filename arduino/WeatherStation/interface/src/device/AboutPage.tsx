@@ -21,7 +21,7 @@ class AboutPage extends Component<AboutPageProps> {
     return (
       <List>
         <Typography variant="subtitle1">
-        Created for <Link href="https://www.influxdata.com" target="_blank" rel="noreferrer">InfluxData</Link> by <Link href="https://bonitoo.io" target="_blank" rel="noreferrer">Bonitoo</Link>
+        Created for <Link href="https://www.influxdata.com" target="_blank" rel="noreferrer">InfluxData</Link> company by <Link href="https://bonitoo.io" target="_blank" rel="noreferrer">Bonitoo.io</Link>
         </Typography>
         <ListItem >
           <ListItemAvatar>
@@ -58,6 +58,7 @@ class AboutPage extends Component<AboutPageProps> {
           </ListItemAvatar>
           <ListItemText primary="CPU Frequency" secondary={data.cpuFreq + ' MHz'} />
         </ListItem>
+        <Divider variant="inset" component="li" />
         <ListItem >
           <ListItemAvatar>
             <Avatar>
@@ -66,6 +67,7 @@ class AboutPage extends Component<AboutPageProps> {
           </ListItemAvatar>
           <ListItemText primary="Licenses" secondary={this.renderLicenses()} />
         </ListItem>
+        <Divider variant="inset" component="li" />
       </List>
     );
   }
@@ -73,7 +75,7 @@ class AboutPage extends Component<AboutPageProps> {
   renderLicenses = () => {
     return (
       <span>
-        Programmed using various <Link href="https://github.com/bonitoo-io/weather-station/blob/main/arduino/WeatherStation/Licenses.md" target="_blank" rel="noreferrer">open source software</Link>
+        Programmed using various <Link href="https://github.com/bonitoo-io/weather-station/blob/main/arduino/WeatherStation/LICENSES.md" target="_blank" rel="noreferrer">open source software</Link>
       </span>
     )
   }
