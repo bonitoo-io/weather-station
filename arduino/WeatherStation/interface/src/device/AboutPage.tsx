@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import { Avatar, Divider, Typography, Link, List } from '@material-ui/core';
 import { ListItem, ListItemAvatar, ListItemText } from '@material-ui/core';
 
@@ -73,7 +73,7 @@ class AboutPage extends Component<AboutPageProps> {
   renderLicenses = () => {
     return (
       <span>
-        Programmed using various <Link href="https://github.com/bonitoo-io/weather-station/blob/main/Licenses.md" target="_blank" rel="noreferrer">open source software</Link>
+        Programmed using various <Link href="https://github.com/bonitoo-io/weather-station/blob/main/arduino/WeatherStation/Licenses.md" target="_blank" rel="noreferrer">open source software</Link>
       </span>
     )
   }

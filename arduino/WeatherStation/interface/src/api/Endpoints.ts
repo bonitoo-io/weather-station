@@ -16,3 +16,5 @@ export const UPDATE_SETTINGS_ENDPOINT = ENDPOINT_ROOT + "updaterSettings";
 export const REGIONAL_SETTINGS_ENDPOINT = ENDPOINT_ROOT + "regionalSettings";
 export const REGIONAL_SETTINGS_VALIDATE_ENDPOINT = ENDPOINT_ROOT + "regionalSettingsCheckValidation";
 export const UPLOAD_FIRMWARE_ENDPOINT = ENDPOINT_ROOT + "uploadFirmware";
+export const ADVANCED_SETTINGS_ENDPOINT = ENDPOINT_ROOT + "advancedSettings";
+export const ADVANCED_SETTINGS_VALIDATE_ENDPOINT  = ENDPOINT_ROOT + "validateAdvancedSettings"

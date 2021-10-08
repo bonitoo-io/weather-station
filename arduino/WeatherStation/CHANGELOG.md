@@ -1,7 +1,15 @@
 # Changelog
 ## 0.57 [in progress]
+## Features
  - Split Status page to About and Status 
    - Added automatic refresh to Status page
+ - Added monitoring of synchronization service
+ - Added Advanced Settings
+   - Including ability to configure display screens
+ 
+## Fixes
+ - Fixed setting configure language after reset
+ - Improved web server response stability
 
 ## 0.56 [2021-09-30]
  - Improved WiFi setting wizard
@@ -17,7 +25,7 @@
    - Possibility to disable location detection
    - Manual setting of regional parameters
  - Allowing upload firmware via web interface
-  
+
 ## 0.55
  - Added validation of WiFi params during initial configuration
  - Simplified on screen setup instructions

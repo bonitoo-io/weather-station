@@ -7,15 +7,23 @@
 extern int tempHistory[90];
 const char *Token PROGMEM = "token";
 
+#define LOCK() { uint16_t _lc=3000; while(_lock) { delay(1); if(!--_lc) {Serial.println(F("Lock timeout!"));break; } } _lock = 1; }
+#define UNLOCK()  { _lock = 0; } 
+
 InfluxDBHelper::InfluxDBHelper():_sensor("environment") {
 
 }
 
-void InfluxDBHelper::release() {
+bool InfluxDBHelper::release() {
+  if(_lock) {
+    return false;
+  }
   if(_client) {
     delete _client;
     _client = nullptr;
+    _wasReleased = true;
   }
+  return true;
 }
 
 void InfluxDBHelper::begin(InfluxDBSettings *settings) {
@@ -25,6 +33,7 @@ void InfluxDBHelper::begin(InfluxDBSettings *settings) {
   _settings = settings;
   _client = new InfluxDBClient(_settings->serverURL.c_str(), _settings->org.c_str(), _settings->bucket.c_str(), _settings->authorizationToken.c_str(), InfluxDbCloud2CACert);
   _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1));  
+  _wasReleased = false;
 }
 
 
@@ -32,6 +41,8 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   if(!_client || !_client->getServerUrl().length()) {
     return;
   }
+  
+  LOCK();
   
   WriteOptions wo;
   uint16_t batchSize = SyncServices::ServiceLastMark+3;
@@ -50,14 +61,15 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   if(firstStart) {
     loadTempHistory( deviceID, metric);
   }
+  UNLOCK();
 }
 
 
-void InfluxDBHelper::write( float temp, float hum, const float lat, const float lon) {
+bool InfluxDBHelper::write( float temp, float hum, const float lat, const float lon) {
   if(!_client || !_client->getServerUrl().length()) {
-    return;
+    return false;
   }
-
+  LOCK();
   _sensor.clearFields();
   // Report temperature and humidity
   _sensor.addField(String(F("Temperature")), temp);
@@ -70,17 +82,21 @@ void InfluxDBHelper::write( float temp, float hum, const float lat, const float 
   Serial.println(_client->pointToLineProtocol(_sensor));
   _client->writePoint(_sensor);
   // Write point
+  bool res = true;
   if (!_client->flushBuffer()) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
+    res = false;
   }
+  UNLOCK();
+  return false;
 }
 
-void InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
+bool InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
   if(!_client || !_client->getServerUrl().length()) {
-    return;
+    return false;
   }
-
+  LOCK();
   Point status("device_status");
   status.addField(F("free_heap"), ESP.getFreeHeap());
   status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
@@ -102,11 +118,14 @@ void InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
   if(_pResetInfo) {
     writeResetInfo();
   }
-
+  bool res = true;
   if (!_client->flushBuffer()) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
+    res = false;
   }
+  UNLOCK();
+  return res;
 }
 
 void InfluxDBHelper::registerResetInfo(const String &resetReason, ServicesStatusTracker *servicesTracker) {
@@ -127,25 +146,28 @@ void InfluxDBHelper::registerResetInfo(const String &resetReason, ServicesStatus
   }
 }
 
-void InfluxDBHelper::writeResetInfo() {
+bool InfluxDBHelper::writeResetInfo() {
   if(!_client || !_client->getServerUrl().length() || !_pResetInfo) {
-    return;
+    return false;
   }
   Serial.print(F("Writing reset info: "));
   Serial.println(_client->pointToLineProtocol(*_pResetInfo));
+  bool res = true;
   if (!_client->writePoint(*_pResetInfo)) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
+    res = false;
   } else {
     delete _pResetInfo;
     _pResetInfo = nullptr;
   }
+  return res;
 }
 
 // load temperature from InfluxDB - the last 90 minutes and the selected device
-void InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
+bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   if(!_client || !_client->getServerUrl().length()) {
-    return;
+    return false;
   }
   // TODO: optimize to use reserve() and subsequent concatenation
   String query = String(F("from(bucket: \"")) + _settings->bucket + String(F("\") |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == \"")) + deviceID +  String(F("\")"
@@ -164,13 +186,15 @@ void InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
     if (i == 90)
       break;
   }
-
+  bool res = true;
   // Check if there was an error
   if(result.getError().length() > 0) {
     Serial.print(F("Query error: "));
     Serial.println(result.getError());
+    res = false;
   }
   result.close();
+  return res;
 }
 
 String InfluxDBHelper::validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken) {
@@ -187,13 +211,13 @@ String InfluxDBHelper::validateConnection(const String &serverUrl, const String 
   return res.getError();
 }
 
-void printInfluxDBettings(String prefix, InfluxDBSettings *s) {
-    Serial.print(prefix);
-    Serial.print(F(" server: "));Serial.print(s->serverURL);
-    //Serial.print(F(", token: "));Serial.print(s->authorizationToken);
-    Serial.print(F(", org: "));Serial.print(s->org);
-    Serial.print(F(", bucket: "));Serial.print(s->bucket);
-    Serial.print(F(", writeInterval: "));Serial.print(s->writeInterval);
+void InfluxDBSettings::print(const __FlashStringHelper *title) {
+    Serial.print(title);
+    Serial.print(F(" server: "));Serial.print(serverURL);
+    //Serial.print(F(", token: "));Serial.print(authorizationToken);
+    Serial.print(F(", org: "));Serial.print(org);
+    Serial.print(F(", bucket: "));Serial.print(bucket);
+    Serial.print(F(", writeInterval: "));Serial.print(writeInterval);
     Serial.println();
 }
  
@@ -206,36 +230,27 @@ InfluxDBSettings::InfluxDBSettings():
 }
 
 int InfluxDBSettings::save(JsonObject& root) {
-    root[F("server")] = serverURL;
-    root[FPSTR(Token)] = authorizationToken;
-    root[F("org")] = org;
-    root[F("bucket")] = bucket;
-    root[F("writeInterval")] = writeInterval;
-    printInfluxDBettings(F("InfluxDBSettings::save:"), this);
-    return 0;
+  root[F("server")] = serverURL;
+  root[FPSTR(Token)] = authorizationToken;
+  root[F("org")] = org;
+  root[F("bucket")] = bucket;
+  root[F("writeInterval")] = writeInterval;
+  print(F("Save InfluxDB params"));
+  return 0;
 }
 
 int InfluxDBSettings::load(JsonObject& root) {
-    serverURL = root[F("server")].as<const char *>();
-    authorizationToken = root[FPSTR(Token)].as<const char *>();
-    org = root[F("org")].as<const char *>();
-    bucket = root[F("bucket")].as<const char *>() ;
-    writeInterval = root[F("writeInterval")]; 
-    printInfluxDBettings(F("InfluxDBSettings::load:"), this);
-    return 1;
+  serverURL = root[F("server")].as<const char *>();
+  authorizationToken = root[FPSTR(Token)].as<const char *>();
+  org = root[F("org")].as<const char *>();
+  bucket = root[F("bucket")].as<const char *>() ;
+  writeInterval = root[F("writeInterval")]; 
+  print(F("Load InfluxDB params"));
+  return 1;
 }
 
 
 // ****************** InfluxDBSettingsEndpoint ***************************
-
-String obfuscateToken(const String &token) {
-  String authToken;
-  authToken.reserve(15);
-  authToken = token.substring(0,4);
-  authToken += "******";
-  authToken += token.substring(token.length()-4);
-  return authToken;
-}
 
 InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings):
     SettingsEndpoint(pServer, INFLUXDB_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
@@ -246,11 +261,7 @@ InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPer
       }
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
-      if(strchr(authToken,'*')) {
-        //DynamicJsonDocument doc(DEFAULT_BUFFER_SIZE);
-        //JsonObject tmpObject = doc.to<JsonObject>();
-        //_settings->save(tmpObject);
-        //jsonObject[FPSTR(Token)] = tmpObject[FPSTR(Token)].as<const char *>();
+      if(strstr(authToken, ReplaceMark)) {
         InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
         jsonObject[FPSTR(Token)] = idbSettings->authorizationToken;
       }
@@ -276,7 +287,7 @@ void InfluxDBValidateParamsEndpoint::saveParams(JsonVariant& json) {
   _validationSettings = new InfluxDBSettings;
   _validationSettings->load(jsonObject);
   const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
-  if(strchr(authToken,'*')) {
+  if(strstr(authToken,ReplaceMark)) {
     _validationSettings->authorizationToken = _helper->settings()->authorizationToken;
   }
 }

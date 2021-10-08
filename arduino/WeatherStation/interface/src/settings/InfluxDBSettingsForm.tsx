@@ -22,6 +22,8 @@ interface InfluxDBSettingsFormState {
   errorMessage?: string;
 }
 
+const WriteIntervalErrorText = 'Must be a number with value at least 1 (minute)'
+
 class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, InfluxDBSettingsFormState> {
 
   state: InfluxDBSettingsFormState = {
@@ -101,7 +103,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
         />
          <TextValidator
           validators={['required','isNumber','minNumber: 1']}
-          errorMessages={['Write Interval is required']}
+          errorMessages={['Write Interval is required', WriteIntervalErrorText, WriteIntervalErrorText]}
           name="writeInterval"
           label="Write Interval [minutes]"
           fullWidth

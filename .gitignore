@@ -1,5 +1,6 @@
 .vscode
 custom_dev.h
+custom_dev.h.*
 node_modules/
 build/
 .eslintcache

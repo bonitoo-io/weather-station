@@ -25,6 +25,7 @@ void UploadFirmwareEndpoint::handleUpload(AsyncWebServerRequest* request,
   if (!index) {
     if (Update.begin(request->contentLength())) {
       // success, let's make sure we end the update if the client hangs up
+      Serial.println(F("Starting upload FW"));
       request->onDisconnect(UploadFirmwareEndpoint::handleEarlyDisconnect);
     } else {
       // failed to begin, send an error response
@@ -53,7 +54,7 @@ void UploadFirmwareEndpoint::loop() {
     if(_callback) {
       _callback();
     } else {
-      AboutServiceEndpoint::restartNow;
+      AboutServiceEndpoint::restartNow();
     }
     _notify = false;
   }
@@ -64,6 +65,7 @@ void UploadFirmwareEndpoint::uploadComplete(AsyncWebServerRequest* request) {
   if (!request->_tempObject) {
     request->onDisconnect([this]() {
       // Must notify in main loop, not async callbalk
+      Serial.println(F("Upload FW successfully completed"));
       _notify = true;
     });
     AsyncWebServerResponse* response = request->beginResponse(200);

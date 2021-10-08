@@ -1,44 +1,96 @@
-#include <OLEDDisplayUi.h>
 #include <ESPWiFi.h>
 #include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 #include "Tools.h"
-#include "WiFi.h"
-#include "InfluxDBHelper.h"
+
+
 #include "DHTSensor.h"
+#include "ScreenCommon.h"
 
-int getCurrentWeatherTemperature();
+const char ScreenConstants::About = 'B';
+const char ScreenConstants::DateTimeAnalog = 'A';
+const char ScreenConstants::DateTimeDigital = 'D';
+const char ScreenConstants::SensorValues = 'I';
+const char ScreenConstants::CurrentWeather = 'O';
+const char ScreenConstants::WeatherForecast = 'F';
+const char ScreenConstants::WindForecast = 'W';
+const char ScreenConstants::Astronomy = 'M';
+const char ScreenConstants::TemperatureChart = 'T';
+const char ScreenConstants::Config = 'C';
 
-void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-bool isInfluxDBError();  
+String ScreenConstants::getDefaultList() {
+  String list;
+  list.concat(DateTimeAnalog);
+  list.concat(DateTimeDigital);
+  list.concat(SensorValues);
+  list.concat(TemperatureChart);
+  list.concat(CurrentWeather);
+  list.concat(WeatherForecast);
+  list.concat(WindForecast);
+  list.concat(Astronomy);
+  list.concat(Config);
+  return list;
+}
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
-FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy, drawAbout};
+//FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy, drawAbout};
 //FrameCallback frames[] = { drawTemperatureChart};
 OverlayCallback overlays[] = { drawHeaderOverlay};
 
-void setupOLEDUI(OLEDDisplayUi *ui) {
+void initOLEDUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
+  configureUI(ui, pAdvancedSettings);
+  ui->init(); // Inital UI takes care of initalising the display too
+}
+
+FrameCallback getFrameCallback(char c) {
+  switch(c) {
+    case ScreenConstants::DateTimeAnalog:
+      return drawDateTimeAnalog;
+    case ScreenConstants::DateTimeDigital:
+      return drawDateTime;
+    case ScreenConstants::SensorValues:
+      return drawDHT;
+    case ScreenConstants::TemperatureChart:
+      return drawTemperatureChart;
+    case ScreenConstants::CurrentWeather:
+      return drawCurrentWeather;
+    case ScreenConstants::WeatherForecast:
+      return drawForecast;
+    case ScreenConstants::WindForecast:
+      return drawWindForecast;
+    case ScreenConstants::Astronomy:
+      return drawAstronomy;
+    case ScreenConstants::Config:
+      return drawAbout;
+    default:
+      return nullptr; 
+  }
+} 
+
+static FrameCallback *pFrames = nullptr;
+
+void configureUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
   ui->setTargetFPS(30);
-  ui->setTimePerFrame(10000);
+  ui->setTimePerFrame(pAdvancedSettings->screenRotateInterval*1000);
   ui->setActiveSymbol(activeSymbole);
   ui->setInactiveSymbol(inactiveSymbole);
   ui->setIndicatorPosition(TOP);
   ui->setIndicatorDirection(LEFT_RIGHT);   // Defines where the first frame is located in the bar.
   ui->setFrameAnimation(SLIDE_LEFT);
-
-  ui->setFrames(frames, sizeof(frames) / sizeof(FrameCallback));
   ui->setOverlays(overlays, sizeof(overlays) / sizeof(OverlayCallback));
-  ui->init(); // Inital UI takes care of initalising the display too
+  if(pFrames) {
+    delete [] pFrames;
+  }
+  pFrames = new FrameCallback[pAdvancedSettings->screens.length()];
+  int i=0;
+  for(char c: pAdvancedSettings->screens) {
+    FrameCallback f = getFrameCallback(c);
+    if(f) {
+      pFrames[i++] = f;
+    }
+  }
+  ui->setFrames(pFrames, i);
 }
 
 uint32_t wifiProgressCounter;
@@ -185,7 +237,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   if ( secToReset > 5) {
     display->drawString(0,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
     display->drawString(0, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(0, 20, String(F("Update in ")) + String((conf.updateDataMin*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
+    display->drawString(0, 20, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
     display->drawString(0, 30, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
     display->drawString(0, 40, String("v") + version + String(F("; tz: ")) + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + station.getRegionalSettings()->language);
     display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());

@@ -7,6 +7,7 @@ import { MenuAppBar } from '../components';
 import InfluxDBSettingsController from './InfluxDBSettingsController';
 import UpdateSettingsController from './UpdateSettingsController';
 import RegionalSettingsController from './RegionalSettingsController';
+import AdvancedSettingsController from './AdvancedSettingsController';
 
 type SettingsProps = RouteComponentProps
 
@@ -24,11 +25,13 @@ class Settings extends Component<SettingsProps> {
           <Tab value="/settings/influxdb" label="InfluxDB" />
           <Tab value="/settings/update" label="Update"/>
           <Tab value="/settings/regional" label="Regional"/>
+          <Tab value="/settings/advanced" label="Advanced"/>
         </Tabs>
         <Switch>
           <Route exact path="/settings/influxdb" component={InfluxDBSettingsController} />
           <Route exact path="/settings/update" component={UpdateSettingsController} />
           <Route exact path="/settings/regional" component={RegionalSettingsController} />
+          <Route exact path="/settings/advanced" component={AdvancedSettingsController} />
           <Redirect to="/settings/influxdb" />
         </Switch>
       </MenuAppBar>

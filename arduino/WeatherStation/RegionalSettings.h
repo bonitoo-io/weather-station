@@ -5,8 +5,7 @@
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
 #include "Settings.h"
-#include "Validation.h"
-#include "Tools.h"
+#include "AdvancedSettings.h"
 
 #define REGIONAL_SETTINGS_DEFAULT_DETECT true
 #define REGIONAL_SETTINGS_DEFAULT_CITY F("San Francisco,US")
@@ -37,21 +36,11 @@ public:
     bool useYMDFormat;
 public:
   RegionalSettings();
+  virtual ~RegionalSettings() {}
   virtual int save(JsonObject& root) override;
   virtual int load(JsonObject& root) override;
+  virtual void print(const __FlashStringHelper *title) override;
   virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/regionalSettings.json"); }  
-};
-
-class RegionalSettingsValidateEndpoint : public ValidateParamsEndpoint {
-public:
-    RegionalSettingsValidateEndpoint(AsyncWebServer* server, tConfig *pConf);
-    virtual ~RegionalSettingsValidateEndpoint() { delete _pSettings; }
-protected:
-  virtual void saveParams(JsonVariant& json) override;
-  virtual void runValidation() override;
-private:
-  tConfig *_pConf;
-  RegionalSettings *_pSettings = nullptr;
 };
 
 #endif //WS_REGIONAL_SETTINGS_H

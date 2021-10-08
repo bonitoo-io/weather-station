@@ -1,14 +1,15 @@
 import React, { Component, RefObject } from 'react';
 import { SnackbarProvider } from 'notistack';
 
-import { IconButton, Typography } from '@material-ui/core';
+import { IconButton } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 
 import AppRouting from './AppRouting';
 import CustomMuiTheme from './CustomMuiTheme';
-import { ABOUT_INFO_ENDPOINT, PROJECT_NAME } from './api';
+import { PROJECT_NAME, WIFI_STATUS_ENDPOINT } from './api';
 import { AppStateContext, AppStateContextValue } from './AppStateContext';
-import { AboutInfo, AppState } from './device/types';
+import FullScreenLoading from './components/FullScreenLoading';
+import { WiFiConnectionStatus, WiFiStatus } from './wifi/types';
 
 class App extends Component<{}, AppStateContextValue> {
 
@@ -45,9 +46,7 @@ class App extends Component<{}, AppStateContextValue> {
               </IconButton>
             )}>
             {loading?
-            <Typography variant="subtitle1">
-              Loading..
-            </Typography>
+            <FullScreenLoading/>
             :
             <AppRouting/>
             }
@@ -57,19 +56,15 @@ class App extends Component<{}, AppStateContextValue> {
     );
   }
 
-  //            <Switch>
-//  <Route component={AppRouting} />
-  //</Switch>
-
   loadData = () => {
-     fetch(ABOUT_INFO_ENDPOINT).then(response => {
+     fetch(WIFI_STATUS_ENDPOINT).then(response => {
       if (response.status === 200) {
         return response.json();
       }
       throw Error("Invalid status code: " + response.status);
     }).then(json => {
-      const info : AboutInfo = json
-      this.setState({loading: false, wifiConfigured: info.appState !== AppState.WifiConfigNeeded})
+      const status : WiFiStatus = json
+      this.setState({loading: false, wifiConfigured: status.status === WiFiConnectionStatus.WIFI_STATUS_CONNECTED})
     }).catch(error => {
       const errorMessage = error.message || "Unknown error";
       this.notistackRef.current.enqueueSnackbar("Problem fetching: " + errorMessage, { variant: 'error' });

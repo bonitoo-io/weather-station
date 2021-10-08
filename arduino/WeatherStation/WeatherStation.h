@@ -12,6 +12,8 @@
 #include "Updater.h"
 #include "RegionalSettings.h"
 #include "UploadFirmware.h"
+#include "AdvancedSettings.h"
+#include "Validation.h"
 
 class WeatherStation {
 public:
@@ -36,6 +38,10 @@ public:
         return &_regionalSettings;
     }
 
+    AdvancedSettings *getAdvancedSettings() {
+        return &_advancedSettings;
+    }
+
     FSPersistence *getPersistence() {
         return &_persistence;
     }
@@ -53,6 +59,7 @@ private:
     InfluxDBSettings _influxDBSettings;
     UpdaterSettings _updaterSettings;
     RegionalSettings _regionalSettings;
+    AdvancedSettings _advancedSettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
     AsyncWebServer *_server = nullptr;
@@ -70,6 +77,8 @@ private:
     RegionalSettingsValidateEndpoint *_pRegionalSettingsValidateEndpoint = nullptr;
     UploadFirmwareEndpoint *_pUploadFirmwareEndpoint = nullptr; 
     FWUploadFinishedCallback _fwUploadFinishedCallback = nullptr;
+    AdvancedSettingsEndpoint *_pAdvancedSettingsEndpoint = nullptr;
+    AdvancedSettingsValidateEndpoint *_pAdvancedSettingsValidateEndpoint = nullptr;
 };
 
 extern WeatherStation station;

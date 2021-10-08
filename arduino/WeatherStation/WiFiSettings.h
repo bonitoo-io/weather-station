@@ -36,6 +36,7 @@ public:
     void setFilePath(const String &filePath) { _filePath = filePath; }
     virtual int save(JsonObject& root) override;
     virtual int load(JsonObject& root) override;
+    virtual void print(const __FlashStringHelper *title) override;
     virtual String getFilePath() override { return  _filePath; }
 private:
     static char *DefaultHostname;

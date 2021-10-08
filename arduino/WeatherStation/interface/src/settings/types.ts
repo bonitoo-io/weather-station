@@ -43,3 +43,15 @@ export interface RegionalSettings {
   use24Hours: boolean;
   useYMDFormat: boolean;
 }
+
+export interface AdvancedSettings {
+  // in minutes
+  updateDataInterval: number;
+  openWeatherAPIKey: string;
+  ntpServers: string;
+  tempOffset: number;
+  humOffset: number;
+  // in seconds
+  screenRotateInterval: number;
+  screens: string;
+}

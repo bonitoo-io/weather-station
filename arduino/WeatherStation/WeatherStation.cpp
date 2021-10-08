@@ -42,6 +42,7 @@ void WeatherStation::begin() {
   _persistence.readFromFS(&_influxDBSettings);
   _persistence.readFromFS(&_updaterSettings);
   _persistence.readFromFS(&_regionalSettings);
+  _persistence.readFromFS(&_advancedSettings);
   
   _wifiManager.begin();
 }
@@ -56,6 +57,9 @@ void WeatherStation::loop() {
   }
   if(_pUploadFirmwareEndpoint) {
     _pUploadFirmwareEndpoint->loop();
+  }
+  if(_pAdvancedSettingsValidateEndpoint) {
+    _pAdvancedSettingsValidateEndpoint->loop();
   }
 }
 
@@ -78,31 +82,53 @@ void WeatherStation::end() {
     _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_server, _influxDBHelper);
     _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_server, &_persistence);
     _pRegionalSettingsEndpoint = new SettingsEndpoint(_server, REGIONAL_SETTINGS_ENDPOINT_PATH, &_persistence, &_regionalSettings);
-    _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &conf);
+    _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &_advancedSettings);
     _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
     _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
+    _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(_server, &_persistence, &_advancedSettings);
+    _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(_server, &_regionalSettings);
     // Serve static resources from PROGMEM
     WWWData::registerRoutes(
       [this](const String& uri, const String& contentType, const uint8_t* content, size_t len) {
-        ArRequestHandlerFunction requestHandler = [uri,contentType, content, len](AsyncWebServerRequest* request) {
+        ArRequestHandlerFunction requestHandler = [uri,contentType, content, len, this](AsyncWebServerRequest* request) {
           Serial.print(F("Serving "));
           Serial.print(uri);
           Serial.print(F(" of len "));
-          Serial.print(len);
+          Serial.println(len);
+          WS_DEBUG_RAM(" RAM Before request");
           uint32_t s = millis();
+          request->onDisconnect([uri,s](){
+            WS_DEBUG_RAM(" RAM after request");
+            Serial.print(F("Sent "));
+            Serial.print(uri);
+            Serial.print(F(" in "));
+            Serial.print(millis()-s);
+            Serial.println(F("ms"));
+            
+          });  
           if (request->header("If-Modified-Since").equals(htmlBuildTime)) {
             // send not modified
+            Serial.println(F(" Not modified"));
             request->send(304);
           } else {
-            AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
-            response->addHeader(F("Content-Encoding"), F("gzip"));
-            response->addHeader(F("Last-Modified"), htmlBuildTime);
-            request->send(response);
+            bool cont = true;
+            if(ESP.getMaxFreeBlockSize() < 2048) {
+              Serial.println(F(" Low memory condition. Releasing influxdb client "));
+              if(!_influxDBHelper->release()) {
+                 Serial.println(F(" Failed "));
+                 AsyncWebServerResponse* response = request->beginResponse(503);
+                 response->addHeader(F("Retry-After"), F("1"));
+                 request->send(response);
+                 cont = false;
+              }
+            }
+            if(cont) {
+              AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
+              response->addHeader(F("Content-Encoding"), F("gzip"));
+              response->addHeader(F("Last-Modified"), htmlBuildTime);
+              request->send(response);
+            }
           }
-          Serial.print(F(" in "));
-          Serial.print(millis()-s);
-          Serial.println(F("ms"));
-          WS_DEBUG_RAM("  RAM");
         };
         _server->on(uri.c_str(), HTTP_GET, requestHandler);
         // Serving non matching get requests with "/index.html"
@@ -153,6 +179,10 @@ void WeatherStation::end() {
     _pRegionalSettingsEndpoint = nullptr;
     delete _pUploadFirmwareEndpoint;
     _pUploadFirmwareEndpoint = nullptr;
+    delete _pAdvancedSettingsEndpoint;
+    _pAdvancedSettingsEndpoint = nullptr;
+    delete _pAdvancedSettingsValidateEndpoint;
+    _pAdvancedSettingsValidateEndpoint = nullptr;
    }
  }
 
