@@ -33,6 +33,7 @@ struct APInfo {
 
 enum class WifiConnectionEvent {
     ConnectingStarted = 0,
+    ConnectingUpdate,
     ConnectingSuccess,
     ConnectingFailed
 };

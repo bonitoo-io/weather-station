@@ -247,6 +247,7 @@ bool WiFiManager::startSTA(WiFiSettings *pConfig, WiFiNetwork *pNetwork) {
       WiFi.config(INADDR_ANY, INADDR_ANY, INADDR_ANY);
       WiFi.hostname(pConfig->hostname);
   }
+  notifyWifiEvent(WifiConnectionEvent::ConnectingUpdate);
     // attempt to connect to the network
   if(pNetwork) {
     Serial.printf_P(PSTR("[WIFIM] Connecting to %s, chan %d\n"), pNetwork->ssid.c_str(), pNetwork->channel);

@@ -423,6 +423,9 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
         wifiSSID = ssid;
       }
       break;
+    case WifiConnectionEvent::ConnectingUpdate: 
+      wifiSSID = ssid;
+      break;
     case WifiConnectionEvent::ConnectingSuccess:
       shouldDrawWifiProgress = false;
       station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
