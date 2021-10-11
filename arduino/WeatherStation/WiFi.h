@@ -46,6 +46,7 @@ enum class WiFiConnectingState {
     ConnectingToKnown, //when conneting using saved list
     ConnectingSuccess,
     ConnectingToHidden,
+    TestingInternet,
     TestingConfig,
     TestingConfigFailed,
     ConnectingToSaved, //when conencting from external request
@@ -139,6 +140,7 @@ public:
   // list of currently found networks
   std::vector<WiFiNetwork> _foundNetworks;
   WiFiConnectingState _state = WiFiConnectingState::NotConnected;
+  WiFiConnectingState _previousState = WiFiConnectingState::NotConnected;
   bool _connectingToWifi = false;
   bool _ignoreDisconnect = false;
   // last connected network when try new

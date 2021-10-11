@@ -428,10 +428,17 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
       break;
     case WifiConnectionEvent::ConnectingSuccess:
       shouldDrawWifiProgress = false;
-      station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
+      station.getWifiManager()->setWiFiConnectionEventHandler(influxdbClientReleaseHandler);
       station.startServer();
       break;        
   };
+}
+
+void influxdbClientReleaseHandler(WifiConnectionEvent event, const char *ssid) {
+  if(event == WifiConnectionEvent::ConnectingStarted) {
+    // We are connecting to another network, release client
+    influxdbHelper.release();
+  }
 }
 
 void wifiAPEventHandler(WifiAPEvent event, APInfo *info){

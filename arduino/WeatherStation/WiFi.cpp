@@ -1,5 +1,6 @@
 #include "WiFi.h"
 #include "IPUtils.h"
+#include <ESP8266HTTPClient.h>
 
 const char *StringId PROGMEM = "id";
 
@@ -7,6 +8,49 @@ static char *copyChars(const char *str) {
   char *ret = new char[strlen(str)+1];
   strcpy(ret, str);
   return ret;
+}
+
+struct CheckServer {
+  const char *url;
+  int expectCode;  
+};
+
+// test urls, must return anything else than 200 to distiguish captive portal
+CheckServer servers[] = {{"http://www.gstatic.com/generate_204", 204}, {"http://api.openweathermap.org:80/data/2.5/weather", 401}};
+
+static bool checkInternetConnectivity() {
+  bool ok = false;
+  for(int i=0;i<sizeof(servers)/sizeof(servers[0]) && !ok;i++) {
+    HTTPClient *client = new HTTPClient;
+    WiFiClient *c;
+    if(strstr(servers[i].url, "https") == servers[i].url) {
+      WiFiClientSecure *sc = new WiFiClientSecure;
+      sc->setInsecure();
+      c = sc;
+    } else {
+      c = new WiFiClient;
+    }
+    Serial.printf_P(PSTR(" Testing %s with %d\n"), servers[i].url, servers[i].expectCode);
+    client->begin(*c, servers[i].url);
+    int code = client->GET();
+    if(code == servers[i].expectCode) {
+      ok = true;
+      Serial.println(F("  Got:"));
+      Serial.println(client->getString());
+    } else {
+      Serial.print(F("  Unexpected code: "));
+      Serial.println(code);
+      if(servers[i].expectCode != 200 && code == 200) {
+        // we got captive portal response
+        ok = false;
+        break;
+      }
+    }
+    client->end();
+    delete client;
+    delete c;
+  }
+  return ok;
 }
 
 WiFiManager::WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings):
@@ -107,6 +151,7 @@ void WiFiManager::loadSettings(const String &ssid) {
 }
 
 void WiFiManager::enterState(WiFiConnectingState newState, bool reconFigure) {
+  _previousState = _state;
   _state = newState;
   if(reconFigure) {
     reconfigureWiFiConnection();
@@ -195,9 +240,13 @@ again:
         }
         break;  
       case WiFiConnectingState::ConnectingSuccess:
-        _manageDelay = MANAGE_NETWORK_DELAY;
-        cleanNetworks();
-        enterState(WiFiConnectingState::Idle);
+        if(checkInternetConnectivity()) {
+          _manageDelay = MANAGE_NETWORK_DELAY;
+          cleanNetworks();
+          enterState(WiFiConnectingState::Idle);
+        } else {
+          enterState(_previousState, true);
+        }
         break;
       case WiFiConnectingState::Idle:
         // Do nothing
@@ -364,21 +413,23 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
 void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& event) {
   Serial.print(F("[WIFIM] WiFi Connected. SSID="));
   Serial.println(event.ssid);
+}
+
+void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
+  Serial.printf_P(PSTR("[WIFIM] WiFi Got IP. localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
   _connectingToWifi = false;
   if(_state == WiFiConnectingState::TestingConfig || _state == WiFiConnectingState::ConnectingToSaved ) {
     // Mark test success only when comming from testing states
     _connectTestSuccess = true;
   }
   _state = WiFiConnectingState::ConnectingSuccess;
+  // Force MGMT loop
+  _lastConnectionAttempt = 0;
   notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
   if(_apInfo.running) {
     // stop ap after a time, so connected client gets a HTTP reponse about successful connection
     _forceAPStop = millis()+10000;
   }
-}
-
-void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
-  Serial.printf_P(PSTR("[WIFIM] WiFi Got IP. localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
 }
 
 void WiFiManager::onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
