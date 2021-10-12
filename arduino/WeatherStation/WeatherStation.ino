@@ -133,12 +133,10 @@ void setup() {
 
   RegionalSettings *pRegionalSettings = station.getRegionalSettings();
   pRegionalSettings->setHandler([pRegionalSettings](){
-    if(pRegionalSettings->detectAutomatically) {
-      bForceUpdate = true;
-    } else {
+    if(!pRegionalSettings->detectAutomatically) {
       setLanguage( pRegionalSettings->language.c_str());  
-      refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
     }
+    bForceUpdate = true; 
   });
 
   station.getAdvancedSettings()->setHandler([](){
