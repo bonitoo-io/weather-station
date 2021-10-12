@@ -1,9 +1,9 @@
 # Changelog
-## 0.57 [in progress]
+## 0.57 [2021-10-12]
 ## Features
  - Split Status page to About and Status 
    - Added automatic refresh to Status page
- - Added monitoring of synchronization service
+ - Added monitoring of synchronization services
  - Added Advanced Settings
    - Including ability to configure display screens
  
