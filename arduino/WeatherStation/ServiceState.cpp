@@ -1,7 +1,9 @@
 #include "ServiceState.h"
 
 // Must be the same number and the same order like SyncServices enum
-static const char *serviceNames[] PROGMEM = {"location", "clock", "update","astronomy","current_weather","forecast","iot_center"};
+static const char *serviceNames[] PROGMEM = {"location", "clock", "update","astronomy","current_weather","forecast","iot_center","db_write_status","db_write_data","db_validate"};
+
+ServicesStatusTracker ServicesTracker;
 
 ServicesStatusTracker::ServicesStatusTracker() {
 }
@@ -25,14 +27,13 @@ void ServicesStatusTracker::updateServiceState(SyncServices service, ServiceStat
 
 void ServicesStatusTracker::load() {
   bool ok = false;
-  Serial.printf_P(PSTR("Read from RTC mem, size %d\n"), sizeof(_statistics));
   if(ESP.rtcUserMemoryRead(0, (uint32_t*) &_statistics, sizeof(_statistics))) {
      uint32_t crcOfData = calculateCRC32((uint8_t*) &_statistics.services[0], sizeof(_statistics.services));
      ok = _statistics.crc32 == crcOfData;
      if(ok) {
-       printStatistics();
+       printStatistics(F("Load"));
      } else {
-       Serial.println(F("RTC memory data CRC error"));
+       Serial.println(F("Load RTC memory: data CRC error"));
      }
   } else {
     Serial.println(F("Failed reading RTC memory"));
@@ -43,12 +44,11 @@ void ServicesStatusTracker::load() {
 }
 
 void ServicesStatusTracker::save(bool print) {
-  Serial.printf_P(PSTR("Write to RTC mem, size %d\n"), sizeof(_statistics));
   _statistics.crc32 = calculateCRC32((uint8_t*) &_statistics.services[0], sizeof(_statistics.services));
   // Write struct to RTC memory
   if (ESP.rtcUserMemoryWrite(0, (uint32_t*) &_statistics, sizeof(_statistics))) {
     if(print) {
-      printStatistics();
+      printStatistics(F("Save"));
     }
   } else {
     Serial.println(F("Failed writing to RTC memory"));
@@ -83,8 +83,9 @@ Point *ServicesStatusTracker::serviceStatisticToPoint(SyncServices service) {
   return point;
 }
 
-void ServicesStatusTracker::printStatistics() {
-  Serial.println(" Services statistics: ");
+void ServicesStatusTracker::printStatistics(const String &title) {
+  Serial.print(title);
+  Serial.println(F(" services statistics:"));
   for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
       Serial.print(F("\t"));
       Serial.print(FPSTR(getServiceName((SyncServices)i)));

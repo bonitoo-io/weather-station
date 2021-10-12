@@ -57,7 +57,7 @@ InfluxDBHelper influxdbHelper;
 // Weather station backend
 WeatherStation station(&influxdbHelper);
 Updater updater;
-ServicesStatusTracker servicesTracker;
+
 
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
@@ -86,10 +86,10 @@ void initData() {
     //Initialize OLED UI
     initOLEDUI(&ui, station.getAdvancedSettings());
     if(resetReason.length()) {
-      influxdbHelper.registerResetInfo(resetReason, &servicesTracker);
+      influxdbHelper.registerResetInfo(resetReason);
       resetReason = (char *)nullptr;
     }
-    servicesTracker.reset();
+    ServicesTracker.reset();
 
     //Load all data
     updateData(&display, true);
@@ -161,7 +161,7 @@ void setup() {
   setLanguage( pRegionalSettings->language.c_str());  
   refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
   WS_DEBUG_RAM("Setup 3");
-  servicesTracker.load();
+  ServicesTracker.load();
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
@@ -180,13 +180,13 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     delay(1000);
     WS_DEBUG_RAM("After delay");
     //Load location data from IP
-    servicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncStarted);
-    servicesTracker.save();
+    ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncStarted);
+    ServicesTracker.save();
     int res = detectLocationFromIP( firstStart, station.getRegionalSettings());
     if(!res) {
-      servicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncFailed);
+      ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncFailed);
     } else {
-      servicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncOk);
+      ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncOk);
       if(res==2) {
         station.saveRegionalSettings();
         setLanguage( station.getRegionalSettings()->language.c_str());
@@ -201,23 +201,23 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
 
   drawUpdateProgress(display, 10, getStr(s_Updating_time));
-  servicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncStarted);
-  servicesTracker.save();
+  ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncStarted);
+  ServicesTracker.save();
   if(updateClock( firstStart, station.getRegionalSettings()->utcOffset, station.getAdvancedSettings()->ntpServers)) {
-    servicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncOk);
+    ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncOk);
   } else {
-    servicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncFailed);
+    ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncFailed);
   }
 
 
   drawUpdateProgress(display, 20, getStr(s_Checking_update));
   if(firstStart && station.getUpdaterSettings()->updateTime < 2400) {
-    servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
-    servicesTracker.save();
+    ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
+    ServicesTracker.save();
     if(updater.checkUpdate()) {
-      servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
+      ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
     } else {
-      servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
+      ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
     }
   }
 
@@ -226,14 +226,14 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     if(conf.iotCenterUrl.length()) {
       // TODO: better solution for updating Settings from IoT center
       auto influxDBSettings = station.getInfluxDBSettings();
-      servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
-      servicesTracker.save();
+      ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
+      ServicesTracker.save();
       if(loadIoTCenter(firstStart, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
-        servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
+        ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
         station.getPersistence()->writeToFS(influxDBSettings);
         influxDBSettings->notify();
       } else {
-        servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
+        ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
       }
     } else {
       influxdbHelper.begin(station.getInfluxDBSettings());
@@ -241,33 +241,33 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
 
   drawUpdateProgress(display, 50, getStr(s_Updating_weather));
-  servicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncStarted);
-  servicesTracker.save();
+  ServicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncStarted);
+  ServicesTracker.save();
   if(updateCurrentWeather( station.getRegionalSettings(), station.getAdvancedSettings()->openWeatherAPIKey)) {
-    servicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncOk);
+    ServicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncOk);
   } else {
-    servicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncFailed);
+    ServicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncFailed);
   }
   
-  servicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncStarted);
-  servicesTracker.save();
+  ServicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncStarted);
+  ServicesTracker.save();
   drawUpdateProgress(display, 60, getStr(s_Calculate_moon_phase));
   if(updateAstronomy( firstStart, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
-    servicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncOk);
+    ServicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncOk);
   } else {
-    servicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncFailed);
+    ServicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncFailed);
   }
   
   drawUpdateProgress(display, 70, getStr(s_Updating_forecasts));
-  servicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncStarted);
-  servicesTracker.save();
+  ServicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncStarted);
+  ServicesTracker.save();
   if(updateForecast(station.getRegionalSettings(), station.getAdvancedSettings()->openWeatherAPIKey)) {
-    servicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncOk);
+    ServicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncOk);
   } else {
-    servicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncFailed);
+    ServicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncFailed);
   }
 
-  servicesTracker.save(true);
+  ServicesTracker.save(true);
   
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
 
@@ -280,7 +280,14 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);
   }
 
-  influxdbHelper.writeStatus(&servicesTracker);
+  ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
+  ServicesTracker.save();
+  if(influxdbHelper.writeStatus()) {
+    ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncOk);
+  } else {
+    ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncFailed);
+  }
+  ServicesTracker.save();
 
   digitalWrite( LED, HIGH);
   delay(500);
@@ -308,7 +315,7 @@ void loop() {
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
     refreshDHTCachedValues(station.getRegionalSettings()->useMetricUnits);
-    servicesTracker.reset();
+    ServicesTracker.reset();
 
     if(WiFi.isConnected()) {
       if(station.getUpdaterSettings()->updateTime < 2400) {
@@ -324,18 +331,25 @@ void loop() {
           WS_DEBUG_RAM("After stop server");
           delay(1000);
           WS_DEBUG_RAM("After delay");
-          servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
-          servicesTracker.save();
+          ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
+          ServicesTracker.save();
           if(updater.checkUpdate()) {
-             servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
+             ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
           } else {
-            servicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
+            ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
           }
-          servicesTracker.save();
           station.startServer();
           influxdbHelper.begin(station.getInfluxDBSettings());
+          
+          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
+          ServicesTracker.save();
           // update status of updater service, which runs only once
-          influxdbHelper.writeStatus(&servicesTracker);
+          if(influxdbHelper.writeStatus()) {
+            ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncOk);
+          } else {
+            ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncFailed);
+          }
+          ServicesTracker.save();;
         }
       }
 
@@ -344,16 +358,16 @@ void loop() {
         digitalWrite( LED, LOW);
         // TODO: better solution for updating Settings from IoT center
         auto influxDBSettings = station.getInfluxDBSettings();
-        servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
-        servicesTracker.save();
+        ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
+        ServicesTracker.save();
         if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
-          servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
+          ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
           station.getPersistence()->writeToFS(influxDBSettings);
           influxDBSettings->notify();
         } else {
-          servicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
+          ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
         }
-        servicesTracker.save();
+        ServicesTracker.save();
         digitalWrite( LED, HIGH);
       }
 
@@ -374,7 +388,15 @@ void loop() {
         digitalWrite( LED, LOW);
         saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);  //Save temperature for the chart
         ESP.wdtFeed();
-        influxdbHelper.write( getDHTTemp( true), getDHTHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude);  //always save in celsius
+        ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
+        ServicesTracker.save();
+        //always save in celsius
+        if(influxdbHelper.write( getDHTTemp( true), getDHTHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) { 
+          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
+        } else {
+          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
+        }
+        ServicesTracker.save();
         Serial.print(F("InfluxDB write "));
         Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
         digitalWrite( LED, HIGH);

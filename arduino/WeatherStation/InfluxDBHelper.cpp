@@ -3,6 +3,7 @@
 #include "Tools.h"
 #include "Version.h"
 #include "FSPersistance.h"
+#include "ServiceState.h"
 
 extern int tempHistory[90];
 const char *Token PROGMEM = "token";
@@ -89,10 +90,10 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
     res = false;
   }
   UNLOCK();
-  return false;
+  return res;
 }
 
-bool InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
+bool InfluxDBHelper::writeStatus() {
   if(!_client || !_client->getServerUrl().length()) {
     return false;
   }
@@ -107,8 +108,9 @@ bool InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
   Serial.println(_client->pointToLineProtocol(status));
   _client->writePoint(status);
 
-  for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
-    Point *point = servicesTracker->serviceStatisticToPoint((SyncServices)i);
+  // Write all statuses except write
+  for(uint8_t i = 0; i < SyncServices::ServiceDBWriteStatus; i++) {
+    Point *point = ServicesTracker.serviceStatisticToPoint((SyncServices)i);
     Serial.print(F("Writing service status: "));
     Serial.println(_client->pointToLineProtocol(*point));
     _client->writePoint(*point);
@@ -128,7 +130,7 @@ bool InfluxDBHelper::writeStatus(ServicesStatusTracker *servicesTracker) {
   return res;
 }
 
-void InfluxDBHelper::registerResetInfo(const String &resetReason, ServicesStatusTracker *servicesTracker) {
+void InfluxDBHelper::registerResetInfo(const String &resetReason) {
   if(_pResetInfo) {
     delete _pResetInfo;
   }
@@ -138,10 +140,10 @@ void InfluxDBHelper::registerResetInfo(const String &resetReason, ServicesStatus
   _pResetInfo->addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
   _pResetInfo->addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
-    ServiceStatistic &stat = servicesTracker->getServiceStatics((SyncServices)i);
+    ServiceStatistic &stat = ServicesTracker.getServiceStatics((SyncServices)i);
     if(stat.state == ServiceState::SyncStarted) {
       _pResetInfo->addTag(F("crashed"), getServiceName((SyncServices)i));
-      servicesTracker->serviceStatisticToPoint((SyncServices)i, _pResetInfo);
+      ServicesTracker.serviceStatisticToPoint((SyncServices)i, _pResetInfo);
     }
   }
 }
@@ -271,13 +273,10 @@ InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPer
 
 // ****************** InfluxDBValidateParamsEndpoint ***************************
 
-InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper):
-  ValidateParamsEndpoint(server, VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH),
+InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer *pServer, InfluxDBHelper *pHelper):
+  ValidateParamsEndpoint(pServer, VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH),
   _validationSettings(nullptr),
-  _helper(helper)
-  {
-
-}
+  _pHelper(pHelper) { }
 
 void InfluxDBValidateParamsEndpoint::saveParams(JsonVariant& json) {
  if(_validationSettings) {
@@ -288,12 +287,19 @@ void InfluxDBValidateParamsEndpoint::saveParams(JsonVariant& json) {
   _validationSettings->load(jsonObject);
   const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
   if(strstr(authToken,ReplaceMark)) {
-    _validationSettings->authorizationToken = _helper->settings()->authorizationToken;
+    _validationSettings->authorizationToken = _pHelper->settings()->authorizationToken;
   }
 }
 
 void InfluxDBValidateParamsEndpoint::runValidation() {
-  _error = _helper->validateConnection(_validationSettings->serverURL, _validationSettings->org, _validationSettings->bucket, _validationSettings->authorizationToken);
+  ServicesTracker.updateServiceState(SyncServices::ServiceDBValidate, ServiceState::SyncStarted);
+  ServicesTracker.save();
+  _error = _pHelper->validateConnection(_validationSettings->serverURL, _validationSettings->org, _validationSettings->bucket, _validationSettings->authorizationToken);
+  if(_error.length()) {
+    ServicesTracker.updateServiceState(SyncServices::ServiceDBValidate, ServiceState::SyncFailed);
+  } else {
+    ServicesTracker.updateServiceState(SyncServices::ServiceDBValidate, ServiceState::SyncOk);
+  }
   delete _validationSettings;
   _validationSettings = nullptr;
 }

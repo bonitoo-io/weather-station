@@ -12,6 +12,9 @@ enum SyncServices : uint8_t {
   ServiceCurrentWeather,
   ServiceForecast,
   ServiceIoTCenter,
+  ServiceDBWriteStatus,
+  ServiceDBWriteData,
+  ServiceDBValidate,
   ServiceLastMark
 };
 
@@ -23,20 +26,21 @@ enum class ServiceState : uint8_t {
   SyncFailed
 };
 
-// 8bytes
+// 8 bytes
 struct MemoryStatistic {
   uint32_t freeMem;
   uint16_t maxFreeBlock;
   uint8_t heapFragmentation;
 };
 
-// 20bytes
+// 20 bytes
 struct ServiceStatistic {
   ServiceState state;
   MemoryStatistic memBefore;
   MemoryStatistic memAfter;
 };
 
+//204 bytes
 struct RtcMemBlock {
   ServiceStatistic services[SyncServices::ServiceLastMark];
   uint32_t crc32;
@@ -54,12 +58,13 @@ class ServicesStatusTracker {
   void reset();
   void serviceStatisticToPoint(SyncServices service, Point *point);
   Point *serviceStatisticToPoint(SyncServices service);
-  void printStatistics();
+  void printStatistics(const String &title);
   ServiceStatistic& getServiceStatics(SyncServices service) { return _statistics.services[service]; }
 private:
   RtcMemBlock _statistics;
 };
 
+extern ServicesStatusTracker ServicesTracker;
 
 uint32_t calculateCRC32(const uint8_t *data, size_t length);
 void resetServiceStatistic(ServiceStatistic *stat);

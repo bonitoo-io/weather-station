@@ -6,7 +6,6 @@
 #include "Settings.h"
 #include <InfluxDbClient.h>
 #include "Validation.h"
-#include "ServiceState.h"
 
 #define INFLUXDB_DEFAULT_SERVER_URL ""
 #define INFLUXDB_DEFAULT_ORG ""
@@ -44,9 +43,9 @@ class InfluxDBHelper {
   }
   void begin( InfluxDBSettings *settings);
   void update( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location, bool metric);
-  void registerResetInfo(const String &resetReason, ServicesStatusTracker *servicesTracker);
+  void registerResetInfo(const String &resetReason);
   bool writeResetInfo();
-  bool writeStatus(ServicesStatusTracker *servicesTracker);
+  bool writeStatus();
   bool write( float temp, float hum, const float lat, const float lon);
   bool loadTempHistory(const String &deviceID, bool metric);
   bool release();
@@ -74,14 +73,14 @@ public:
 
 class InfluxDBValidateParamsEndpoint : public ValidateParamsEndpoint {
 public:
-    InfluxDBValidateParamsEndpoint(AsyncWebServer* server, InfluxDBHelper *helper);
+    InfluxDBValidateParamsEndpoint(AsyncWebServer *pServer, InfluxDBHelper *pHelper);
     virtual ~InfluxDBValidateParamsEndpoint() { delete _validationSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;
   virtual void runValidation() override;
 private:
     InfluxDBSettings *_validationSettings;
-    InfluxDBHelper *_helper;
+    InfluxDBHelper *_pHelper;
 };
 
 #endif //INFLUXDB_HELPER_H
