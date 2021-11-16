@@ -32,6 +32,9 @@ module.exports = function override(config, env) {
       test: /\.(js)$/,
       deleteOriginalAssets: true
     }));
+    config.optimization.splitChunks = {
+         chunks: 'all',
+      }
   }
   return config;
 }
