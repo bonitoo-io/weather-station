@@ -1,13 +1,11 @@
-import React, { Component } from 'react';
+import React, { Component, lazy, Suspense } from 'react';
 import { Switch, Route, Redirect } from 'react-router';
 
-
-import WiFiConnection from './wifi/WiFiConnection';
 import Device from './device/Device';
-import Settings from './settings/Settings'
 import { AppStateContext } from './AppStateContext';
 
-
+const Settings = lazy(() => import('./settings/Settings'));
+const WiFiConnection  = lazy(() => import('./wifi/WiFiConnection'));
 
 class AppRouting extends Component {
 
@@ -18,12 +16,16 @@ class AppRouting extends Component {
     return (
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
-          <Switch>
-            <Route exact path="/device/*" component={Device} />
-            <Route exact path="/wifi/*" component={WiFiConnection} />
-            <Route exact path="/settings/*" component={Settings } />
-            <Redirect to={wifiConfigured?"/device/about":"/wifi/scan"} />
-          </Switch>
+          <div>
+             <Suspense fallback={<div>Page is Loading...</div>}>
+              <Switch>
+                <Route exact path="/device/*" component={Device} />
+                <Route exact path="/wifi/*" component={WiFiConnection} />
+                <Route exact path="/settings/*" component={Settings } />
+                <Redirect to={wifiConfigured?"/device/about":"/wifi/scan"} />
+              </Switch>
+          </Suspense>
+          </div>
           )
         }
       </AppStateContext.Consumer>
