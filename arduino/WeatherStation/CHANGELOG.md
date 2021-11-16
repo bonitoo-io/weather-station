@@ -1,4 +1,9 @@
 # Changelog
+## 0.58 
+## Fixes
+ - Improved initial web page loading
+ - Using memory optimized InfluxDB Client
+ 
 ## 0.57 [2021-10-12]
 ## Features
  - Split Status page to About and Status 

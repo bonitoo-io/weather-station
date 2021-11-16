@@ -1,0 +1,2 @@
+set BOARD=esp8266:esp8266:d1_mini_clone:xtal=80,vt=flash,exception=disabled,stacksmash=disabled,ssl=all,mmu=3232,non32xfer=fast,FlashMode=dout,FlashFreq=40,eesz=4M2M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600
+c:\software\arduino\arduino_debug.exe --board %BOARD% --verify --verbose-build --verbose-upload --pref build.path=c:\tmp\_ArduinoOutput\d1mini\weatherstation c:\git\arduino\weather-station\arduino\WeatherStation\WeatherStation.ino
