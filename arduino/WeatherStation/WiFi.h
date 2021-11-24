@@ -90,6 +90,8 @@ public:
     bool isConnectingToWiFi() const { return _connectingToWifi; }
     bool isConnectTestSuccessful() const { return _connectTestSuccess; }
     void connectToSavedNetwork(int index);
+    int getDisconnectsCount() const { return _disconnectsCount; }
+    void resetDisconnectsCount() { _disconnectsCount = 0; }
  private:
   void reconfigureWiFiConnection();
   void manageSTA();
@@ -145,6 +147,8 @@ public:
   char *_previousNetwork = nullptr;
   // Result of external connection attempt (TestingConfig, ConnectToSaved)
   bool _connectTestSuccess = false;
+  // disconnects statistic counter
+  uint8_t _disconnectsCount = 0;
 };
 
 #define CONNECT_TO_SAVED_ENDPOINT_PATH "/api/connectSaved"

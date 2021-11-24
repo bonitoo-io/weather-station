@@ -4,6 +4,7 @@
 #include "Version.h"
 #include "FSPersistance.h"
 #include "ServiceState.h"
+#include "WeatherStation.h"
 
 extern int tempHistory[90];
 const char *Token PROGMEM = "token";
@@ -47,7 +48,7 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   
   WriteOptions wo;
   uint16_t batchSize = SyncServices::ServiceLastMark+3;
-  wo.batchSize(batchSize).bufferSize(batchSize*4);
+  wo.batchSize(batchSize).bufferSize(batchSize).maxRetryAttempts(0);
   wo.addDefaultTag(String(F("clientId")), deviceID);
   wo.addDefaultTag(String(F("Device")), String(F("WS-ESP8266")));
   wo.addDefaultTag(String(F("Version")), version);
@@ -103,6 +104,8 @@ bool InfluxDBHelper::writeStatus() {
   status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
   status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   status.addField(F("uptime"), millis()/1000.0);
+  status.addField(F("wifi_disconnects"), station.getWifiManager()->getDisconnectsCount());
+  station.getWifiManager()->resetDisconnectsCount();
   
   Serial.print(F("Writing device status: "));
   Serial.println(_client->pointToLineProtocol(status));

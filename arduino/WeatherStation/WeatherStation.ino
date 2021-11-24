@@ -72,7 +72,7 @@ String resetReason;
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
-int detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings);
+int detectLocationFromIP(RegionalSettings *pRegionalSettings);
 bool updateClock( bool firstStart, int utc_offset, const String &ntp);
 bool updateAstronomy(bool firstStart, const float lat, const float lon);
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey);
@@ -180,7 +180,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     //Load location data from IP
     ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncStarted);
     ServicesTracker.save();
-    int res = detectLocationFromIP( firstStart, station.getRegionalSettings());
+    int res = detectLocationFromIP(station.getRegionalSettings());
     if(!res) {
       ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncFailed);
     } else {
@@ -338,6 +338,7 @@ void loop() {
           }
           station.startServer();
           influxdbHelper.begin(station.getInfluxDBSettings());
+          influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
           
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
           ServicesTracker.save();

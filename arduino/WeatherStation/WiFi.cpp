@@ -339,6 +339,7 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
   //   _lastConnectionAttempt = 0;
   // }
   _connectingToWifi = false;
+  ++_disconnectsCount;
   if(!_ignoreDisconnect) {
     switch(_state) {
       case WiFiConnectingState::ConnectingToKnown:
