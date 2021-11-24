@@ -62,8 +62,8 @@ bool findCountry( const char* country, const char* list) {
   return false;
 }
 
-// Returns 0 in case of failure, 1- ok, city not changed, 2 - ok, city changed
-int detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings) {
+// Returns 0 in case of failure, 1- ok, city or UTC offset not changed, 2 - ok, city or UTC offset changed
+int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
   BearSSL::WiFiClientSecure client;
   HTTPClient http;
   tIPListener ipListener;
@@ -107,7 +107,7 @@ int detectLocationFromIP( bool firstStart, RegionalSettings *pRegionalSettings) 
     utc_offset = -utc_offset;
   
   bool changed = false;
-  if (!firstStart && (pRegionalSettings->utcOffset != utc_offset)) { //if utc offset is changed during refresh
+  if (pRegionalSettings->utcOffset != utc_offset) { //if utc offset is changed during refresh
     Serial.print( F("UTC offset changed from "));
     Serial.println( String(pRegionalSettings->utcOffset) + String(F( " to ")) + String(utc_offset));
     pRegionalSettings->utcOffset = utc_offset;
