@@ -1,5 +1,13 @@
 # Changelog
-## 0.58 
+## 0.58 rc2
+## Features
+ - New application icon
+ - Reporting WiFi reconnects count
+## Fixes
+ - Detecting UTC offset change always
+ - Improved stability
+
+## 0.58 rc1 
 ## Fixes
  - Improved initial web page loading
  - Using memory optimized InfluxDB Client
