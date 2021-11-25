@@ -39,12 +39,6 @@
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
 tConfig conf = {
-//  60,   //updateDataMin
-//  OPEN_WEATHER_MAP_API_KEY, // openweatherApiKey;  
-//  "pool.ntp.org,time.nis.gov,time.google.com", //ntp
-//  0,  //tempOffset
-//  0,  //humOffset
-  
   IOT_CENTER_URL, //iotCenterUrl 
   60             //iotRefreshMin
 };
@@ -278,6 +272,8 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);
   }
 
+  WS_DEBUG_RAM("After updates");
+
   ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
   ServicesTracker.save();
   if(influxdbHelper.writeStatus()) {
@@ -286,7 +282,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncFailed);
   }
   ServicesTracker.save();
-
+  WS_DEBUG_RAM("After write status");
   digitalWrite( LED, HIGH);
   delay(500);
 }
@@ -336,19 +332,22 @@ void loop() {
           } else {
             ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
           }
+          WS_DEBUG_RAM("After update");
           station.startServer();
           influxdbHelper.begin(station.getInfluxDBSettings());
           influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
           
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
           ServicesTracker.save();
+          WS_DEBUG_RAM("After start server");
           // update status of updater service, which runs only once
           if(influxdbHelper.writeStatus()) {
             ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncOk);
           } else {
             ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncFailed);
           }
-          ServicesTracker.save();;
+          ServicesTracker.save();
+          WS_DEBUG_RAM("After write status");
         }
       }
 
@@ -390,6 +389,7 @@ void loop() {
         ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
         ServicesTracker.save();
         //always save in celsius
+        unsigned long start = millis();
         if(influxdbHelper.write( getDHTTemp( true), getDHTHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) { 
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
         } else {
@@ -397,7 +397,7 @@ void loop() {
         }
         ServicesTracker.save();
         Serial.print(F("InfluxDB write "));
-        Serial.println(String(millis() - timeSinceLastUpdate) + String(F("ms")));
+        Serial.println(String(millis() - start) + String(F("ms")));
         digitalWrite( LED, HIGH);
         WS_DEBUG_RAM("After write");
       }
