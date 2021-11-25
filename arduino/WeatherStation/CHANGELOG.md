@@ -1,4 +1,8 @@
 # Changelog
+## 0.58 rc3
+## Fixes
+ - Reverting InfluxDB Client to the latest release
+
 ## 0.58 rc2
 ## Features
  - New application icon
