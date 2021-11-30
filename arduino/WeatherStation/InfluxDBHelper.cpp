@@ -34,7 +34,7 @@ void InfluxDBHelper::begin(InfluxDBSettings *settings) {
   }
   _settings = settings;
   _client = new InfluxDBClient(_settings->serverURL.c_str(), _settings->org.c_str(), _settings->bucket.c_str(), _settings->authorizationToken.c_str(), InfluxDbCloud2CACert);
-  _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1));  
+  _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1).httpReadTimeout(20000));  
   _wasReleased = false;
 }
 
@@ -47,8 +47,7 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   LOCK();
   
   WriteOptions wo;
-  uint16_t batchSize = SyncServices::ServiceLastMark+3;
-  wo.batchSize(batchSize).bufferSize(batchSize).maxRetryAttempts(0);
+  wo.batchSize(2).bufferSize(4).maxRetryAttempts(0);
   wo.addDefaultTag(String(F("clientId")), deviceID);
   wo.addDefaultTag(String(F("Device")), String(F("WS-ESP8266")));
   wo.addDefaultTag(String(F("Version")), version);
@@ -105,7 +104,6 @@ bool InfluxDBHelper::writeStatus() {
   status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   status.addField(F("uptime"), millis()/1000.0);
   status.addField(F("wifi_disconnects"), station.getWifiManager()->getDisconnectsCount());
-  station.getWifiManager()->resetDisconnectsCount();
   
   Serial.print(F("Writing device status: "));
   Serial.println(_client->pointToLineProtocol(status));
