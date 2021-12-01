@@ -206,11 +206,13 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   if(firstStart && station.getUpdaterSettings()->updateTime < 2400) {
     ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
     ServicesTracker.save();
+    WS_DEBUG_RAM("Before GH update");
     if(updater.checkUpdate()) {
       ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
     } else {
       ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
     }
+    WS_DEBUG_RAM("After GH update");
   }
 
   drawUpdateProgress(display, 30, getStr(s_Connecting_IoT_Center));
@@ -327,27 +329,17 @@ void loop() {
           WS_DEBUG_RAM("After delay");
           ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
           ServicesTracker.save();
+          WS_DEBUG_RAM("Before GH update");
           if(updater.checkUpdate()) {
              ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
           } else {
             ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
           }
-          WS_DEBUG_RAM("After update");
+          WS_DEBUG_RAM("After GH update");
           station.startServer();
+          WS_DEBUG_RAM("After start server");
           influxdbHelper.begin(station.getInfluxDBSettings());
           influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
-          
-          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
-          ServicesTracker.save();
-          WS_DEBUG_RAM("After start server");
-          // update status of updater service, which runs only once
-          if(influxdbHelper.writeStatus()) {
-            ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncOk);
-          } else {
-            ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncFailed);
-          }
-          ServicesTracker.save();
-          WS_DEBUG_RAM("After write status");
         }
       }
 
