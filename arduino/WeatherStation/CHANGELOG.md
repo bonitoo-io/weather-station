@@ -1,4 +1,10 @@
 # Changelog
+## 0.58 rc4
+## Fixes
+ - InfluxDB Client with fixed disabled retrying
+ - Decreased batch size
+ - Increased HTTP timeout
+
 ## 0.58 rc3
 ## Fixes
  - Reverting InfluxDB Client to the latest release

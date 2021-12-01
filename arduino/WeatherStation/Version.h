@@ -1,7 +1,7 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VERSION "0.58-rc3"
+#define VERSION "0.58-rc4"
 
 const char *getLongVersion();
 
