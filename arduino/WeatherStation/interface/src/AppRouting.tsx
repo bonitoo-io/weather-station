@@ -1,6 +1,6 @@
 import React, { Component, lazy, Suspense } from 'react';
 import { Switch, Route, Redirect } from 'react-router';
-
+import FullScreenLoading from './components/FullScreenLoading';
 import Device from './device/Device';
 import { AppStateContext } from './AppStateContext';
 
@@ -17,7 +17,7 @@ class AppRouting extends Component {
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
           <div>
-             <Suspense fallback={<div>Page is Loading...</div>}>
+             <Suspense fallback={<FullScreenLoading/>}>
               <Switch>
                 <Route exact path="/device/*" component={Device} />
                 <Route exact path="/wifi/*" component={WiFiConnection} />
