@@ -12,6 +12,7 @@ class ScreenConstants {
   static const char DateTimeAnalog;
   static const char DateTimeDigital;
   static const char SensorValues;
+  static const char Covid19;
   static const char CurrentWeather;
   static const char WeatherForecast;
   static const char WindForecast;
@@ -44,7 +45,9 @@ void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, in
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawCovid19(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-bool isInfluxDBError();  
+bool isInfluxDBError();
+
 
 #endif //WS_SCREEN_COMMON_H

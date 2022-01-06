@@ -112,7 +112,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
               onChange={this.toUpperCase('screens', handleDirectValueChange)}
               margin="normal"
               inputProps={{ style: { textTransform: "uppercase" } }}  
-              helperText="Screens (letter is in brackets): (A)nalog time; (D)igital time; (I)ndoor temperature/humidity; (T)emperature chart; (O)utdoor weather; weather (F)orecast; (W)ind forecast; (M)oon phase rise/set; (C)onfiguration info"
+              helperText="Screens (letter is in brackets): (A)nalog time; (D)igital time; (I)ndoor temperature/humidity; Covid-19 (S)pread risk; (T)emperature chart; (O)utdoor weather; weather (F)orecast; (W)ind forecast; (M)oon phase rise/set; (C)onfiguration info"
             />
           <TextValidator
               validators={['required', 'isNumber', 'minNumber:1']}

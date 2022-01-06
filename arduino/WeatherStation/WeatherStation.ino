@@ -19,7 +19,7 @@
  * Begin Settings
  **************************/
 //See https://docs.thingpulse.com/how-tos/openweathermap-key/
-#define OPEN_WEATHER_MAP_API_KEY "XXX"
+#define OPEN_WEATHER_MAP_API_KEY ""
 
 // IoT Center url, e.g. http://192.168.1.20:5000  (can be empty, if not configured)
 #define IOT_CENTER_URL ""

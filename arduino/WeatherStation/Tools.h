@@ -49,7 +49,7 @@ String getMoonPhaseName( uint8_t index);
 
 //List of all strings
 enum tStrings {
-  s_Connecting_WiFi=0, s_Connecting_IoT_Center, s_Detecting_location, s_Checking_update, s_Updating_time, s_Updating_weather, s_Calculate_moon_phase, s_Updating_forecasts, s_Connecting_InfluxDB, s_Done,
+  s_Connecting_WiFi=0, s_Searching, s_or_wait_for_setup, s_Connecting_IoT_Center, s_Detecting_location, s_Checking_update, s_Updating_time, s_Updating_weather, s_Calculate_moon_phase, s_Updating_forecasts, s_Connecting_InfluxDB, s_Done,
   s_Update_found, s_Update_start_in, s_Update_successful, s_Update_restart_in, s_Update_failed, s_Updating_to, s_Update_restarting, s_Wifi_AP_connect, s_Wifi_web_point, s_Wifi_configure,
   s_InfluxData_Weather_Station, s_Configure_via, s_Forecast_error,
   s_In, s_Out, s_now,

@@ -12,6 +12,7 @@ const char ScreenConstants::About = 'B';
 const char ScreenConstants::DateTimeAnalog = 'A';
 const char ScreenConstants::DateTimeDigital = 'D';
 const char ScreenConstants::SensorValues = 'I';
+const char ScreenConstants::Covid19 = 'S';
 const char ScreenConstants::CurrentWeather = 'O';
 const char ScreenConstants::WeatherForecast = 'F';
 const char ScreenConstants::WindForecast = 'W';
@@ -25,6 +26,7 @@ String ScreenConstants::getDefaultList() {
   list.concat(DateTimeDigital);
   list.concat(SensorValues);
   list.concat(TemperatureChart);
+  list.concat(Covid19);
   list.concat(CurrentWeather);
   list.concat(WeatherForecast);
   list.concat(WindForecast);
@@ -34,8 +36,6 @@ String ScreenConstants::getDefaultList() {
 }
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
-//FrameCallback frames[] = { drawDateTimeAnalog, drawDateTime, drawDHT, drawTemperatureChart, drawCurrentWeather, drawForecast, drawWindForecast, drawAstronomy, drawAbout};
-//FrameCallback frames[] = { drawTemperatureChart};
 OverlayCallback overlays[] = { drawHeaderOverlay};
 
 void initOLEDUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
@@ -53,6 +53,8 @@ FrameCallback getFrameCallback(char c) {
       return drawDHT;
     case ScreenConstants::TemperatureChart:
       return drawTemperatureChart;
+    case ScreenConstants::Covid19:
+      return drawCovid19;
     case ScreenConstants::CurrentWeather:
       return drawCurrentWeather;
     case ScreenConstants::WeatherForecast:
@@ -83,7 +85,7 @@ void configureUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
     delete [] pFrames;
   }
   pFrames = new FrameCallback[pAdvancedSettings->screens.length()];
-  int i=0;
+  int8_t i=0;
   for(char c: pAdvancedSettings->screens) {
     FrameCallback f = getFrameCallback(c);
     if(f) {
@@ -109,11 +111,14 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
       display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nv")) + version);
     } else {  //show Wifi connecting screen
       display->drawString(88, 0, getStr(s_Connecting_WiFi));
-      display->drawString(88, 15, ssid);
+      if (strlen(ssid) > 0)
+        display->drawString(88, 15, ssid);
+      else
+        display->drawString(88, 15, getStr(s_Searching));
       display->drawXbm(71, 30, 8, 8, wifiProgressCounter % 3 == 0 ? activeSymbole : inactiveSymbole);
       display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
       display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
-      display->drawString(88, 38, String(F("or wait for setup")));
+      display->drawString(88, 38, getStr(s_or_wait_for_setup));
       display->drawString(88, 50, String(F("v")) + version);
     }
     display->display();    
