@@ -9,12 +9,8 @@ import { RestFormProps, BlockFormControlLabel, FormActions, FormButton } from '.
 
 
 import { RegionalSettings, ValidationStatus, ValidationStatusResponse } from './types';
-import { REGIONAL_SETTINGS_VALIDATE_ENDPOINT } from '../api';
+import { NUM_POLLS, POLLING_FREQUENCY, REGIONAL_SETTINGS_VALIDATE_ENDPOINT, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
-
-const NUM_POLLS = 20
-const POLLING_FREQUENCY = 500
-const RETRY_EXCEPTION_TYPE = "retry"
 
 const styles = (theme: Theme) => createStyles({ 
    connectingSettings: {
@@ -232,26 +228,28 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
         this.pollCount = 0
         this.schedulePollValidation()
         return
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.postValidation, timeout*1000)
+        throw retryError503()
       } else {
-        this.setState({ validatingParams: false });
         throw Error("Invalid status code: " + response.status);
       }
     })
     .catch(error => {
-      this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
-      this.setState({ validatingParams: false });
+      if (error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
+        this.setState({ validatingParams: false });
+      }
     });
   }
 
   schedulePollValidation() {
     setTimeout(this.pollValidation, POLLING_FREQUENCY);
-  }
-
-  retryError() {
-    return {
-      name: RETRY_EXCEPTION_TYPE,
-      message: "Validation not ready, will retry in " + POLLING_FREQUENCY + "ms."
-    };
   }
 
   pollValidation = () => {
@@ -262,10 +260,18 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
         } else if(response.status === 202) {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.pollValidation, timeout*1000)
+          throw retryError503()
         } else {
           throw new Error("Invalid status code " + response.status)
         }
@@ -281,7 +287,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
         } else {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }

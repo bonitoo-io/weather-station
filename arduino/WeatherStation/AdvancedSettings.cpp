@@ -17,7 +17,7 @@ AdvancedSettings::AdvancedSettings():
 void AdvancedSettings::print(const __FlashStringHelper *title) {
     Serial.print(title);
     Serial.print(F(" updateDataInterval: "));Serial.print(updateDataInterval);
-    Serial.print(F(", openWeatherAPIKey: "));Serial.print(openWeatherAPIKey);
+    Serial.print(F(", openWeatherAPIKey: "));Serial.print(obfuscateToken(openWeatherAPIKey));
     Serial.print(F(", ntpServers: "));Serial.print(ntpServers);
     Serial.print(F(", tempOffset: "));Serial.print(tempOffset);
     Serial.print(F(", humOffset: "));Serial.print(humOffset);

@@ -217,7 +217,7 @@ String InfluxDBHelper::validateConnection(const String &serverUrl, const String 
 void InfluxDBSettings::print(const __FlashStringHelper *title) {
     Serial.print(title);
     Serial.print(F(" server: "));Serial.print(serverURL);
-    //Serial.print(F(", token: "));Serial.print(authorizationToken);
+    Serial.print(F(", token: "));Serial.print(obfuscateToken(authorizationToken));
     Serial.print(F(", org: "));Serial.print(org);
     Serial.print(F(", bucket: "));Serial.print(bucket);
     Serial.print(F(", writeInterval: "));Serial.print(writeInterval);

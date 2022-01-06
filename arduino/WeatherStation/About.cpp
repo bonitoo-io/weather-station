@@ -52,7 +52,7 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   root[F("fsTotal")] = fs_info.totalBytes;
   root[F("fsUsed")] = fs_info.usedBytes;
 
-
+  response->addHeader(F("Cache-Control"),F("No-Store"));
   response->setLength();
   request->send(response);
 }

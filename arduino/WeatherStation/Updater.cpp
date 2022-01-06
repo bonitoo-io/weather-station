@@ -26,7 +26,9 @@ bool Updater::checkUpdate() {
   bool res = ver.length();
   if(res) {
     Serial.printf_P(PSTR("Updater: Curent version %s, latest version: %s\n"), _currentVersion, ver.c_str());
-    if(ver != _currentVersion) {
+    // check if current version starts with the latest version, i.e. allow custom firmware
+    // e.g. latest: 0.58, current 0.58-cb-test
+    if(strstr(_currentVersion, ver.c_str()) != _currentVersion) {
       Serial.println(F("Updater: Starting update"));
       if(_startCb) {
         _startCb(ver.c_str());
