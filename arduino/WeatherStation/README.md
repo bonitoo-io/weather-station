@@ -19,12 +19,15 @@ Weather station with OLED and WiFi (using ESP8266, SSD1306, and DHT11) with Infl
 
 ## Required Libraries
 
-(accessible via Library manager - indented libraries installed as dependencies)
+Libraries are accessible via Library manager or must installed manually, if source URL is provided. 
+Indentation means transitive dependency, but such a library must be installed as well.
 
 * ESP8266 and ESP32 OLED driver for SSD1306 displays (by ThingPulse, Fabrice Weinberg)
-* ESP8266 Weather Station (by ThingPulse) optimized version from https://github.com/bonitoo-io/esp8266-weather-station
+* ESP8266 Weather Station (by ThingPulse) optimized version - from https://github.com/bonitoo-io/esp8266-weather-station branch [all-fixes](https://github.com/bonitoo-io/esp8266-weather-station/tree/all-fixes)
   * Json Streaming Parser (by Daniel Eichhorn)
 * DHT sensor library (by Adafruit)
   * Adafruit Unified Sensor (by Adafruit)
 * ESP8266 Influxdb (by Tobias Schürg, InfluxData)
-* ESP Github Updater - from https://github.com/vlastahajek/ESP-Github-Updater
+* ESP Github Updater - from https://github.com/bonitoo-io/ESP-Github-Updater
+* ESPAsyncWebServer - from https://github.com/bonitoo-io/ESPAsyncWebServer/ branch [feat/global_filter](https://github.com/bonitoo-io/ESPAsyncWebServer/tree/feat/global_filter)
+  * ESPAsyncTCP - from https://github.com/me-no-dev/ESPAsyncWebServer

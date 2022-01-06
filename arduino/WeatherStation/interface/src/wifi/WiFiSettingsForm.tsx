@@ -16,13 +16,9 @@ import { isIP, isHostname, optional } from '../validators';
 import { WiFiConnectionContext } from './WiFiConnectionContext';
 import { isNetworkOpen, networkSecurityMode } from './WiFiSecurityModes';
 import { ConnectingStatus, WiFiSettings } from './types';
-import { CONNECT_STATUS_ENDPOINT_PATH, WIFI_SETTINGS_ENDPOINT } from '../api';
+import { CONNECT_STATUS_ENDPOINT_PATH, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE, WIFI_SETTINGS_ENDPOINT } from '../api';
 //import { withStyles, WithStyles } from '@material-ui/styles';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
-
-const NUM_POLLS = 20
-const POLLING_FREQUENCY = 500
-const RETRY_EXCEPTION_TYPE = "retry"
 
 const styles = (theme: Theme) => createStyles({ 
    connectingSettings: {
@@ -264,26 +260,29 @@ class WiFiSettingsForm extends Component<WiFiSettingsFormProps, WiFiSettingsForm
         this.pollCount = 0
         this.schedulePollValidation()
         return
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.validateAndSaveParams, timeout*1000)
+        throw retryError503()
       } else {
         this.setState({ validatingParams: false });
         throw Error("Invalid status code: " + response.status);
       }
     })
     .catch(error => {
-      this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
-      this.setState({ validatingParams: false });
+      if (error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
+        this.setState({ validatingParams: false });
+      }
     });
   }
 
   schedulePollValidation() {
     setTimeout(this.pollValidation, POLLING_FREQUENCY);
-  }
-
-  retryError() {
-    return {
-      name: RETRY_EXCEPTION_TYPE,
-      message: "Validation not ready, will retry in " + POLLING_FREQUENCY + "ms."
-    };
   }
 
   pollValidation = () => {
@@ -294,10 +293,18 @@ class WiFiSettingsForm extends Component<WiFiSettingsFormProps, WiFiSettingsForm
         } else if(response.status === 202) {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.pollValidation, timeout*1000)
+          throw retryError503()
         } else {
           throw new Error("Invalid status code " + response.status)
         }

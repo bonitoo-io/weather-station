@@ -320,7 +320,7 @@ void WiFiManager::stopAP() {
     _forceAPStop = 0;
     notifyAPEvent(WifiAPEvent::APStopped);
     WiFi.disconnect(true);
-    ESP.restart();
+    //ESP.restart();
 }
 
 void WiFiManager::handleDNS() {
@@ -451,6 +451,7 @@ void WiFiConnectionHelperEndpoint::connectingStatus(AsyncWebServerRequest* reque
     if(_pWiFiManager->getLastDisconnectReason()) {
       root[F("disconnect_reason")] = _pWiFiManager->getLastDisconnectReason();
     }
+    response->addHeader(F("Cache-Control"),F("No-Store"));
     response->setLength();
     request->send(response);
   }
@@ -484,6 +485,7 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
             network[F("channel")] = WiFi.channel(i);
             network[F("encryption_type")] = convertEncryptionType(WiFi.encryptionType(i));
         }
+        response->addHeader(F("Cache-Control"),F("No-Store"));
         response->setLength();
         request->send(response);
     } else if (numNetworks == -1) {
@@ -543,6 +545,7 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
       root[F("dns_ip_2")] = dnsIP2.toString();
     }
   }
+  response->addHeader(F("Cache-Control"),F("No-Store"));
   response->setLength();
   request->send(response);
 }
@@ -567,6 +570,7 @@ void WiFiListSavedEndpoint::listNetworks(AsyncWebServerRequest* request) {
       network[FPSTR(StringSSID)] = _savedNetworks[i];
       network[F("connected")] = _savedNetworks[i] == WiFi.SSID();
   }
+  response->addHeader(F("Cache-Control"),F("No-Store"));
   response->setLength();
   request->send(response);
 }

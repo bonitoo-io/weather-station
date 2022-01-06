@@ -51,7 +51,11 @@ public:
     }
     void startServer();
     void stopServer();
+    void registerEndpoints();
     void saveRegionalSettings();
+    void registerHandler(const String& uri, const String& contentType, const uint8_t* content, size_t len);
+    void globalDisconnectHandler(AsyncWebServerRequest *request);
+    bool globalFilterHandler(AsyncWebServerRequest *request);
     void setFWUploadFinishedCallback(FWUploadFinishedCallback callback) { _fwUploadFinishedCallback = callback; }
 private:
     InfluxDBHelper *_influxDBHelper;
@@ -62,6 +66,7 @@ private:
     AdvancedSettings _advancedSettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
+    bool _endpointsRegistered = false;
     AsyncWebServer *_server = nullptr;
     WiFiScannerEndpoint *_wifiScannerEndpoint = nullptr;
     WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;

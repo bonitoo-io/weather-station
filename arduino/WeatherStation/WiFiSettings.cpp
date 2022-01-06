@@ -7,7 +7,7 @@ const char *StringPassword PROGMEM = "password";
 void WiFiSettings::print(const __FlashStringHelper *title) {
     Serial.print(title);
     Serial.print(F(" ssid: "));Serial.print(ssid);
-    //Serial.print(F(", password: "));Serial.print(password);
+    Serial.print(F(", password: "));Serial.print(obfuscateToken(password,2));
     Serial.print(F(", hostname: "));Serial.print(hostname);
     Serial.print(F(", static_ip_config: "));Serial.print(staticIPConfig);
     Serial.print(F(", local_ip: "));Serial.print(localIP);

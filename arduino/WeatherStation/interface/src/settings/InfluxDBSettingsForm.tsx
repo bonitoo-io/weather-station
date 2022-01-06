@@ -9,13 +9,10 @@ import { RestFormProps, FormActions, FormButton,  } from '../components';
 import { isURL } from '../validators';
 import CheckCircle from '@material-ui/icons/CheckCircle';
 import { InfluxDBSettings, ValidationStatus, ValidationStatusResponse } from './types';
-import { INFLUXDB_VALIDATE_ENDPOINT} from '../api';
+import { INFLUXDB_VALIDATE_ENDPOINT, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE} from '../api';
 
 type InfluxDBSettingsFormProps = RestFormProps<InfluxDBSettings>;
 
-const NUM_POLLS = 20
-const POLLING_FREQUENCY = 500
-const RETRY_EXCEPTION_TYPE = "retry"
 
 interface InfluxDBSettingsFormState {
   validatingParams: boolean;
@@ -150,7 +147,19 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
         }
       })
     .then(response => {
-      return response.json()
+      if(response.status === 200) {
+        return response.json()
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.validateParams, timeout*1000)
+        throw retryError503()
+      } else {
+        throw new Error("Invalid status code " + response.status)
+      }
     })
     .then(json => {
       const status : ValidationStatusResponse = json
@@ -163,25 +172,32 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
       return
     })
     .catch(error => {
-      this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
-      this.setState({ validatingParams: false });
+      if (error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
+        this.setState({ validatingParams: false });
+      }
     });
   }
   schedulePollValidation() {
     setTimeout(this.pollValidation, POLLING_FREQUENCY);
   }
 
-  retryError() {
-    return {
-      name: RETRY_EXCEPTION_TYPE,
-      message: "Validation not ready, will retry in " + POLLING_FREQUENCY + "ms."
-    };
-  }
-
   pollValidation = () => {
     fetch(INFLUXDB_VALIDATE_ENDPOINT, {method: 'GET'})
       .then(response => {
-        return response.json();
+        if(response.status === 200) {
+          return response.json()
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.pollValidation, timeout*1000)
+          throw retryError503()
+        } else {
+          throw new Error("Invalid status code " + response.status)
+        }
       })
       .then(json => {
         const status : ValidationStatusResponse = json
@@ -196,7 +212,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
         } else {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }

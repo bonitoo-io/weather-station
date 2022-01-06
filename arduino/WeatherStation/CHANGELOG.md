@@ -1,4 +1,13 @@
 # Changelog
+## New
+## Features
+ - InfluxDB client with streaming write
+ - Web Server improvements:
+   - All request logging
+   - No cache for api responses
+   - Concurrent writing and api request check
+   - All UI requests to server handle 503 and 427
+
 ## 0.58 rc4
 ## Fixes
  - InfluxDB Client with fixed disabled retrying
