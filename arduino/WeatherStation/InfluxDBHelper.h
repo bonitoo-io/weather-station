@@ -52,6 +52,7 @@ class InfluxDBHelper {
   String validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken);
   InfluxDBSettings *settings() { return _settings; }
   bool wasReleased() const { return _wasReleased; }
+  bool isWriting() const { return _lock == 1; }
 private:
   InfluxDBSettings *_settings = nullptr;
   InfluxDBClient *_client = nullptr;

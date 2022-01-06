@@ -5,15 +5,11 @@ import { createStyles, WithStyles, Theme, withStyles, Typography, LinearProgress
 import PermScanWifiIcon from '@material-ui/icons/PermScanWifi';
 
 import { FormActions, FormButton, SectionContent } from '../components';
-import { SCAN_NETWORKS_ENDPOINT, LIST_NETWORKS_ENDPOINT, LIST_SAVED_NETWORKS_ENDPOINT, CONNECT_TO_SAVED_ENDPOINT_PATH, CONNECT_STATUS_ENDPOINT_PATH } from '../api';
+import { SCAN_NETWORKS_ENDPOINT, LIST_NETWORKS_ENDPOINT, LIST_SAVED_NETWORKS_ENDPOINT, CONNECT_TO_SAVED_ENDPOINT_PATH, CONNECT_STATUS_ENDPOINT_PATH, POLLING_FREQUENCY, NUM_POLLS, retryErrorPolling, RETRY_EXCEPTION_TYPE, retryError503 } from '../api';
 import { AppStateContext } from '../AppStateContext';
 import WiFiNetworkSelector from './WiFiNetworkSelector';
 import { WiFiNetworkList, WiFiNetwork, SavedNetworkList, SavedNetwork,  ConnectingStatus } from './types';
 import { WiFiConnectionContext } from './WiFiConnectionContext';
-
-const NUM_POLLS = 20
-const POLLING_FREQUENCY = 500
-const RETRY_EXCEPTION_TYPE = "retry"
 
 interface WiFiNetworkScannerState {
   scanningForNetworks: boolean;
@@ -46,6 +42,7 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
   context!: React.ContextType<typeof WiFiConnectionContext>;
 
   networkToSelect: WiFiNetwork | undefined;
+  networkToConnect: SavedNetwork | undefined;
 
   pollCount: number = 0;
 
@@ -74,25 +71,28 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
       if (response.status === 202) {
         this.schedulePollTimeout();
         return;
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.scanNetworks, timeout*1000)
+        throw retryError503()
       }
       throw Error("Scanning for networks returned unexpected response code: " + response.status);
     }).catch(error => {
-      this.props.enqueueSnackbar("Problem scanning: " + error.message, {
-        variant: 'error',
-      });
-      this.setState({ scanningForNetworks: false, networkList: undefined, errorMessage: error.message });
+      if(error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar("Problem scanning: " + error.message, {
+          variant: 'error',
+        });
+        this.setState({ scanningForNetworks: false, networkList: undefined, errorMessage: error.message });
+      }
     });
   }
 
   schedulePollTimeout() {
     setTimeout(this.pollNetworkList, POLLING_FREQUENCY);
-  }
-
-  retryError() {
-    return {
-      name: RETRY_EXCEPTION_TYPE,
-      message: "Network list not ready, will retry in " + POLLING_FREQUENCY + "ms."
-    };
   }
 
   compareNetworks(network1: WiFiNetwork, network2: WiFiNetwork) {
@@ -108,14 +108,21 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
       .then(response => {
         if (response.status === 200) {
           return response.json();
-        }
-        if (response.status === 202) {
+        } else if (response.status === 202) {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollTimeout();
-            throw this.retryError();
+            throw retryErrorPolling();
           } else {
             throw Error("Device did not return network list in timely manner.");
           }
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.pollNetworkList, timeout*1000)
+          throw retryError503()
         }
         throw Error("Device returned unexpected response code: " + response.status);
       })
@@ -138,19 +145,29 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
     fetch(LIST_SAVED_NETWORKS_ENDPOINT).then(response => {
       if (response.status === 200) {
         return response.json();
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.loadSavedNetworks, timeout*1000)
+        throw retryError503()
       }
       throw Error("Device returned unexpected response code: " + response.status);
     })
     .then(json => {
       this.setState({savedNetworks: json})
     }).catch(error => {
-      this.props.enqueueSnackbar("Problem loading saved networks: " + error.message, {
-        variant: 'error',
-      });
+      if(error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar("Problem loading saved networks: " + error.message, {
+          variant: 'error',
+        });
+      }
     });
   } 
 
-  connectToSaved = (savedNetwork: SavedNetwork, network: WiFiNetwork) => {
+  connectToSavedClicked = (savedNetwork: SavedNetwork, network: WiFiNetwork) => {
     if(savedNetwork.connected) {
       this.props.enqueueSnackbar("Already connected to " + savedNetwork.ssid, {
         variant: 'info',
@@ -158,10 +175,15 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
       return
     }
     this.networkToSelect = network;
+    this.networkToConnect = savedNetwork;
     this.setState({ connectingToSaved: true });
+    this.connectToSaved();
+  }
+
+  connectToSaved = () => {
     fetch(CONNECT_TO_SAVED_ENDPOINT_PATH, {
       method: 'POST',
-      body: JSON.stringify(savedNetwork),
+      body: JSON.stringify(this.networkToConnect),
       headers: {
         'Content-Type': 'application/json'
       }
@@ -170,14 +192,24 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
         this.pollCount = 0
         this.schedulePollValidation();
         return;
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.connectToSaved, timeout*1000)
+        throw retryError503()
       }
       throw Error("Device returned unexpected response code: " + response.status);
     })
    .catch(error => {
-      this.props.enqueueSnackbar("Problem connecting to network: " + error.message, {
-        variant: 'error',
-      });
-      this.setState({ connectingToSaved: false });
+      if(error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar("Problem connecting to network: " + error.message, {
+          variant: 'error',
+        });
+        this.setState({ connectingToSaved: false });
+      }
     });
   }
 
@@ -193,10 +225,18 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
         } else if(response.status === 202) {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.pollValidation, timeout*1000)
+          throw retryError503()
         } else {
           throw new Error("Invalid status code " + response.status)
         }
@@ -272,7 +312,7 @@ class WiFiNetworkScanner extends Component<WiFiNetworkScannerProps, WiFiNetworkS
       </div>
       }
       {networkList &&
-        <WiFiNetworkSelector networkList={networkList} savedNetworks={savedNetworks} connectToSaved={this.connectToSaved} />
+        <WiFiNetworkSelector networkList={networkList} savedNetworks={savedNetworks} connectToSaved={this.connectToSavedClicked} />
       }
       </>
     );

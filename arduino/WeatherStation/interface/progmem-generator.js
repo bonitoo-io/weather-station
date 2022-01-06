@@ -103,8 +103,12 @@ class ProgmemGenerator {
 
 class WWWData {
 ${indent}public:
+${indent.repeat(2)}static void registerIndex(RouteRegistrationHandler handler) {
+${fileInfo.filter(file => file.uri === '/index.html').map(file => `${indent.repeat(3)}handler("${file.uri}", "${file.mimeType}", ${file.variable}, ${file.size});`).join('\n')}
+${indent.repeat(2)}}
+
 ${indent.repeat(2)}static void registerRoutes(RouteRegistrationHandler handler) {
-${fileInfo.map(file => `${indent.repeat(3)}handler("${file.uri}", "${file.mimeType}", ${file.variable}, ${file.size});`).join('\n')}
+${fileInfo.filter(file => file.uri !== '/index.html').map(file => `${indent.repeat(3)}handler("${file.uri}", "${file.mimeType}", ${file.variable}, ${file.size});`).join('\n')}
 ${indent.repeat(2)}}
 };
 `;

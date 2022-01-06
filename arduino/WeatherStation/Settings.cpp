@@ -23,6 +23,7 @@ void SettingsEndpoint::fetchSettings(AsyncWebServerRequest* request) {
     if(_fetchManipulator) {
         _fetchManipulator(_pSettings, jsonObject);
     }
+    response->addHeader(F("Cache-Control"),F("No-Store"));
     response->setLength();
     request->send(response);
 }
@@ -46,6 +47,7 @@ void SettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVarian
         _fetchManipulator(_pSettings, jsonObject);
     }
     request->onDisconnect([this]() { _pSettings->notify(); });
+    response->addHeader(F("Cache-Control"),F("No-Store"));
     response->setLength();
     request->send(response);
 }

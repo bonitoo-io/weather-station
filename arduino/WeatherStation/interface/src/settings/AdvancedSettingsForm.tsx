@@ -9,12 +9,8 @@ import { RestFormProps, FormActions, FormButton } from '../components';
 import { AdvancedSettings, ValidationStatus, ValidationStatusResponse } from './types';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import { LinearProgress, Link, Typography } from '@material-ui/core';
-import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT } from '../api';
+import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
 
-
-const NUM_POLLS = 20
-const POLLING_FREQUENCY = 500
-const RETRY_EXCEPTION_TYPE = "retry"
 
 const styles = (theme: Theme) => createStyles({ 
    connectingSettings: {
@@ -223,14 +219,24 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
         this.pollCount = 0
         this.schedulePollValidation()
         return
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.postValidation, timeout*1000)
+        throw retryError503()
       } else {
         this.setState({ validatingParams: false });
         throw Error("Invalid status code: " + response.status);
       }
     })
     .catch(error => {
-      this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
-      this.setState({ validatingParams: false });
+      if(error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar(error.message || "Problem validating params", { variant: 'error' });
+        this.setState({ validatingParams: false });
+      }
     });
   }
 
@@ -238,12 +244,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     setTimeout(this.pollValidation, POLLING_FREQUENCY);
   }
 
-  retryError() {
-    return {
-      name: RETRY_EXCEPTION_TYPE,
-      message: "Validation not ready, will retry in " + POLLING_FREQUENCY + "ms."
-    };
-  }
+  
 
   pollValidation = () => {
     fetch(ADVANCED_SETTINGS_VALIDATE_ENDPOINT, {method: 'GET'})
@@ -253,10 +254,18 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
         } else if(response.status === 202) {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.pollValidation, timeout*1000)
+          throw retryError503()
         } else {
           throw new Error("Invalid status code " + response.status)
         }
@@ -272,7 +281,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
         } else {
           if (++this.pollCount < NUM_POLLS) {
             this.schedulePollValidation();
-            throw this.retryError()
+            throw retryErrorPolling()
           } else {
             throw Error("Validation has not completed in timely manner.");
           }

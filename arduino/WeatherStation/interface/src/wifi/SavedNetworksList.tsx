@@ -5,7 +5,7 @@ import WifiIcon from '@material-ui/icons/Wifi';
 import DeleteIcon from '@material-ui/icons/Delete';
 import React, { Component } from 'react';
 import { SavedNetwork, SavedNetworkList } from './types';
-import { LIST_SAVED_NETWORKS_ENDPOINT } from '../api';
+import { LIST_SAVED_NETWORKS_ENDPOINT, retryError503, RETRY_EXCEPTION_TYPE } from '../api';
 import { SectionContent } from '../components';
 
 interface SavedNetworksListState {
@@ -149,28 +149,36 @@ class SavedNetworksList extends Component<SavedNetworksListProps, SavedNetworksL
       return -1;
     return 0;
   }
-
-  loadList = (fetch: Promise<Response>) => {
-    fetch.then(response => {
-      if (response.status === 200) {
-        return response.json();
-      }
-      throw Error("Device returned unexpected response code: " + response.status);
-    })
-    .then(json => {
-      json.networks.sort(this.compareNetworks)
-      this.setState({ loading: false, networkList: json, errorMessage: undefined })
-    }).catch(error => {
-      this.props.enqueueSnackbar("Problem loading: " + error.message, {
-        variant: 'error',
-      });
-      this.setState({ loading: false, networkList: undefined, errorMessage: error.message });
-    });
-  } 
+  
 
   loadNetworks = () => {
     this.setState({ loading: true, networkList: undefined, errorMessage: undefined });
-    this.loadList(fetch(LIST_SAVED_NETWORKS_ENDPOINT))
+    fetch(LIST_SAVED_NETWORKS_ENDPOINT)
+      .then(response => {
+        if (response.status === 200) {
+          return response.json();
+        } else if (response.status === 503 || response.status ===  429) {
+          const retryAfter = response.headers.get("Retry-After")
+          let timeout = 1
+          if (retryAfter) {
+            timeout = parseInt(retryAfter, 10);
+          }
+          setTimeout(this.loadNetworks, timeout*1000)
+          throw retryError503()
+        }
+        throw Error("Device returned unexpected response code: " + response.status);
+      })
+      .then(json => {
+        json.networks.sort(this.compareNetworks)
+        this.setState({ loading: false, networkList: json, errorMessage: undefined })
+      }).catch(error => {
+        if(error.name !== RETRY_EXCEPTION_TYPE) {
+          this.props.enqueueSnackbar("Problem loading: " + error.message, {
+            variant: 'error',
+          });
+          this.setState({ loading: false, networkList: undefined, errorMessage: error.message });
+        }
+      });
   }
 
   onRemoveNetwork = (id: number) => ()  => {
@@ -179,10 +187,33 @@ class SavedNetworksList extends Component<SavedNetworksListProps, SavedNetworksL
 
   removeNetwork = () => {
     this.setState({ loading: true, confirmRemove: false })
-    this.loadList(fetch(LIST_SAVED_NETWORKS_ENDPOINT + "?id=" + this.state.networkToRemove, {
+    fetch(LIST_SAVED_NETWORKS_ENDPOINT + "?id=" + this.state.networkToRemove, {
       method: 'DELETE',
-    }))
-    this.setState({networkToRemove: undefined})
+    }).then(response => {
+      if (response.status === 200) {
+        return response.json();
+      } else if (response.status === 503 || response.status ===  429) {
+        const retryAfter = response.headers.get("Retry-After")
+        let timeout = 1
+        if (retryAfter) {
+          timeout = parseInt(retryAfter, 10);
+        }
+        setTimeout(this.removeNetwork, timeout*1000)
+        throw retryError503()
+      }
+      throw Error("Device returned unexpected response code: " + response.status);
+    })
+    .then(json => {
+      json.networks.sort(this.compareNetworks)
+      this.setState({ loading: false, networkList: json, errorMessage: undefined, networkToRemove: undefined })
+    }).catch(error => {
+      if(error.name !== RETRY_EXCEPTION_TYPE) {
+        this.props.enqueueSnackbar("Problem loading: " + error.message, {
+          variant: 'error',
+        });
+        this.setState({ loading: false, networkList: undefined, errorMessage: error.message });
+      }
+    });
   }
 
   onRemoveRejected = () => {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
+import { retryError503, RETRY_EXCEPTION_TYPE } from '../api';
 
 
 export interface RestControllerProps<D> extends WithSnackbarProps {
@@ -39,6 +40,8 @@ interface RestControllerState<D> {
   errorMessage?: string;
 }
 
+
+
 export function restController<D, P extends RestControllerProps<D>>(endpointUrl: string, RestController: React.ComponentType<P & RestControllerProps<D>>) {
   return withSnackbar(
     class extends React.Component<Omit<P, keyof RestControllerProps<D>> & WithSnackbarProps, RestControllerState<D>> {
@@ -57,6 +60,7 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
         }, callback);
       }
 
+     
       loadData = () => {
         this.setState({
           data: undefined,
@@ -66,14 +70,24 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
         fetch(endpointUrl).then(response => {
           if (response.status === 200) {
             return response.json();
+          } else if (response.status === 503 || response.status ===  429) {
+            const retryAfter = response.headers.get("Retry-After")
+            let timeout = 1
+            if (retryAfter) {
+              timeout = parseInt(retryAfter, 10);
+            }
+            setTimeout(this.loadData, timeout*1000)
+            throw retryError503()
           }
           throw Error("Invalid status code: " + response.status);
         }).then(json => {
           this.setState({ data: json, loading: false })
         }).catch(error => {
-          const errorMessage = error.message || "Unknown error";
-          this.props.enqueueSnackbar("Problem fetching: " + errorMessage, { variant: 'error' });
-          this.setState({ data: undefined, loading: false, errorMessage });
+          if(error.name !== RETRY_EXCEPTION_TYPE) {
+            const errorMessage = error.message || "Unknown error";
+            this.props.enqueueSnackbar("Problem fetching: " + errorMessage, { variant: 'error' });
+            this.setState({ data: undefined, loading: false, errorMessage });
+          }
         });
       }
 
@@ -88,15 +102,25 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
         }).then(response => {
           if (response.status === 200) {
             return response.json();
+          } else if (response.status === 503 || response.status ===  429) {
+            const retryAfter = response.headers.get("Retry-After")
+            let timeout = 1
+            if (retryAfter) {
+              timeout = parseInt(retryAfter, 10);
+            }
+            setTimeout(this.loadData, timeout*1000)
+            throw retryError503()
           }
           throw Error("Invalid status code: " + response.status);
         }).then(json => {
           this.props.enqueueSnackbar("Update successful.", { variant: 'success' });
           this.setState({ data: json, loading: false });
         }).catch(error => {
-          const errorMessage = error.message || "Unknown error";
-          this.props.enqueueSnackbar("Problem updating: " + errorMessage, { variant: 'error' });
-          this.setState({ data: undefined, loading: false, errorMessage });
+          if(error.name !== RETRY_EXCEPTION_TYPE) {
+            const errorMessage = error.message || "Unknown error";
+            this.props.enqueueSnackbar("Problem updating: " + errorMessage, { variant: 'error' });
+            this.setState({ data: undefined, loading: false, errorMessage });
+          }
         });
       }
 
