@@ -32,13 +32,13 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
     state = AppState::InfluxDBConfigNeeded;
   } else if(_influxDBHelper->isError()) {
       state = AppState::Error;
-      String error = "InfluxDB error: ";
+      String error = F("InfluxDB error: ");
       error += _influxDBHelper->errorMsg();
       root[F("error")] = error;
   }
   root[F("appState")] = static_cast<int>(state);
   root[F("freeHeap")] = ESP.getFreeHeap();
-  root[F("espPlatform")] = "esp8266";
+  root[F("espPlatform")] = F("esp8266");
   root[F("maxAllocHeap")] = ESP.getMaxFreeBlockSize();
   root[F("heapFragmentation")] = ESP.getHeapFragmentation();
   root[F("cpuFreq")] = ESP.getCpuFreqMHz();
@@ -59,8 +59,8 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
 
 AboutServiceEndpoint::AboutServiceEndpoint(AsyncWebServer* server, FSPersistence* persistence):
   _persistence(persistence) {
-  server->on(SYSTEM_RESTART_ENDPOINT_PATH, HTTP_POST, std::bind(&AboutServiceEndpoint::restartHandler, this, std::placeholders::_1));
-  server->on(SYSTEM_FACTORY_RESET_ENDPOINT_PATH, HTTP_POST, std::bind(&AboutServiceEndpoint::factoryResetHandler, this, std::placeholders::_1));
+  server->on(String(F(SYSTEM_RESTART_ENDPOINT_PATH)).c_str(), HTTP_POST, std::bind(&AboutServiceEndpoint::restartHandler, this, std::placeholders::_1));
+  server->on(String(F(SYSTEM_FACTORY_RESET_ENDPOINT_PATH)).c_str(), HTTP_POST, std::bind(&AboutServiceEndpoint::factoryResetHandler, this, std::placeholders::_1));
 }
 
 void AboutServiceEndpoint::restartHandler(AsyncWebServerRequest* request) {
