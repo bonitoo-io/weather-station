@@ -12,7 +12,8 @@ static const char STR_ENG[] PROGMEM =
 "Weather Station\0" "Configure via:\0" "Forecast error\0"
 "In:\0" " Out:\0" "now\0"
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
-"Moon\0" "Sun\0" ;
+"Moon\0" "Sun\0"
+"Indoor spread risk\0" "Low\0" "Medium\0" "High!\0";
 
 // Czech strings
 static const char DAYS_CZ[] PROGMEM = "Ne\0" "Po\0" "Út\0" "St\0" "Čt\0" "Pá\0" "So\0";
@@ -24,7 +25,8 @@ static const char STR_CZ[] PROGMEM =
 "Meteorologická stanice\0" "Nastavte přes:\0" "Chyba předpovědi\0"
 "Zde:\0" " Vně:\0" "nyní\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
-"Měsíc\0" "Slunce\0";
+"Měsíc\0" "Slunce\0"
+"Riziko šíření uvnitř\0" "Nízká\0" "Střední\0" "Vysoká!\0";
 
 // Add other languages
 // ...

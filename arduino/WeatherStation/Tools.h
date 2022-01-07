@@ -55,6 +55,7 @@ enum tStrings {
   s_In, s_Out, s_now,
   s_INDOOR, s_feel, s_hum, s_wind,
   s_Moon, s_Sun,
+  s_indoor_spread_risk, s_Low, s_Medium, s_High,
 };
 
 String getStr( uint8_t index);

@@ -103,7 +103,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
     Serial.print(F("."));
 
     display->clear();
-    display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_bits);
+    display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_XBM);
     display->setFont(ArialMT_Plain_10);
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     
