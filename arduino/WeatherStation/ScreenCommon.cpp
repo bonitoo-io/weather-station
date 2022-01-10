@@ -118,8 +118,8 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
       display->drawXbm(71, 30, 8, 8, wifiProgressCounter % 3 == 0 ? activeSymbole : inactiveSymbole);
       display->drawXbm(85, 30, 8, 8, wifiProgressCounter % 3 == 1 ? activeSymbole : inactiveSymbole);
       display->drawXbm(99, 30, 8, 8, wifiProgressCounter % 3 == 2 ? activeSymbole : inactiveSymbole);
-      display->drawString(88, 38, getStr(s_or_wait_for_setup));
-      display->drawString(88, 50, String(F("v")) + version);
+      display->drawString(88, 36, getStr(s_or_wait_for_setup));
+      display->drawString(88, 47, String(F("v")) + version);
     }
     display->display();    
     wifiProgressCounter++;
@@ -157,7 +157,7 @@ void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& labe
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
-  display->drawString(64, 10, label);
+  display->drawString(64, 53, label);
   display->drawProgressBar(2, 28, 124, 10, percentage);
   display->display();
 }
@@ -175,7 +175,7 @@ void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent
   display->clear();
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64, 10, getStr(s_Updating_to) + version);
+  display->drawString(64, 53, getStr(s_Updating_to) + version);
   display->drawProgressBar(2, 28, 124, 10, percent);
   display->display();
 }
@@ -193,16 +193,7 @@ int8_t getWifiSignal() {
 }
 
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
-  time_t now = time(nullptr);
-
-  display->setFont(ArialMT_Plain_10);
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0, 54, strTime(now,true));
-  display->drawString(display->getStringWidth(F("00:00")), 52, strTimeSuffix(now));
-
-  display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth(), 54, getStr(s_In) + strTemp(getDHTTemp( station.getRegionalSettings()->useMetricUnits)) + getStr(s_Out) + strTemp(getCurrentWeatherTemperature()));
-
+  //Draw Wifi signal level
   int8_t quality = getWifiSignal();
   for (int8_t i = 0; i < 4; i++) {
     for (int8_t j = 0; j < 2 * (i + 1); j++) {
@@ -215,8 +206,16 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   if ( isInfluxDBError())
     display->drawXbm( 0, 0, 8, 8, warning_8x8);
-  
-  display->drawHorizontalLine(0, 52, display->getWidth());
+
+  display->drawHorizontalLine(0, 51, display->getWidth());
+  time_t now = time(nullptr);
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->drawString(0, 53, strTime(now, true));
+  display->drawString(display->getStringWidth(F("00:00")), 51, strTimeSuffix(now));
+
+  display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  display->drawString(display->getWidth(), 53, getStr(s_In) + strTemp(getDHTTemp( station.getRegionalSettings()->useMetricUnits)) + getStr(s_Out) + strTemp(getCurrentWeatherTemperature()));    
 }
 
 const __FlashStringHelper * wifiStatusStr(wl_status_t status) {
@@ -255,11 +254,11 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
 void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString((display->getWidth() / 2) + x, 6 + y, getStr(s_InfluxData_Weather_Station));
-  display->drawRect(8 + x, 18 + y, display->getWidth() - 16, 23);
-  display->drawString((display->getWidth() / 2) + x, 18 + y, getStr(s_Configure_via));
-  display->drawString((display->getWidth() / 2) + x, 28 + y, String(F("http://")) + WiFi.localIP().toString());
-  display->drawString((display->getWidth() / 2) + x, 40 + y, String(F("Id: ")) + getDeviceID());
+  display->drawString((display->getWidth() / 2) + x, 5 + y, getStr(s_InfluxData_Weather_Station));
+  display->drawRect(8 + x, 17 + y, display->getWidth() - 16, 23);
+  display->drawString((display->getWidth() / 2) + x, 17 + y, getStr(s_Configure_via));
+  display->drawString((display->getWidth() / 2) + x, 27 + y, String(F("http://")) + WiFi.localIP().toString());
+  display->drawString((display->getWidth() / 2) + x, 38 + y, String(F("Id: ")) + getDeviceID());
 }
 
 /*void showFont(OLEDDisplay *display, const uint8_t *fontData) {

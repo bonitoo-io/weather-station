@@ -7,8 +7,8 @@
 #include "WeatherStationImages.h"
 
 // Internal sensor settings
-#define DHTTYPE DHT11   // DHT 11
-#define DHTPIN D1       // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT11   // Sensor DHT 11
+#define DHTPIN D1       // Digital pin connected to the DHT 11 sensor
 
 DHT dht(DHTPIN, DHTTYPE);
 int tempHistory[90];
@@ -51,21 +51,34 @@ float getDHTHic(bool metric) {
 }
 
 void saveDHTTempHist(bool metric) {
+  float t = getDHTTemp(metric);
+  if (isnan(t))
+    return; 
   for (int i = 1; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++) //move all values left
     tempHistory[i-1] = tempHistory[i];
-  tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( getDHTTemp(metric) * 10); //save the latest value
+  tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( t * 10); //save the latest value
+}
+
+void sensorError( OLEDDisplay *display, int16_t x, int16_t y) {
+  display->setFont(ArialMT_Plain_10);
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->drawString((display->getWidth() / 2) + x, 21 + y, strTemp(s_Temperature_sensor_error));
 }
 
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  if (isnan(getDHTTemp(station.getRegionalSettings()->useMetricUnits))) {
+    sensorError( display, x ,y);
+    return;
+  }
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(64 + x, 6 + y, getStr(s_INDOOR));
 
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(8 + x, 38 + y, getStr(s_feel) + strTemp(getDHTHic(station.getRegionalSettings()->useMetricUnits)));
+  display->drawString(8 + x, 36 + y, getStr(s_feel) + strTemp(getDHTHic(station.getRegionalSettings()->useMetricUnits)));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(120 + x, 38 + y, getStr(s_hum));
+  display->drawString(120 + x, 36 + y, getStr(s_hum));
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);

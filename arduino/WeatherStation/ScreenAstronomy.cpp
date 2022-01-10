@@ -35,9 +35,9 @@ void drawAstronomy(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, i
   display->drawString(x + 43, y + 13, strTime(currentWeather.sunrise, true) + strTimeSuffix(currentWeather.sunrise) + String(F("-")) + strTime(currentWeather.sunset, true) +  strTimeSuffix(currentWeather.sunset));
   display->drawString(x + 40, y + 21, getStr(s_Moon));
   display->drawString(x + 43, y + 30, strTime(moonRise, true) + strTimeSuffix(moonRise) + "-" + strTime(moonSet, true) + strTimeSuffix(moonSet));
-  display->drawString(x + 0, y + 38, getMoonPhaseName( moonPhase));
+  display->drawString(x + 0, y + 36, getMoonPhaseName( moonPhase));
 
   display->setFont(MoonPhases_Regular_36);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 5 + y, String(moonAgeImage));
+  display->drawString(0 + x, 3 + y, String(moonAgeImage));
 }

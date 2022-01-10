@@ -1,7 +1,6 @@
 #include <OLEDDisplayUi.h>
 #include "Tools.h"
-
-extern int tempHistory[90];
+#include "DHTSensor.h"
 
 void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigned int size, int16_t x, int16_t y) {
   //Caclculate min, max and number of samples
@@ -24,13 +23,13 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigne
   min10 *= 10;
   max10 *= 10;
 
-  float scale = 30.0 / (float)(max10-min10);
+  float scale = 27.0 / (float)(max10-min10);
   //Serial.println("-----");  
   //Serial.println( "Min-Max-Scale: " + String(min10) + "-" + String(max10) + "-" + String(scale));
   
   // Plot temperature graph
   int x1 = 23;
-  int y1 = 39;
+  int y1 = 36;
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(display->getWidth() + x, 20 + y, unit);

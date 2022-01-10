@@ -10,7 +10,7 @@ static const char STR_ENG[] PROGMEM =
 "Connecting WiFi\0" "Searching...\0" "or wait for setup\0" "Connecting IoT Center\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Done\0"
 "Found update \0" "Starting update\0" "Update successful\0" "Restarting...\0" "Update failed \0" "Updating \0" "Restarting\0" "connect the following WiFi\nvia your phone or laptop\nto \0" "follow the WiFi config steps\nor open browser with\0" "DEVICE CONFIGURATION:\0"
 "Weather Station\0" "Configure via:\0" "Forecast error\0"
-"In:\0" " Out:\0" "now\0"
+"In:\0" " Out:\0" "now\0" "Temperature sensor error!\0"
 "INDOOR\0" "feel: \0" "hum\0" "wind\0"
 "Moon\0" "Sun\0"
 "Indoor spread risk\0" "Low\0" "Medium\0" "High!\0";
@@ -23,7 +23,7 @@ static const char STR_CZ[] PROGMEM =
 "Připojuji WiFi\0" "Hledám...\0" "nebo počkejte\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Kontrola aktualizace\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
 "Dostupná aktualizace \0" "Připravuji aktualizaci\0" "Aktualizace byla úpěšná\0" "Restartuji...\0" "Aktualizace selhala \0" "Aktualizuji \0" "Restartuji...\0" "použijte telefon, nebo počítač\npřipojte následující WiFi\0" "dokončete kroky WiFi připojení\nnebo otevřete prohlížeč\0" "Nastavení:\0"
 "Meteorologická stanice\0" "Nastavte přes:\0" "Chyba předpovědi\0"
-"Zde:\0" " Vně:\0" "nyní\0"
+"Zde:\0" " Vně:\0" "teď\0" "Chyba senzoru teploty!\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
 "Měsíc\0" "Slunce\0"
 "Riziko šíření uvnitř\0" "Nízká\0" "Střední\0" "Vysoká!\0";

@@ -82,9 +82,9 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(station.getRegionalSettings()->location));
-  display->drawString(display->getWidth() + x, 38 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
+  display->drawString(display->getWidth() + x, 36 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 38 + y, utf8ascii(currentWeather.description));
+  display->drawString(0 + x, 36 + y, utf8ascii(currentWeather.description));
   display->drawString(40 + x, 17 + y, getStr( s_wind));
   display->drawString(38 + x, 27 + y, strWind(currentWeather.windSpeed));
 
@@ -94,7 +94,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 4 + y, String(currentWeather.iconMeteoCon));
+  display->drawString(0 + x, 3 + y, String(currentWeather.iconMeteoCon));
 }
 
 
@@ -106,7 +106,7 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
-  display->drawString(x + 20, y + 39, strTemp(forecasts[dayIndex].temp));
+  display->drawString(x + 20, y + 38, strTemp(forecasts[dayIndex].temp));
   
   display->setFont(Meteocons_Plain_21);
   display->drawString(x + 20, y + 17, String(forecasts[dayIndex].iconMeteoCon));
@@ -167,8 +167,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   arrow( display, cos(f)+clockCenterX, sin(f)+clockCenterY, clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, 3, 5);
 
   display->setFont(ArialMT_Plain_10);
-  //display->drawString(x + 20, y + 29, String(forecasts[dayIndex].windDeg, 0) + "°");
-  display->drawString(x + 20, y + 39, strWind(forecasts[dayIndex].windSpeed));
+  display->drawString(x + 20, y + 36, strWind(forecasts[dayIndex].windSpeed));
 }
 
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {

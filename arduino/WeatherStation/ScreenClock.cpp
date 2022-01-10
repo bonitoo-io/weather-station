@@ -37,7 +37,7 @@ bool updateClock( bool firstStart, int utc_offset, const String &ntp) {
 
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   int clockCenterX=30+x;
-  int clockCenterY=30+y;
+  int clockCenterY=28+y;
   const int clockSize=20;
 
   time_t now = time(nullptr);
