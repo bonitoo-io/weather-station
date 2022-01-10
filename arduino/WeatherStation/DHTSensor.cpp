@@ -47,7 +47,7 @@ float getDHTHum() {
 float getDHTHic(bool metric) {
   float tempDHT = getDHTTemp( metric);
   float humDHT = getDHTHum();
-  return dht.computeHeatIndex(tempDHT, humDHT, !metric);
+  return isnan(tempDHT) ? NAN : dht.computeHeatIndex(tempDHT, humDHT, !metric);
 }
 
 void saveDHTTempHist(bool metric) {

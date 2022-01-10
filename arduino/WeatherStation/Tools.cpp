@@ -122,12 +122,12 @@ String strTempUnit() {
   return String(station.getRegionalSettings()->useMetricUnits ? F("°C") : F("°F"));
 }
 
-String strTemp( int t) {
-  return (t == 0xffff ? String(F("??")) : String(t)) + strTempUnit();
+String strTemp( float t) {
+  return (isnan(t) ? String(F("??")) : String(t,0)) + strTempUnit();
 }
 
-String strHum( unsigned int h) {
-  return String(h) + String(F("%"));
+String strHum( float h) {
+  return (isnan(h) ? String(F("??")) : String(h,0)) + String(F("%"));
 }
 
 String strWind( unsigned int w) {
