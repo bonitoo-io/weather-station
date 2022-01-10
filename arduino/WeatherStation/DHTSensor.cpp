@@ -62,7 +62,7 @@ void saveDHTTempHist(bool metric) {
 void sensorError( OLEDDisplay *display, int16_t x, int16_t y) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString((display->getWidth() / 2) + x, 21 + y, strTemp(s_Temperature_sensor_error));
+  display->drawString((display->getWidth() / 2) + x, 21 + y, getStr(s_Temperature_sensor_error));
 }
 
 void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
