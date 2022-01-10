@@ -1,5 +1,5 @@
 # Changelog
-## New
+## 0.58 rc5
 ## Features
  - InfluxDB client with streaming write
  - Web Server improvements:
@@ -7,6 +7,7 @@
    - No cache for api responses
    - Concurrent writing and api request check
    - All UI requests to server handle 503 and 427
+  - Added Covid-19 OLED screen
 
 ## 0.58 rc4
 ## Fixes
