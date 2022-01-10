@@ -34,6 +34,7 @@ void InfluxDBHelper::begin(InfluxDBSettings *settings) {
   }
   _settings = settings;
   _client = new InfluxDBClient(_settings->serverURL.c_str(), _settings->org.c_str(), _settings->bucket.c_str(), _settings->authorizationToken.c_str(), InfluxDbCloud2CACert);
+  _client->setStreamingWrite(true);
   _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1).httpReadTimeout(20000));  
   _wasReleased = false;
 }
