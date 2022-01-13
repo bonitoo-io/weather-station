@@ -4,7 +4,7 @@
 s = 58.5;//sirka
 d = 58.5;//delka
 v = 29;//vyska
-use <Logo-Influx-Ivan.scad>;//použij i tento soubor
+use <logoInfluxdata.scad>; //use logo
 
 module krabicka()
 
