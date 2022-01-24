@@ -34,7 +34,7 @@ void InfluxDBHelper::begin(InfluxDBSettings *settings) {
   }
   _settings = settings;
   _client = new InfluxDBClient(_settings->serverURL.c_str(), _settings->org.c_str(), _settings->bucket.c_str(), _settings->authorizationToken.c_str(), InfluxDbCloud2CACert);
-  _client->setStreamingWrite(true);
+  _client->setStreamWrite(true);
   _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1).httpReadTimeout(20000));  
   _wasReleased = false;
 }
@@ -173,8 +173,12 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   if(!_client || !_client->getServerUrl().length()) {
     return false;
   }
-  // TODO: optimize to use reserve() and subsequent concatenation
-  String query = String(F("from(bucket: \"")) + _settings->bucket + String(F("\") |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == \"")) + deviceID +  String(F("\")"
+  // Prepare query parameters
+  QueryParams params;
+  params.add("bucket", _settings->bucket);
+  params.add("deviceID", deviceID);
+  
+  String query = String(F("from(bucket: params.bucket) |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == params.deviceID)"
   "|> filter(fn: (r) => r[\"_measurement\"] == \"environment\") |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")"
   "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)"));
 
@@ -182,7 +186,7 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   Serial.println(query);
 
   unsigned int i = 0;
-  FluxQueryResult result = _client->query(query);
+  FluxQueryResult result = _client->query(query, params);
   while (result.next()) {
     float value = result.getValueByName(String(F("_value"))).getDouble();
     tempHistory[ i] = metric ? round( value * 10) : round( convertCtoF( value) * 10);
@@ -190,6 +194,9 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
     if (i == 90)
       break;
   }
+  Serial.print(F("Loaded values: "));
+  Serial.println(i);
+
   bool res = true;
   // Check if there was an error
   if(result.getError().length() > 0) {
@@ -305,4 +312,3 @@ void InfluxDBValidateParamsEndpoint::runValidation() {
   delete _validationSettings;
   _validationSettings = nullptr;
 }
-

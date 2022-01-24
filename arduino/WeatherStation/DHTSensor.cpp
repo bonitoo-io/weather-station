@@ -7,11 +7,11 @@
 #include "WeatherStationImages.h"
 
 // Internal sensor settings
-#define DHTTYPE DHT11   // Sensor DHT 11
-#define DHTPIN D1       // Digital pin connected to the DHT 11 sensor
+#define DHT_TYPE DHT11  // Sensor DHT 11
+#define DHT_PIN D1      // Digital pin connected to the DHT 11 sensor - GPIO5
 
-DHT dht(DHTPIN, DHTTYPE);
-int tempHistory[90];
+DHT dht(DHT_PIN, DHT_TYPE);
+int16_t tempHistory[90];
 
 void setupDHT() {
   dht.begin();

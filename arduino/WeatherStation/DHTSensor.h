@@ -11,6 +11,6 @@ float getDHTCachedTemp();
 float getDHTCachedHum();
 class OLEDDisplay;
 void sensorError( OLEDDisplay *display, int16_t x, int16_t y);
-extern int tempHistory[90];
+extern int16_t tempHistory[90];
 
 #endif //DHT_SENSOR_H

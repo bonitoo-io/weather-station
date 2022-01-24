@@ -2,7 +2,7 @@
 #include "Tools.h"
 #include "DHTSensor.h"
 
-void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigned int size, int16_t x, int16_t y) {
+void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], unsigned int size, int16_t x, int16_t y) {
   //Caclculate min, max and number of samples
   int min10 = 32767;
   int max10 = -32768;
@@ -73,6 +73,5 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int data[], unsigne
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  
   drawLineChart( display, strTempUnit(), tempHistory, sizeof(tempHistory) / sizeof(tempHistory[0]), x, y);
 }

@@ -28,13 +28,13 @@
  * End Settings
  **************************/
 
-// Display settings
-#define I2C_OLED_ADDRESS 0x3c
-#define SDA_PIN D4
-#define SDC_PIN D5
 // Button and LED
-#define BUTTONHPIN D3   //Boot button pin
-#define LED        D2   //LED pin
+#define LED_PIN    D2   //LED pin
+#define BUTTON_PIN D3   //Boot button pin
+// Display settings
+#define SDA_PIN    D4
+#define SDC_PIN    D5
+#define I2C_OLED_ADDRESS 0x3c
 
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
@@ -145,9 +145,9 @@ void setup() {
   WS_DEBUG_RAM("Setup 2");
 
   // Configure pins
-  pinMode(BUTTONHPIN, INPUT);
-  pinMode(LED, OUTPUT);
-  digitalWrite( LED, HIGH);
+  pinMode(BUTTON_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite( LED_PIN, HIGH);
   setupDHT();
 
   setLanguage( pRegionalSettings->language.c_str());  
@@ -158,7 +158,7 @@ void setup() {
 
 void updateData(OLEDDisplay *display, bool firstStart) {
   WS_DEBUG_RAM("UpdateData");
-  digitalWrite( LED, LOW);
+  digitalWrite( LED_PIN, LOW);
 
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (station.getRegionalSettings()->detectAutomatically) {
@@ -285,7 +285,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
   ServicesTracker.save();
   WS_DEBUG_RAM("After write status");
-  digitalWrite( LED, HIGH);
+  digitalWrite( LED_PIN, HIGH);
   delay(500);
 }
 
@@ -345,7 +345,7 @@ void loop() {
 
       //Sync IoT Center configuration
       if (lastUpdateMins % conf.iotRefreshMin == 0 && conf.iotCenterUrl.length()) {
-        digitalWrite( LED, LOW);
+        digitalWrite( LED_PIN, LOW);
         // TODO: better solution for updating Settings from IoT center
         auto influxDBSettings = station.getInfluxDBSettings();
         ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
@@ -358,7 +358,7 @@ void loop() {
           ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
         }
         ServicesTracker.save();
-        digitalWrite( LED, HIGH);
+        digitalWrite( LED_PIN, HIGH);
       }
 
       if(influxdbHelper.wasReleased()) {
@@ -367,15 +367,15 @@ void loop() {
 
       //Update data?
       if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || bForceUpdate) {
-        digitalWrite( LED, LOW);
+        digitalWrite( LED_PIN, LOW);
         updateData(&display,false);
-        digitalWrite( LED, HIGH);
+        digitalWrite( LED_PIN, HIGH);
         bForceUpdate = false;
       }
 
       //Write into InfluxDB
       if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
-        digitalWrite( LED, LOW);
+        digitalWrite( LED_PIN, LOW);
         saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);  //Save temperature for the chart
         ESP.wdtFeed();
         ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
@@ -390,7 +390,7 @@ void loop() {
         ServicesTracker.save();
         Serial.print(F("InfluxDB write "));
         Serial.println(String(millis() - start) + String(F("ms")));
-        digitalWrite( LED, HIGH);
+        digitalWrite( LED_PIN, HIGH);
         WS_DEBUG_RAM("After write");
       }
     }
@@ -398,7 +398,7 @@ void loop() {
       
   //Handle BOOT button
   unsigned int loops = 0;
-  while (digitalRead(BUTTONHPIN) == LOW) {  //Pushed boot button?
+  while (digitalRead(BUTTON_PIN) == LOW) {  //Pushed boot button?
     if (loops == 0) {
       ui.nextFrame();   //jump to the next frame
     }

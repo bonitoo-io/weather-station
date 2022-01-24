@@ -31,7 +31,6 @@ class InfluxDBSettings : public Settings {
   virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/influxDbSettings.json"); }  
 };
 
-
 class InfluxDBHelper {
  public:
   InfluxDBHelper();
