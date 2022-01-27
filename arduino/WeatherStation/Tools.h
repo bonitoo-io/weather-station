@@ -23,16 +23,16 @@ struct tConfig {
 
 struct tForecast {
   uint32_t observationTime;
-  int temp;
+  int16_t temp;
   char iconMeteoCon;
   unsigned int windSpeed;
   unsigned int windDeg;
 };
 
 struct tCurrentWeather {
-  int temp;
-  int tempMin;
-  int tempMax;
+  int16_t temp;
+  int16_t tempMin;
+  int16_t tempMax;
   String description;
   unsigned int windSpeed;
   char iconMeteoCon;
@@ -63,3 +63,5 @@ String getStr( uint8_t index);
 int convertCtoF(int c);
 int convertFtoC(int c);
 float convertCtoF(float c);
+
+#define NO_VALUE -32768

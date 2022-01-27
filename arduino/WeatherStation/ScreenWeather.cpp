@@ -26,10 +26,10 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   _currentWeather.temp = NAN;
   currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
   if (isnan(_currentWeather.temp)) {
-    currentWeather.temp =  0xffff;
+    currentWeather.temp =  NO_VALUE;
     return false;  
   }
-  
+
   currentWeather.temp =  round( _currentWeather.temp);
   currentWeather.tempMin = round( _currentWeather.tempMin);
   currentWeather.tempMax = round( _currentWeather.tempMax);
@@ -53,7 +53,7 @@ bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
   forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS);
 
   if (isnan(_forecasts[0].temp)) {
-    forecasts[0].temp = 0xffff;
+    forecasts[0].temp = NO_VALUE;
     return false;
   }
 
@@ -74,7 +74,7 @@ void forecastError( OLEDDisplay *display, int16_t x, int16_t y) {
 }
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (currentWeather.temp == 0xffff) {
+  if (currentWeather.temp == NO_VALUE) {
     forecastError( display, x ,y);
     return;
   }
@@ -113,7 +113,7 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 }
 
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (forecasts[0].temp == 0xffff) {
+  if (forecasts[0].temp == NO_VALUE) {
     forecastError( display, x ,y);
     return;
   }
@@ -171,7 +171,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 }
 
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (forecasts[0].temp == 0xffff) {
+  if (forecasts[0].temp == NO_VALUE) {
     forecastError( display, x ,y);
     return;
   }

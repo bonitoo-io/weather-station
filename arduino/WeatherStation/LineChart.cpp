@@ -8,8 +8,8 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], uin
   int16_t max10 = -32768;
   for (uint8_t i = 0; i < size; i++) {
     int16_t d = data[i];
-    //Serial.println( "Data: " + String(i) + "-" + String(d));
-    if (d == 0xffff)  //skip empty values
+    //Serial.println( "Data: " + String(i) + "-" + String(d) + ":" + String(d, HEX));
+    if (d == NO_VALUE)  //skip empty values
       continue;
     if ( d > max10)
       max10 = d;
@@ -58,19 +58,19 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], uin
     display->drawString( x1-4 + x, y1 - mark - 7 + y, String((float)i/10, 0));
   }
 
-  int prev = 0xffff;
+  int prev = NO_VALUE;
   for (uint8_t i = 0; i < size; i++)
-    if ( data[i] != 0xffff) {
+    if ( data[i] != NO_VALUE) {
       //Serial.println( String(i) + "-" + String(data[i]) + "-" + String(convertFtoC(data[i])));
       int d = round((float)(data[i] - min10) * scale);
       //Serial.println( String( i) + "-" + String( data[i]) + "=" + String(d));
-      if (prev == 0xffff)
+      if (prev == NO_VALUE)
         display->setPixel( i+x1 + x, y1 - d + y);
       else
         display->drawLine( i+x1 + x - 1, y1 - prev + y, i+x1 + x, y1 - d + y);
       prev = d;
     } else
-      prev = 0xffff;
+      prev = NO_VALUE;
 }
 
 void drawTemperatureChart(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {

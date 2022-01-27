@@ -17,13 +17,13 @@ void setupDHT() {
   dht.begin();
   //clean data
   for (int i = 0; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
-    tempHistory[i] = 0xffff;
+    tempHistory[i] = NO_VALUE;
   float h = dht.readHumidity();
   
   //fix humidity offset overflow
   if (station.getAdvancedSettings()->humOffset + h > 100) { 
     station.getAdvancedSettings()->humOffset = 0;
-    Serial.println( F("DHT humidity overfow, zeroing offset"));
+    Serial.println( F("DHT humidity overflow, zeroing offset"));
   }
 
   //autocalibrate sensors with faulty humidity
@@ -38,8 +38,8 @@ float lastTemp = NAN;
 float lastHum = NAN;
 
 void refreshDHTCachedValues(bool metric) {
-  lastTemp = getDHTTemp( metric);
-  lastHum = getDHTHum();
+  getDHTTemp( metric);
+  getDHTHum();
   //Serial.println( "refreshDHTCachedValues " +  String(lastTemp) + " " + String(lastHum));
 }
 
@@ -52,16 +52,29 @@ float getDHTCachedHum() {
 }
 
 float getDHTTemp(bool metric) {
-  return round((dht.readTemperature(!metric) + station.getAdvancedSettings()->tempOffset) * 100) / 100;
+  float t = dht.readTemperature(!metric);
+  if (isnan(t)) {
+    Serial.println( F("Received NAN temperature!"));
+    return NAN;
+  }
+  t += station.getAdvancedSettings()->tempOffset;
+  lastTemp = round( t  * 10) / 10;
+  return lastTemp;
 }
 
 float getDHTHum() {
-  float h = dht.readHumidity() + station.getAdvancedSettings()->humOffset;
+  float h = dht.readHumidity();
+  if (isnan(h)) {
+    Serial.println( F("Received NAN humidity!"));
+    return NAN;
+  }
+  h += station.getAdvancedSettings()->humOffset;
   if (h > 100)
     h = 100;
   if (h < 0)
-    h = 0;  
-  return round( h * 100) / 100;
+    h = 0;
+  lastHum = round( h * 10) / 10;
+  return lastHum;
 }
 
 float getDHTHic(bool metric) {
