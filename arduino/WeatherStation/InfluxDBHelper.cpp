@@ -185,14 +185,14 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   Serial.print(F("Querying: "));
   Serial.println(query);
 
-  unsigned int i = 0;
+  uint16_t i = 0;
   FluxQueryResult result = _client->query(query, params);
   while (result.next()) {
     float value = result.getValueByName(String(F("_value"))).getDouble();
     tempHistory[ i] = metric ? round( value * 10) : round( convertCtoF( value) * 10);
-    Serial.println( "tempHistory[" + String(i) + "] " + String(value) + "->" + String(tempHistory[ i]));
+    //Serial.println( "tempHistory[" + String(i) + "] " + String(value) + "->" + String(tempHistory[ i]));
     i++;
-    if (i == 90)
+    if (i == sizeof(tempHistory) / sizeof(tempHistory[0]))  //is the history is full?
       break;
   }
   Serial.print(F("Loaded values: "));
