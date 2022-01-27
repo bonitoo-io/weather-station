@@ -5,8 +5,8 @@
 #include "FSPersistance.h"
 #include "ServiceState.h"
 #include "WeatherStation.h"
+#include "DHTSensor.h"
 
-extern int tempHistory[90];
 const char *Token PROGMEM = "token";
 
 #define LOCK() { uint16_t _lc=3000; while(_lock) { delay(1); if(!--_lc) {Serial.println(F("Lock timeout!"));break; } } _lock = 1; }
@@ -190,6 +190,7 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   while (result.next()) {
     float value = result.getValueByName(String(F("_value"))).getDouble();
     tempHistory[ i] = metric ? round( value * 10) : round( convertCtoF( value) * 10);
+    Serial.println( "tempHistory[" + String(i) + "] " + String(value) + "->" + String(tempHistory[ i]));
     i++;
     if (i == 90)
       break;

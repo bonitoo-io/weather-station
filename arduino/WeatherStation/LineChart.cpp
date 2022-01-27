@@ -2,12 +2,13 @@
 #include "Tools.h"
 #include "DHTSensor.h"
 
-void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], unsigned int size, int16_t x, int16_t y) {
+void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], uint8_t size, int16_t x, int16_t y) {
   //Caclculate min, max and number of samples
-  int min10 = 32767;
-  int max10 = -32768;
-  for (unsigned int i = 0; i < size; i++) {
-    int d = data[i];
+  int16_t min10 = 32767;
+  int16_t max10 = -32768;
+  for (uint8_t i = 0; i < size; i++) {
+    int16_t d = data[i];
+    //Serial.println( "Data: " + String(i) + "-" + String(d));
     if (d == 0xffff)  //skip empty values
       continue;
     if ( d > max10)
@@ -37,7 +38,7 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], uns
   // Horizontal axis
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawHorizontalLine(x1 + x, y1 + y, 96);
-  for (int i=0; i<=90; i+=30) {
+  for (uint8_t i=0; i<=90; i+=30) {
     int mark = x1+i;
     display->drawLine( mark + x, y1 + y, mark + x, y1+2 + y);
     display->drawString( mark + x, y1+1 + y, i == 90 ? getStr(s_now) : String(-90+i) + "m");
@@ -51,14 +52,14 @@ void drawLineChart(OLEDDisplay *display, const String& unit, int16_t data[], uns
     step = 10;  //Minimal value
 
   //Serial.println( String( min10) + "~" + String( max10) + "~" + String( scale,2) + "=" + String( step));
-  for (int i=min10; i<=max10; i+=step) {
+  for (int16_t i=min10; i<=max10; i+=step) {
     int mark = round((float)(i - min10) * scale);
     display->drawLine( x1 + x, y1 - mark + y, x1-2 + x, y1 - mark + y);
     display->drawString( x1-4 + x, y1 - mark - 7 + y, String((float)i/10, 0));
   }
 
   int prev = 0xffff;
-  for (unsigned int i = 0; i < size; i++)
+  for (uint8_t i = 0; i < size; i++)
     if ( data[i] != 0xffff) {
       //Serial.println( String(i) + "-" + String(data[i]) + "-" + String(convertFtoC(data[i])));
       int d = round((float)(data[i] - min10) * scale);

@@ -8,12 +8,13 @@
 
 // Internal sensor settings
 #define DHT_TYPE DHT11  // Sensor DHT 11
-#define DHT_PIN D1      // Digital pin connected to the DHT 11 sensor - GPIO5
+#define PIN_DHT D1      // Digital pin connected to the DHT 11 sensor - GPIO5
 
-DHT dht(DHT_PIN, DHT_TYPE);
+DHT dht(PIN_DHT, DHT_TYPE);
 int16_t tempHistory[90];
 
 void setupDHT() {
+  //Serial.println( "DHT setup");
   dht.begin();
   //clean data
   for (int i = 0; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++)
@@ -26,6 +27,7 @@ float lastHum = NAN;
 void refreshDHTCachedValues(bool metric) {
   lastTemp = dht.readTemperature(!metric) + station.getAdvancedSettings()->tempOffset;
   lastHum = dht.readHumidity() + station.getAdvancedSettings()->humOffset;
+  //Serial.println( "refreshDHTCachedValues " +  String(lastTemp) + " " + String(lastHum));
 }
 
 float getDHTCachedTemp() {
@@ -37,6 +39,7 @@ float getDHTCachedHum() {
 }
 
 float getDHTTemp(bool metric) {
+  //Serial.println( "Temperature: " + String(dht.readTemperature(!metric)));
   return dht.readTemperature(!metric) + station.getAdvancedSettings()->tempOffset;
 }
 
@@ -53,9 +56,10 @@ float getDHTHic(bool metric) {
 void saveDHTTempHist(bool metric) {
   float t = getDHTTemp(metric);
   if (isnan(t))
-    return; 
-  for (int i = 1; i < sizeof(tempHistory) / sizeof(tempHistory[0]); i++) //move all values left
-    tempHistory[i-1] = tempHistory[i];
+    return;
+  
+  for (uint8_t i = 0; i < (sizeof(tempHistory) / sizeof(tempHistory[0])) - 1; i++) //move all values left
+    tempHistory[i] = tempHistory[i+1];
   tempHistory[(sizeof(tempHistory) / sizeof(tempHistory[0])) - 1] = round( t * 10); //save the latest value
 }
 

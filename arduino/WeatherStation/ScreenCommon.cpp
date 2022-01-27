@@ -142,11 +142,11 @@ void drawAPInfo(OLEDDisplay *display, APInfo *info) {
   if (!info->clientsCount) {    //Any connected client to Wifi?
     display->drawString(0, 13, getStr(s_Wifi_AP_connect));
     display->setFont(ArialMT_Plain_16);
-    display->drawString(0, 40, info->ssid);
+    display->drawString(0, 45, info->ssid);
   } else {
     display->drawString(0, 13, getStr(s_Wifi_web_point));
     display->setFont(ArialMT_Plain_16);
-    display->drawString(0, 40, String(F("http://")) + info->ipAddress.toString());
+    display->drawString(0, 45, String(F("http://")) + info->ipAddress.toString());
   }
   display->display();
 }
