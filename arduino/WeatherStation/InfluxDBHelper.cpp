@@ -49,17 +49,17 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   
   WriteOptions wo;
   wo.batchSize(2).bufferSize(4).maxRetryAttempts(0);
-  wo.addDefaultTag(String(F("clientId")), deviceID);
-  wo.addDefaultTag(String(F("Device")), String(F("WS-ESP8266")));
-  wo.addDefaultTag(String(F("Version")), version);
-  wo.addDefaultTag(String(F("Location")), location);
-  wo.addDefaultTag(String(F("WiFi")), wifi);
+  wo.addDefaultTag(F("clientId"), deviceID);
+  wo.addDefaultTag(F("Device"), F("WS-ESP8266"));
+  wo.addDefaultTag(F("Version"), version);
+  wo.addDefaultTag(F("Location"), location);
+  wo.addDefaultTag(F("WiFi"), wifi);
   _client->setWriteOptions(wo);
 
   _sensor.clearTags();
-  _sensor.addTag(String(F("TemperatureSensor")), String(F("DHT11")));
-  _sensor.addTag(String(F("HumiditySensor")), String(F("DHT11")));
-  _sensor.addTag(String(F("TemperatureUnit")), String(F("C")));
+  _sensor.addTag(F("TemperatureSensor"), F("DHT11"));
+  _sensor.addTag(F("HumiditySensor"), F("DHT11"));
+  _sensor.addTag(F("TemperatureUnit"), F("C"));
   if(firstStart) {
     loadTempHistory( deviceID, metric);
   }
@@ -74,10 +74,10 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
   LOCK();
   _sensor.clearFields();
   // Report temperature and humidity
-  _sensor.addField(String(F("Temperature")), temp);
-  _sensor.addField(String(F("Humidity")), hum);
-  _sensor.addField(String(F("lat")), lat, 6);
-  _sensor.addField(String(F("lon")), lon, 6);
+  _sensor.addField(F("Temperature"), temp);
+  _sensor.addField(F("Humidity"), hum);
+  _sensor.addField(F("lat"), lat, 6);
+  _sensor.addField(F("lon"), lon, 6);
 
    // Print what are we exactly writing
   Serial.print(F("Writing: "));
@@ -177,12 +177,12 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   }
   // Prepare query parameters
   QueryParams params;
-  params.add("bucket", _settings->bucket);
-  params.add("deviceID", deviceID);
+  params.add(F("bucket"), _settings->bucket);
+  params.add(F("deviceID"), deviceID);
   
-  String query = String(F("from(bucket: params.bucket) |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == params.deviceID)"
+  String query = F("from(bucket: params.bucket) |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == params.deviceID)"
   "|> filter(fn: (r) => r[\"_measurement\"] == \"environment\") |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")"
-  "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)"));
+  "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)");
 
   Serial.print(F("Querying: "));
   Serial.println(query);
@@ -190,7 +190,7 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   uint16_t i = 0;
   FluxQueryResult result = _client->query(query, params);
   while (result.next()) {
-    float value = result.getValueByName(String(F("_value"))).getDouble();
+    float value = result.getValueByName(F("_value")).getDouble();
     tempHistory[ i] = metric ? round( value * 10) : round( convertCtoF( value) * 10);
     //Serial.println( "tempHistory[" + String(i) + "] " + String(value) + "->" + String(tempHistory[ i]));
     i++;
