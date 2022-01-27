@@ -15,7 +15,7 @@ typedef std::function<void(bool success, const char *error)> FWUpdateFinishedCal
 #define UPDATER_DEFAULT_BIN_FILE F("ws-firmware-%version%.bin")
 #define UPDATER_DEFAULT_MD5_FILE F("ws-firmware-%version%.md5")
 #define UPDATER_DEFAULT_UPDATETIME 300 //HHMM
-#define UPDATER_DEFAULT_CHECKBETA  true
+#define UPDATER_DEFAULT_CHECKBETA  false
 #define UPDATER_DEFAULT_VERIFY_CERT  true
 #define UPDATER_SETTINGS_ENDPOINT_PATH "/api/updaterSettings"
 
