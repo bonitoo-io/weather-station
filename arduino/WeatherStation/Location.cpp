@@ -118,7 +118,7 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
   String country = ipListener.country;
   country.toUpperCase();
   String location = ipListener.city + "," + country;
-  if(pRegionalSettings->location != location) {
+  if (pRegionalSettings->location != location) {
     Serial.print( F("Location changed from "));
     Serial.print(pRegionalSettings->location);
     Serial.print( F(" to "));
@@ -128,20 +128,37 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
     pRegionalSettings->latitude = ipListener.latitude;
     pRegionalSettings->longitude = ipListener.longitude;
     pRegionalSettings->utcOffset = utc_offset;  
-
-    if ( ipListener.lang == "cs")    //replace cs->cz code for weather
-      ipListener.lang = "cz";
-    pRegionalSettings->language = ipListener.lang;
-    
-    //24-hours vs 12-hours clock detection
-    pRegionalSettings->use24Hours = !findCountry(country.c_str(), Countries12h);
-
-    //Celsius vs Fahrenheit detection
-    pRegionalSettings->useMetricUnits = !findCountry(country.c_str(), CountriesFahrenheit);
-    
-    //Date format YMD vs DMY
-    pRegionalSettings->useYMDFormat = findCountry(country.c_str(), CountriesDateYMD);
     changed = true;
   }
+
+  //interface language
+  if ( ipListener.lang == "cs")    //replace cs->cz code for weather
+    ipListener.lang = "cz";
+  if ( pRegionalSettings->language != ipListener.lang) {
+    pRegionalSettings->language = ipListener.lang;
+    changed = true;
+  }
+
+  //24-hours vs 12-hours clock detection  
+  bool use24Hours = !findCountry(country.c_str(), Countries12h);
+  if ( pRegionalSettings->use24Hours != use24Hours) {
+    pRegionalSettings->use24Hours = use24Hours;
+    changed = true;
+  }
+
+  //Celsius vs Fahrenheit detection
+  bool useMetricUnits = !findCountry(country.c_str(), CountriesFahrenheit);
+  if ( pRegionalSettings->useMetricUnits != useMetricUnits) {
+    pRegionalSettings->useMetricUnits = useMetricUnits;
+    changed = true;
+  }
+    
+  //Date format YMD vs DMY
+  bool useYMDFormat = findCountry(country.c_str(), CountriesDateYMD);
+  if ( pRegionalSettings->useYMDFormat != useYMDFormat) {
+    pRegionalSettings->useYMDFormat = useYMDFormat;
+    changed = true;
+  }
+
   return changed?2:1;
 }
