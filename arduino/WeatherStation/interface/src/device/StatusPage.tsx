@@ -127,7 +127,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
               <ThermostatIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="Sensor values" secondary={data.temp + '°' + (data.useMetric?'C':'F') + ' ' + data.hum + '%'} />
+          <ListItemText primary="Sensor values" secondary={Math.round(data.temp) + '°' + (data.useMetric?'C':'F') + ' ' + Math.round(data.hum) + '%'} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >
