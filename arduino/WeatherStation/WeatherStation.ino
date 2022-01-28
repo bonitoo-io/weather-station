@@ -29,11 +29,11 @@
  **************************/
 
 // Button and LED
-#define PIN_LED    D2   //LED pin
-#define PIN_BUTTON D3   //Boot button pin
+#define PIN_LED    D2   //LED pin  GPIO4
+#define PIN_BUTTON D3   //Boot button pin  GPIO0
 // Display settings
-#define PIN_SDA    D4
-#define PIN_SDC    D5
+#define PIN_SDA    D4   //GPIO2
+#define PIN_SDC    D5   //GPIO14
 #define I2C_OLED_ADDRESS 0x3c
 
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 

@@ -90,7 +90,7 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
     Serial.println(_client->getLastErrorMessage());
     res = false;
   }
-  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received
+  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received?
     writeSuccess++;
   UNLOCK();
   return res;
