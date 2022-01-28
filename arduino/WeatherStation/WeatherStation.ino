@@ -52,7 +52,6 @@ InfluxDBHelper influxdbHelper;
 WeatherStation station(&influxdbHelper);
 Updater updater;
 
-
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
 String wifiSSID;
@@ -61,8 +60,6 @@ bool shouldDrawWifiProgress = false;
 bool isAPRunning = false;
 bool initialized = false;
 String resetReason;
-
-
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -97,12 +94,13 @@ bool bForceUpdate = false;
 void setup() {
   // Prepare serial port
   Serial.begin(74880);
-    //Initialize OLED
+  
+  //Initialize OLED
   display.init();
   display.clear();
   display.display();
   delay(1000);
-
+  
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
@@ -160,6 +158,16 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   WS_DEBUG_RAM("UpdateData");
   digitalWrite( PIN_LED, LOW);
 
+  if (!firstStart) {
+    if (influxdbHelper.getWriteSuccess() == 0) { //without any successfull write?
+      Serial.println(F("Failed all writes to InfluxDB, restarting!"));
+      //TODO: store status to identify reason of restart
+      ESP.restart();
+    }
+    Serial.print(F("InfluxDB successful writes: "));
+    Serial.println( influxdbHelper.getWriteSuccess());
+    influxdbHelper.clearWriteSuccess(); //reset OK counter
+  }
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (station.getRegionalSettings()->detectAutomatically) {
     WS_DEBUG_RAM("Before IPloc");

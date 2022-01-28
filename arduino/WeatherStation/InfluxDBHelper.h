@@ -52,6 +52,8 @@ class InfluxDBHelper {
   InfluxDBSettings *settings() { return _settings; }
   bool wasReleased() const { return _wasReleased; }
   bool isWriting() const { return _lock == 1; }
+  uint16_t getWriteSuccess() { return writeSuccess;}
+  void clearWriteSuccess() { writeSuccess = 0;}
 private:
   InfluxDBSettings *_settings = nullptr;
   InfluxDBClient *_client = nullptr;
@@ -60,6 +62,7 @@ private:
   bool _wasReleased = false;
   // simple sync mechanism
   volatile uint8_t _lock = 0;
+  uint16_t writeSuccess = 0;
 };
 
 
