@@ -55,10 +55,16 @@ float getDHTTemp(bool metric) {
   float t = dht.readTemperature(!metric);
   if (isnan(t)) {
     Serial.println( F("Received NAN temperature!"));
-    return NAN;
+    return lastTemp;
   }
   t += station.getAdvancedSettings()->tempOffset;
-  lastTemp = round( t  * 10) / 10;
+  
+  if (isnan( lastTemp) || (abs(t - lastTemp) < 10))   //skip potentially wrong values
+    lastTemp = round( t  * 10) / 10;
+  else {
+    Serial.print( F("Received wrong temperature: new/last"));
+    Serial.println( String( t) + " / " + String(lastTemp));
+  }
   return lastTemp;
 }
 
@@ -66,14 +72,19 @@ float getDHTHum() {
   float h = dht.readHumidity();
   if (isnan(h)) {
     Serial.println( F("Received NAN humidity!"));
-    return NAN;
+    return lastHum;
   }
   h += station.getAdvancedSettings()->humOffset;
   if (h > 100)
     h = 100;
   if (h < 0)
     h = 0;
-  lastHum = round( h * 10) / 10;
+  if (isnan( lastHum) || (abs(h - lastHum) < 10))   //skip potentially wrong values
+    lastHum = round( h * 10) / 10;
+  else {
+    Serial.print( F("Received wrong humidity: new/last"));
+    Serial.println( String( h) + " / " + String(lastHum));
+  }
   return lastHum;
 }
 
