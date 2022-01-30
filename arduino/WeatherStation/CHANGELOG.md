@@ -1,4 +1,13 @@
 # Changelog
+## 0.58 rc6
+## Features
+ - Finished dual color OLED support
+ - Humidity offset autocalibration (when offset is 0)
+ - Auto-reboot when InfluxDB write fails for the whole hour
+## Fixes
+ - Memory optimization
+ - IP loc detection reloads country specific settings when location is unchanged
+
 ## 0.58 rc5
 ## Features
  - InfluxDB client with streaming write
