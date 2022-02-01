@@ -1,7 +1,7 @@
 # Changelog
 ## 0.58 rc6
 ## Features
- - Finished dual color OLED support
+ - Dual color OLED support
  - Humidity offset autocalibration (when offset is 0)
  - Auto-reboot when InfluxDB write fails for the whole hour
 ## Fixes
