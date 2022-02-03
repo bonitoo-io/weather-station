@@ -123,11 +123,11 @@ String strTempUnit() {
 }
 
 String strTemp( float t) {
-  return (isnan(t) ? String(F("??")) : String(t,0)) + strTempUnit();
+  return (isnan(t) || (t == NO_VALUE) ? String(F("??")) : String(t,0)) + strTempUnit();
 }
 
 String strHum( float h) {
-  return (isnan(h) ? String(F("??")) : String(h,0)) + String(F("%"));
+  return (isnan(h) || (h == NO_VALUE) ? String(F("??")) : String(h,0)) + String(F("%"));
 }
 
 String strWind( unsigned int w) {

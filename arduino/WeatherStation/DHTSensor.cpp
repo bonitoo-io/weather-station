@@ -31,7 +31,7 @@ void setupDHT() {
   //autocalibrate sensors with faulty humidity
   if (( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { 
     station.getAdvancedSettings()->humOffset = 55 - h;
-    lastHum += station.getAdvancedSettings()->humOffset;    //update lastHum
+    invalidateDHTCached();
     Serial.print( F("DHT humidity autocalibration offset: "));
     Serial.println( station.getAdvancedSettings()->humOffset);
   }
@@ -41,6 +41,11 @@ void refreshDHTCachedValues(bool metric) {
   getDHTTemp( metric);
   getDHTHum();
   //Serial.println( "refreshDHTCachedValues " +  String(lastTemp) + " " + String(lastHum));
+}
+
+void invalidateDHTCached() {
+  lastTemp = NAN;
+  lastHum = NAN;
 }
 
 float getDHTCachedTemp() {

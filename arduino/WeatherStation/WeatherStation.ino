@@ -395,6 +395,7 @@ void loop() {
         } else {
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
         }
+        invalidateDHTCached();  //regularly invalid cached values from DHT sensor
         ServicesTracker.save();
         Serial.print(F("InfluxDB write "));
         Serial.println(String(millis() - start) + String(F("ms")));
