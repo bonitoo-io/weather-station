@@ -12,6 +12,8 @@
 
 DHT dht(PIN_DHT, DHT_TYPE);
 int16_t tempHistory[90];
+float lastTemp = NAN;
+float lastHum = NAN;
 
 void setupDHT() {
   dht.begin();
@@ -29,13 +31,11 @@ void setupDHT() {
   //autocalibrate sensors with faulty humidity
   if (( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { 
     station.getAdvancedSettings()->humOffset = 55 - h;
+    lastHum += station.getAdvancedSettings()->humOffset;    //update lastHum
     Serial.print( F("DHT humidity autocalibration offset: "));
     Serial.println( station.getAdvancedSettings()->humOffset);
   }
 }
-
-float lastTemp = NAN;
-float lastHum = NAN;
 
 void refreshDHTCachedValues(bool metric) {
   getDHTTemp( metric);
@@ -62,7 +62,7 @@ float getDHTTemp(bool metric) {
   if (isnan( lastTemp) || (abs(t - lastTemp) < 10))   //skip potentially wrong values
     lastTemp = t;
   else {
-    Serial.print( F("Received wrong temperature: new/last"));
+    Serial.print( F("Received wrong temperature: new/last "));
     Serial.println( String( t) + " / " + String(lastTemp));
   }
   return lastTemp;
@@ -82,7 +82,7 @@ float getDHTHum() {
   if (isnan( lastHum) || (abs(h - lastHum) < 10))   //skip potentially wrong values
     lastHum = h;
   else {
-    Serial.print( F("Received wrong humidity: new/last"));
+    Serial.print( F("Received wrong humidity: new/last "));
     Serial.println( String( h) + " / " + String(lastHum));
   }
   return lastHum;

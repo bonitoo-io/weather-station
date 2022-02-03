@@ -21,7 +21,7 @@ static const char MONTHS_CZ[] PROGMEM = "Leden\0" "Únor\0" "Březen\0" "Duben\0
 static const char MOON_CZ[] PROGMEM = "nov\0" "dorůstající srpek\0" "první čtvrť\0" "dorůstající měsíc\0" "úplněk\0" "couvající měsíc\0" "poslední čtvrť\0" "ubývající srpek\0";
 static const char STR_CZ[] PROGMEM =
 "Připojuji WiFi\0" "Hledám...\0" "počkejte prosím\0" "Připojuji IoT Center\0" "Zjišťuji polohu\0" "Kontrola aktualizace\0" "Aktualizuji čas\0" "Aktualizuji počasí\0" "Vypočítávám fázi měsíce\0" "Aktualizuji předpověď\0" "Připojuji InfluxDB\0" "Hotovo\0"
-"Dostupná aktualizace \0" "Připravuji aktualizaci\0" "Aktualizace byla úpěšná\0" "Restartuji...\0" "Aktualizace selhala \0" "Aktualizuji \0" "Restartuji...\0" "přes telefon, nebo počítač\npřipojte následující WiFi\0" "dokončete WiFi připojení\nnebo otevřete prohlížeč\0" "NASTAVENÍ:\0"
+"Nová aktualizace \0" "Připravuji aktualizaci\0" "Aktualizace byla úpěšná\0" "Restartuji...\0" "Aktualizace selhala \0" "Aktualizuji \0" "Restartuji...\0" "přes telefon, nebo počítač\npřipojte následující WiFi\0" "dokončete WiFi připojení\nnebo otevřete prohlížeč\0" "NASTAVENÍ:\0"
 "Meteorologická stanice\0" "Nastavte přes:\0" "Chyba předpovědi\0"
 "Zde:\0" " Vně:\0" "teď\0" "Chyba senzoru teploty!\0"
 "DOMA\0" "pocitově: \0" "vlhkost\0" "vítr\0"
