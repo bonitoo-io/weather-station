@@ -358,17 +358,17 @@ module cover() {
     }
 
   translate([0, - w / 2 + 6, 1.5])
-    cube_center_xy([12, 6, 3])
+    cube_center_xy([12, 6, 3]);
 
-    for (i = [0,1])
-      mirror([i,0,0])
-      translate([0,0,5])
-      translate([w / 2, d / 2 + shell_width, 0])
-      rotate(180, [0,1,0])
-      rotate(90, [1,0,0])
-        linear_extrude(w+shell_width * 2)
-          offset(delta= .05)
-          polygon([[0, 0], [4, 0], [0, 5]]);
+  for (i = [0,1])
+    mirror([i,0,0])
+    translate([0,0,5])
+    translate([w / 2, d / 2 + shell_width, 0])
+    rotate(180, [0,1,0])
+    rotate(90, [1,0,0])
+      linear_extrude(w + shell_width * 2 + 2)
+        offset(delta= .05)
+        polygon([[0, 0], [4, 0], [0, 5]]);
   }
 }
 
