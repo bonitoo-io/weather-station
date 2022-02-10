@@ -112,6 +112,7 @@ public:
   void cleanNetworks();
   void setPreviousNetwork(const char *network);
  private:
+  bool _firstStart = true;
   FSPersistence *_pFsp;
   WiFiSettings *_pSettings;
   APInfo _apInfo;

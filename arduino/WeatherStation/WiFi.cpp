@@ -115,6 +115,7 @@ void WiFiManager::enterState(WiFiConnectingState newState, bool reconFigure) {
 
 void WiFiManager::manageSTA() {
   if(!_connectingToWifi) {
+    Serial.printf_P(PSTR("ManageSTA::state %d\n"), _state);
     switch(_state) {
       case WiFiConnectingState::NotConnected:
         {
@@ -128,6 +129,7 @@ void WiFiManager::manageSTA() {
           // we have no configured wifis, start AP directly
           int c = getKnownWiFiNetworksCount(_pFsp);
           Serial.printf_P(PSTR("[WIFIM] Found %d save networks\n"),c);
+          _firstStart = c == 0;
           if(!c) {
             manageAP();
             return;
@@ -319,8 +321,10 @@ void WiFiManager::stopAP() {
     _apInfo.running = false;
     _forceAPStop = 0;
     notifyAPEvent(WifiAPEvent::APStopped);
-    WiFi.disconnect(true);
-    //ESP.restart();
+    if(_firstStart) {
+      WiFi.disconnect(true);
+      ESP.restart();
+    }
 }
 
 void WiFiManager::handleDNS() {
@@ -351,6 +355,7 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
         enterState(WiFiConnectingState::TestingConfigFailed, true);
         break;
       case WiFiConnectingState::Idle:
+      case WiFiConnectingState::ConnectingSuccess:
       case WiFiConnectingState::ConnectingToSaved:
         _manageDelay = SCAN_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
