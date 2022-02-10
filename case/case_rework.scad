@@ -2,14 +2,12 @@
 
 use<logoInfluxdata.scad>; // use logo
 
-use<case.scad>; // use logo
-*
-box_orig();
+use_cover_text = true;
 
-shell_width = 2;
+shell_width = 1.6;
 
-outer_fillet = 2;
-inner_fillet = 2;
+outer_fillet = 2.5;
+inner_fillet = 1;
 
 main_board_width = 43.75;
 main_board_depth = 57;
@@ -20,6 +18,7 @@ button_height = 3;
 button_height2 = 3;
 button_width = 3;
 button_width2 = 4;
+button_width3 = 4;
 button_height_full = 23;
 button_clearance = .15;
 button_socket_width = .8;
@@ -31,10 +30,8 @@ sensor_wall_width = 1.5;
 sensor_wall_hole_width = 3;
 sensor_wall_hole_height = 50;
 
-// overrides
-shell_width =  1.6;
-outer_fillet = 2.5;
-inner_fillet = 1;
+cover_frame_polygon = [[0, 0], [3, 0], [0, 5]];
+box_cover_lock = [20, shell_width, .8];
 
 
 module _() {}
@@ -43,17 +40,42 @@ w = 58.5;  // inner Width
 d = 58.5;  // depth
 h = 29;    // height
 
-translate([0,0,0])
+// *
+translate([-(w / 2) - shell_width - 1, 0, 0])
 {
-ws_box();
+  ws_box();
 
-translate([w / 2 + shell_width + button_width2 + 2, h + button_width2 + 2, 0])
-color("red")
-  button();
+  translate([w / 2 + shell_width + button_width2 + 2, h + button_width2 + 2, 0])
+  color("red")
+    button();
 
-translate([w+shell_width+2,0,0])
-  cover();
+  translate([w+shell_width+2,0,0])
+    cover();
 }
+
+// socket test 1
+*
+translate([0,0,0]) {
+  display_socket();
+
+  translate([0,0,-1.8])
+  difference() {
+    cube_center_xy([32,32,1.8]);
+    translate([0,0,-1])
+      cube_center_xy([27,27,5]);
+  }
+}
+
+// socket test 2
+*
+translate([7, -10, 0]) {
+  intersection() {
+    ws_box();
+    translate([-24,-5,0])
+      cube([33,32,8]);
+  }
+}
+
 
 
 // test printer for clearances
@@ -76,7 +98,7 @@ box_cover_test();
 
 // translate([0,0, - 1.5 + rest_height])
 // difference() {
-  
+
 //   union() {
 //     ws_box();
 //     translate([38,0,0])
@@ -193,20 +215,35 @@ module vent() {
 
 module display_socket() {
   top_scale = 0.07;
+  display = [29, 28, 1.8];
+  display_height = display[2];
+  display_dist = 2;
+  lock_height = 1.5;
+
+
+  translate([0,0,display_height+display_dist])
+  for (i = [0:1])
+    mirror([i, 0, 0])
+    translate([-display[0]/2, display[1]/2, 0])
+    rotate(-90)
+    linear_extrude(lock_height)
+        polygon([[0, 0], [3, 0], [0, 4.5]]);
 
   difference()
   {
-    // cube_center_xy([29+2,28+2,10]);
-    linear_extrude(10, scale = [ 1 + top_scale, 1 + top_scale ])
+    linear_extrude(display_height + display_dist + lock_height)
       square([ 29 + 2.5, 28 + 2.5 ], true);
 
-    translate([ 0, 0, 2 ])
-    linear_extrude(10, true, scale = [ 1 + top_scale, 1 + top_scale ])
-      square([ 29, 28 ], true);
-    translate([ 0, 0, -1 ]) cube_center_xy([ 27, 26, 2 + 2 ]);
+    translate([ 0, 0, display_dist ]) {
+      translate([0,-10/2,0])
+        cube_center_xy([display[0], display[1]+10, display[2] +10]);
+    }
 
-    cube_center_xy([ 20, 40, 15 ]);
-    cube_center_xy([ 40, 20, 15 ]);
+    translate([ 0, 0, -1 ]) {
+      cube_center_xy([ 27, 26, 10 ]);
+      cube_center_xy([ 20, 40, 15 ]);
+      cube_center_xy([ 40, 20, 15 ]);
+    }
   }
 }
 
@@ -250,6 +287,9 @@ module button(){
 
     translate([ 0, 0, button_height ])
       cylinder(button_height2, button_width, button_width2);
+
+    translate([ 0, 0, button_height_full - 5])
+      cylinder(5, 2, button_width3);
 
     cylinder(button_height_full,2,2);
   }
@@ -326,8 +366,8 @@ module box_cover_frame(
         translate([w / 2, d / 2 + shell_width, 0])
         rotate(180, [0,1,0])
         rotate(90, [1,0,0])
-        linear_extrude(w+shell_width * 2)
-          polygon([[0, 0], [4, 0], [0, 5]]);
+          linear_extrude(w+shell_width * 2)
+            polygon(cover_frame_polygon);
     }
   }
 
@@ -339,13 +379,16 @@ module box_cover_frame(
         translate([w / 2, d / 2 + shell_width, 0])
         rotate(180, [0,1,0])
         rotate(90, [1,0,0])
-        linear_extrude(w+shell_width * 2)
-          polygon([[0, 0], [1.2, 0], [0, 2]]);
+          linear_extrude(w+shell_width * 2)
+            polygon([[0, 0], [1, 0], [0, 2]]);
     }
 
     translate([0,0,-2])
-      cube_center_xy([w+.2, d+.2, 2 + 2], fillet= inner_fillet);
+      cube_center_xy([w + .2, d + .2, 2 + 2], fillet= inner_fillet);
   }
+
+  translate([-box_cover_lock[0] / 2, -d / 2 - shell_width, 0])
+    cube(box_cover_lock);
 }
 
 module cover() {
@@ -357,18 +400,29 @@ module cover() {
         cube_center_xy([w, d, 2]);
     }
 
-  translate([0, - w / 2 + 6, 1.5])
-    cube_center_xy([12, 6, 3]);
+    for (i = [0:3])
+      translate([0, - w / 2 + 6 + (i * 2), 1])
+        cube_center_xy([15, 1, 3]);
 
-  for (i = [0,1])
-    mirror([i,0,0])
-    translate([0,0,5])
-    translate([w / 2, d / 2 + shell_width, 0])
-    rotate(180, [0,1,0])
-    rotate(90, [1,0,0])
-      linear_extrude(w + shell_width * 2 + 2)
-        offset(delta= .05)
-        polygon([[0, 0], [4, 0], [0, 5]]);
+    for (i = [0:1])
+      mirror([i,0,0])
+      translate([0,0,5])
+      translate([w / 2, d / 2 + shell_width, 0])
+      rotate(180, [0,1,0])
+      rotate(90, [1,0,0])
+        linear_extrude(w + shell_width * 2 + 2)
+          offset(delta= .05)
+            polygon(cover_frame_polygon);
+    
+    // lock
+    translate([-box_cover_lock[0]/2 -1, -d/2 - shell_width -.1, -.1])
+      cube([box_cover_lock[0]+2,box_cover_lock[1]+.5+.1,box_cover_lock[2]+.1 + .3]);
+  
+    if (use_cover_text)
+    for(i = [["github.com/",0], ["bonitoo-io/",1], ["weather-station",2]])
+      translate([-w/2 + 5, d/2-9-i[1]*9, 2-.3])
+        linear_extrude(4)
+          text(i[0], size= 5, halign ="left");
   }
 }
 
