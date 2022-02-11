@@ -110,6 +110,19 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
 
   createListItems() {
     const { data, theme } = this.props
+    var sensors = ''
+    if(data.temp) {
+      sensors = data.temp.toFixed(1) + '°' + (data.useMetric?'C':'F')
+    }
+    if(data.hum) {
+      if(sensors.length) {
+        sensors += ' '
+      }
+      sensors += data.hum.toFixed(0) + '%'
+    }
+    if(sensors.length === 0) {
+      sensors = 'n/a'
+    }
     return (
       <Fragment>
         <ListItem >
@@ -127,7 +140,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
               <ThermostatIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="Sensor values" secondary={data.temp.toFixed(1) + '°' + (data.useMetric?'C':'F') + ' ' + data.hum.toFixed(0) + '%'} />
+          <ListItemText primary="Sensor values" secondary={sensors} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >
