@@ -22,7 +22,7 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   root[F("version")] = getLongVersion();
   root[F("deviceId")] = getDeviceID();
   root[F("useMetric")] = _pRegionalSettings->useMetricUnits;
-  root[F("temp")] = pSensor->getTemp(true);
+  root[F("temp")] = _pRegionalSettings->useMetricUnits ? Sensor::tempF2C(pSensor->getTemp(true)) : pSensor->getTemp(true);
   root[F("hum")] = pSensor->getHum(true);
   root[F("uptime")] = millis();
   AppState state = AppState::Ok;
