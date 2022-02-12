@@ -4,9 +4,6 @@
 String strTime(time_t timestamp, bool shortTime);
 String strTimeSuffix(time_t timestamp);
 String strDate(time_t timestamp, bool shortDate);
-String strTempUnit();
-String strTemp( float f);
-String strHum( float f);
 String strWind( unsigned int w);
 String utf8ascii(const String s);
 const char *getDeviceID();
@@ -59,9 +56,3 @@ enum tStrings {
 };
 
 String getStr( uint8_t index);
-
-int convertCtoF(int c);
-int convertFtoC(int c);
-float convertCtoF(float c);
-
-#define NO_VALUE -32768

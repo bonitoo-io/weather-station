@@ -24,7 +24,7 @@ class ScreenConstants {
 };
 
 
-int getCurrentWeatherTemperature();
+int16_t getCurrentWeatherTemperature();
 
 void initOLEDUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings);
 void configureUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings);
@@ -39,7 +39,6 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
 void drawAbout(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTimeAnalog(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDateTime(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawDHT(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);

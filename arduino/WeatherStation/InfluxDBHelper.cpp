@@ -5,7 +5,7 @@
 #include "FSPersistance.h"
 #include "ServiceState.h"
 #include "WeatherStation.h"
-#include "DHTSensor.h"
+#include "Sensor.h"
 
 const char *Token PROGMEM = "token";
 
@@ -191,10 +191,10 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
   FluxQueryResult result = _client->query(query, params);
   while (result.next()) {
     float value = result.getValueByName(F("_value")).getDouble();
-    tempHistory[ i] = metric ? round( value * 10) : round( convertCtoF( value) * 10);
-    //Serial.println( "tempHistory[" + String(i) + "] " + String(value) + "->" + String(tempHistory[ i]));
+    pSensor->setHist( i, Sensor::temp2Int( value, true));   //metric = true - we save data into InfluxDB always in C
+    //Serial.println( "tempHistory[" + String(i) + "] " + String(value) + "->" + String(pSensor->getHist( i)) + " raw: " + String(pSensor->getRawHist( i)));
     i++;
-    if (i == sizeof(tempHistory) / sizeof(tempHistory[0]))  //is the history is full?
+    if (i == TEMP_HIST_SIZE)  //is the history is full?
       break;
   }
   Serial.print(F("Loaded values: "));

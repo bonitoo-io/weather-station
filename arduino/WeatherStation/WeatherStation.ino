@@ -1,6 +1,4 @@
 //Board: NodeMCU 1.0 (ESP-12E Module)
-
-// Include libraries
 #include <Arduino.h>
 #include <ESPWiFi.h>
 #include <SSD1306Wire.h>
@@ -9,29 +7,21 @@
 #include "InfluxDBHelper.h"
 #include "Tools.h"
 #include "Updater.h"
-#include "DHTSensor.h"
+#include "Sensor.h"
 #include "Debug.h"
 #include "Version.h"
 #include "ServiceState.h"
 #include "ScreenCommon.h"
 
-/***************************
- * Begin Settings
- **************************/
 //See https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define OPEN_WEATHER_MAP_API_KEY ""
-
 // IoT Center url, e.g. http://192.168.1.20:5000  (can be empty, if not configured)
 #define IOT_CENTER_URL ""
-
-/***************************
- * End Settings
- **************************/
 
 // Button and LED
 #define PIN_LED    D2   //LED pin  GPIO4
 #define PIN_BUTTON D3   //Boot button pin  GPIO0
-// Display settings
+// I2C settings
 #define PIN_SDA    D4   //GPIO2
 #define PIN_SDC    D5   //GPIO14
 #define I2C_OLED_ADDRESS 0x3c
@@ -39,6 +29,7 @@
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
 
 tConfig conf = {
+//TODO: move iot center config to web config
   IOT_CENTER_URL, //iotCenterUrl 
   60             //iotRefreshMin
 };
@@ -48,6 +39,7 @@ SSD1306Wire display(I2C_OLED_ADDRESS, PIN_SDA, PIN_SDC);
 OLEDDisplayUi ui( &display);
 
 InfluxDBHelper influxdbHelper;
+
 // Weather station backend
 WeatherStation station(&influxdbHelper);
 Updater updater;
@@ -100,7 +92,6 @@ void setup() {
   display.clear();
   display.display();
   delay(1000);
-  
   Serial.println();
   Serial.println();
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
@@ -111,7 +102,6 @@ void setup() {
     Serial.print(F(" Reset reason: "));
     Serial.println(resetReason);
   }
-
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
   
@@ -135,21 +125,19 @@ void setup() {
       configureUI(&ui, station.getAdvancedSettings());
       bForceUpdate = true;
   });
-
+  
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
-
   WS_DEBUG_RAM("Setup 2");
 
   // Configure pins
   pinMode(PIN_BUTTON, INPUT);
   pinMode(PIN_LED, OUTPUT);
   digitalWrite( PIN_LED, HIGH);
-  setupDHT();
+  setupSensor();
 
   setLanguage( pRegionalSettings->language.c_str());  
-  refreshDHTCachedValues(pRegionalSettings->useMetricUnits);
   WS_DEBUG_RAM("Setup 3");
   ServicesTracker.load();
 }
@@ -275,13 +263,12 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 
   influxdbHelper.update( firstStart, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
 
-  drawUpdateProgress(display, 100, getStr(s_Done));
-
   if (firstStart) {
     //Save temperature for the chart
-    saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);
+    pSensor->saveTempHist();
   }
-
+  drawUpdateProgress(display, 100, getStr(s_Done));
+  
   WS_DEBUG_RAM("After updates");
 
   ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
@@ -294,7 +281,6 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   ServicesTracker.save();
   WS_DEBUG_RAM("After write status");
   digitalWrite( PIN_LED, HIGH);
-  delay(500);
 }
 
 uint16_t nextUIUpdate = 0;
@@ -314,11 +300,10 @@ void loop() {
     initData();
   }
   // Ticker function - executed once per minute
-  if (ui.getUiState()->frameState == FIXED && (millis() - timeSinceLastUpdate >= 1000*60) || bForceUpdate) {
+  if ((ui.getUiState()->frameState == FIXED) && (millis() - timeSinceLastUpdate >= 1000*60) || bForceUpdate) {
     WS_DEBUG_RAM("Loop 1");
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
-    refreshDHTCachedValues(station.getRegionalSettings()->useMetricUnits);
     ServicesTracker.reset();
 
     if(WiFi.isConnected()) {
@@ -358,7 +343,7 @@ void loop() {
         auto influxDBSettings = station.getInfluxDBSettings();
         ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
         ServicesTracker.save();
-        if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings,  conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
+        if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings, conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
           ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
           station.getPersistence()->writeToFS(influxDBSettings);
           influxDBSettings->notify();
@@ -384,18 +369,17 @@ void loop() {
       //Write into InfluxDB
       if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
         digitalWrite( PIN_LED, LOW);
-        saveDHTTempHist( station.getRegionalSettings()->useMetricUnits);  //Save temperature for the chart
+        pSensor->saveTempHist();  //Save temperature for the chart
         ESP.wdtFeed();
         ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
         ServicesTracker.save();
         //always save in celsius
         unsigned long start = millis();
-        if(influxdbHelper.write( getDHTTemp( true), getDHTHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) { 
+        if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTemp()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) { 
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
         } else {
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
         }
-        invalidateDHTCached();  //regularly invalid cached values from DHT sensor
         ServicesTracker.save();
         Serial.print(F("InfluxDB write "));
         Serial.println(String(millis() - start) + String(F("ms")));
@@ -452,7 +436,9 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
       shouldDrawWifiProgress = false;
       station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       station.startServer();
-      break;        
+      break;
+    case WifiConnectionEvent::ConnectingFailed:
+      break;
   };
 }
 
@@ -473,6 +459,8 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
     case WifiAPEvent::APStopped:
       isAPRunning = false;
       break;
+    case WifiAPEvent::ClientDisconnected:
+      break;  
   }
 }
 

@@ -1,7 +1,7 @@
 #include "About.h"
 #include "Settings.h"
 #include <AsyncJson.h>
-#include "DHTSensor.h"
+#include "Sensor.h"
 #include "Version.h"
 
 AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
@@ -22,8 +22,8 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   root[F("version")] = getLongVersion();
   root[F("deviceId")] = getDeviceID();
   root[F("useMetric")] = _pRegionalSettings->useMetricUnits;
-  root[F("temp")] = getDHTCachedTemp();
-  root[F("hum")] = getDHTCachedHum();
+  root[F("temp")] = pSensor->getTemp(true);
+  root[F("hum")] = pSensor->getHum(true);
   root[F("uptime")] = millis();
   AppState state = AppState::Ok;
   if(!_wifiSettings->ssid.length() || !WiFi.isConnected()) {

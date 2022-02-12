@@ -1,13 +1,13 @@
 #include <OLEDDisplayUi.h>
-#include "DHTSensor.h"
+#include "Sensor.h"
 #include "Tools.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
 int8_t getCovid19Dispersal() {
   //Inputs based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7229913/
-  float t = getDHTTemp( true);
-  float h = getDHTHum();
+  float t = Sensor::tempF2C(pSensor->getTemp());
+  float h = pSensor->getHum();
   if (isnan(t))
     return -1;  
 
@@ -33,7 +33,7 @@ void drawCovid19(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int
   int8_t i = getCovid19Dispersal();
 
   if (i == -1) {
-    sensorError( display, x ,y);
+    drawSensorError( display, x ,y);
     return;
   }
 

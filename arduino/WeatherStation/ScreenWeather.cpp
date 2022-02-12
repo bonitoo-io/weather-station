@@ -3,6 +3,7 @@
 #include <OpenWeatherMapForecast.h>
 
 #include "Tools.h"
+#include "Sensor.h"
 #include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
@@ -13,7 +14,7 @@ tCurrentWeather currentWeather;
 tForecast forecasts[MAX_FORECASTS];
 
 
-int getCurrentWeatherTemperature() {
+int16_t getCurrentWeatherTemperature() {
   return currentWeather.temp;
 }
 
@@ -21,18 +22,18 @@ int getCurrentWeatherTemperature() {
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapCurrent currentWeatherClient;
   OpenWeatherMapCurrentData _currentWeather;
-  currentWeatherClient.setMetric(pRegionalSettings->useMetricUnits);
+  currentWeatherClient.setMetric(false);  //always fahrenheit
   currentWeatherClient.setLanguage(pRegionalSettings->language);
   _currentWeather.temp = NAN;
   currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
   if (isnan(_currentWeather.temp)) {
-    currentWeather.temp =  NO_VALUE;
+    currentWeather.temp =  NO_VALUE_INT;
     return false;  
   }
 
-  currentWeather.temp =  round( _currentWeather.temp);
-  currentWeather.tempMin = round( _currentWeather.tempMin);
-  currentWeather.tempMax = round( _currentWeather.tempMax);
+  currentWeather.temp =  Sensor::float2Int( _currentWeather.temp);
+  currentWeather.tempMin = Sensor::float2Int( _currentWeather.tempMin);
+  currentWeather.tempMax = Sensor::float2Int( _currentWeather.tempMax);
   currentWeather.description = _currentWeather.description;
   currentWeather.windSpeed = round( _currentWeather.windSpeed);
   currentWeather.iconMeteoCon = _currentWeather.iconMeteoCon;
@@ -46,20 +47,20 @@ bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
   _forecasts[0].temp = NAN;
-  forecastClient.setMetric(pRegionalSettings->useMetricUnits);
+  forecastClient.setMetric(false);  //always fahrenheit
   forecastClient.setLanguage(pRegionalSettings->language);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS);
 
   if (isnan(_forecasts[0].temp)) {
-    forecasts[0].temp = NO_VALUE;
+    forecasts[0].temp = NO_VALUE_INT;
     return false;
   }
 
   for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
     forecasts[i].observationTime = _forecasts[i].observationTime;
-    forecasts[i].temp = round( _forecasts[i].temp);
+    forecasts[i].temp = Sensor::float2Int( _forecasts[i].temp);
     forecasts[i].iconMeteoCon = _forecasts[i].iconMeteoCon;
     forecasts[i].windDeg = round( _forecasts[i].windDeg);
     forecasts[i].windSpeed = round( _forecasts[i].windSpeed);
@@ -74,7 +75,7 @@ void forecastError( OLEDDisplay *display, int16_t x, int16_t y) {
 }
 
 void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (currentWeather.temp == NO_VALUE) {
+  if (currentWeather.temp == NO_VALUE_INT) {
     forecastError( display, x ,y);
     return;
   }
@@ -82,7 +83,8 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(station.getRegionalSettings()->location));
-  display->drawString(display->getWidth() + x, 36 + y, String(F("(")) + String(currentWeather.tempMin) + String(F("-")) + strTemp(currentWeather.tempMax) + String(F(")")));
+  
+  display->drawString(display->getWidth() + x, 36 + y, String(F("(")) + Sensor::strTempValueInt(currentWeather.tempMin) + String(F("-")) + Sensor::strTempInt(currentWeather.tempMax) + String(F(")")));
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 36 + y, utf8ascii(currentWeather.description));
   display->drawString(40 + x, 17 + y, getStr( s_wind));
@@ -90,11 +92,11 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth() + x, 16 + y, strTemp(currentWeather.temp));
+  display->drawString(display->getWidth() + x, 16 + y, Sensor::strTempInt(currentWeather.temp));
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 3 + y, String(currentWeather.iconMeteoCon));
+  display->drawString(0 + x, 3 + y, String(currentWeather.iconMeteoCon));  
 }
 
 
@@ -106,14 +108,14 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
-  display->drawString(x + 20, y + 38, strTemp(forecasts[dayIndex].temp));
+  display->drawString(x + 20, y + 38, Sensor::strTempInt(forecasts[dayIndex].temp));
   
   display->setFont(Meteocons_Plain_21);
   display->drawString(x + 20, y + 17, String(forecasts[dayIndex].iconMeteoCon));
 }
 
 void drawForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (forecasts[0].temp == NO_VALUE) {
+  if (forecasts[0].temp == NO_VALUE_INT) {
     forecastError( display, x ,y);
     return;
   }
@@ -171,7 +173,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
 }
 
 void drawWindForecast(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (forecasts[0].temp == NO_VALUE) {
+  if (forecasts[0].temp == NO_VALUE_INT) {
     forecastError( display, x ,y);
     return;
   }

@@ -118,18 +118,6 @@ String strDate(time_t timestamp, bool shortDate) {
   return String(buff);
 }
 
-String strTempUnit() {
-  return String(station.getRegionalSettings()->useMetricUnits ? F("°C") : F("°F"));
-}
-
-String strTemp( float t) {
-  return (isnan(t) || (t == NO_VALUE) ? String(F("??")) : String(t,0)) + strTempUnit();
-}
-
-String strHum( float h) {
-  return (isnan(h) || (h == NO_VALUE) ? String(F("??")) : String(h,0)) + String(F("%"));
-}
-
 String strWind( unsigned int w) {
   return String(w) + String(station.getRegionalSettings()->useMetricUnits? F("m/s") : F("mph"));  
 }
@@ -220,22 +208,6 @@ String utf8ascii(const String s) {
   Serial.println( utf8ascii("Любя, съешь щипцы, — вздохнёт мэр, — кайф жгуч."));
   Serial.println( utf8ascii("Γκόλφω, βάδιζε μπροστά ξανθή ψυχή!"));
 }*/
-
-int convertCtoF(int c) {
-  return round(((float)(c/10) * 1.8 + 32) * 10);
-}
-
-int convertFtoC(int c) { 
-  return round(((float)(c/10) - 32) * 5.55555);
-}
-
-float convertFtoC(float f) {
-  return (f - 32) * 0.55555; 
-}
-
-float convertCtoF(float c) {
-  return c * 1.8 + 32;
-}
 
 const char *getDeviceID() {
   if(!deviceID.length()) {

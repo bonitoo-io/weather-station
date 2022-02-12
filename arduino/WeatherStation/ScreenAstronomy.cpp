@@ -2,6 +2,7 @@
 #include <SunMoonCalc.h>
 
 #include "Tools.h"
+#include "Sensor.h"
 #include "WeatherStationFonts.h"
 
 extern tCurrentWeather currentWeather;
@@ -20,7 +21,7 @@ bool updateAstronomy(bool firstStart, const float lat, const float lon) {
   moonSet = sunMoonData.moon.set;
   moonPhase = sunMoonData.moon.phase.index;
   moonAgeImage = (char) (65 + 26 * (((uint8_t)(15 + sunMoonData.moon.age) % 30) / 30.0));
-  if ( currentWeather.temp == NO_VALUE) {
+  if ( currentWeather.temp == NO_VALUE_INT) {
     currentWeather.sunrise = sunMoonData.sun.rise;
     currentWeather.sunset = sunMoonData.sun.set;
   }

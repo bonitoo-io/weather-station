@@ -3,9 +3,7 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 #include "Tools.h"
-
-
-#include "DHTSensor.h"
+#include "Sensor.h"
 #include "ScreenCommon.h"
 
 const char ScreenConstants::About = 'B';
@@ -50,7 +48,7 @@ FrameCallback getFrameCallback(char c) {
     case ScreenConstants::DateTimeDigital:
       return drawDateTime;
     case ScreenConstants::SensorValues:
-      return drawDHT;
+      return drawSensor;
     case ScreenConstants::TemperatureChart:
       return drawTemperatureChart;
     case ScreenConstants::Covid19:
@@ -215,7 +213,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->drawString(display->getStringWidth(F("00:00")), 51, strTimeSuffix(now));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth(), 53, getStr(s_In) + strTemp(getDHTTemp( station.getRegionalSettings()->useMetricUnits)) + getStr(s_Out) + strTemp(getCurrentWeatherTemperature()));    
+  display->drawString(display->getWidth(), 53, getStr(s_In) + Sensor::strTemp(pSensor->getTemp()) + getStr(s_Out) + Sensor::strTemp( Sensor::int2Float( getCurrentWeatherTemperature())));    
 }
 
 const __FlashStringHelper * wifiStatusStr(wl_status_t status) {
@@ -240,10 +238,10 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   display->drawHorizontalLine(0, display->getHeight()-1, display->getWidth());
   if ( secToReset > 5) {
     display->drawString(0,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
-    display->drawString(0, 10, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(0, 20, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
-    display->drawString(0, 30, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
-    display->drawString(0, 40, String("v") + version + String(F("; tz: ")) + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + station.getRegionalSettings()->language);
+    display->drawString(0,  9, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
+    display->drawString(0, 18, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
+    display->drawString(0, 29, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
+    display->drawString(0, 38, String("v") + version + String(F(" tz: ")) + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + station.getRegionalSettings()->language);
     display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());
   } else
     display->drawString(0, 30, String(F("FACTORY RESET IN ")) + String(secToReset) + String(F("s !")));

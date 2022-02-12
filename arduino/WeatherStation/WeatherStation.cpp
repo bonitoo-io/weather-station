@@ -133,7 +133,7 @@ bool WeatherStation::globalFilterHandler(AsyncWebServerRequest *request) {
   Serial.println(request->url());
   WS_DEBUG_RAM(" RAM Before request");
   if(_influxDBHelper->isWriting()) {
-     Serial.println(F(" blocking, writing in progress"));
+    Serial.println(F(" blocking, writing in progress"));
     AsyncWebServerResponse *response = request->beginResponse(429);
     response->addHeader("Retry-After","1");
     request->send(response);
