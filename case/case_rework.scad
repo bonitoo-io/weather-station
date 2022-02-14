@@ -136,12 +136,9 @@ if (render_parts == "display")
     }
   }
 
-// hexbox
-
-
 if (render_parts == "hexbox1")
 translate() {
-  ws_box();
+  ws_box(hex= false);
   %
   shellCriticalPlaces();
 }
@@ -149,7 +146,7 @@ translate() {
 if (render_parts == "hexbox2")
 translate() {
   %
-  ws_box();
+  ws_box(hex= false);
   hex_cuts();
 }
 
@@ -326,7 +323,9 @@ module hex_cuts() {
     translate([-w / 2, -d / 2 ,0])
     union() {
       translate([-3, -6, -.2 - shell_width + 1.5])
-        hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 9);
+      rotate(-13)
+      translate([-12*1,0,0])
+        hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 11, cols= 12);
 
       translate([.5,0,0])
       rotate(-90, [0,1,0])
@@ -576,6 +575,13 @@ module ws_box(hex= false) {
       shell();
       if (hex)
       hex_cuts();
+      translate([0,0,-1])
+      linear_extrude(shell_width+2)
+      translate([14.5,-24.2,0]) {
+        translate([-4*2+.5, 4*2, 0])
+          rotate(30-13)
+          circle(8+2.5-.5, $fn= 6);
+      }
     }
 
     difference(){
@@ -595,10 +601,25 @@ module ws_box(hex= false) {
       sensor_wall();
     }
 
-
     translate([ -w / 2 + main_board_width / 2 + 1, 0, h - 4 ])
       main_board_socket();
   }
+
+  logo_scale = .45;
+  
+  linear_extrude(shell_width)
+    translate([14.5,-24.2,0]) {
+      difference() {
+        translate([-4*2+.5, 4*2, 0])
+        rotate(30-13)
+          circle(8+2.5, $fn= 6);
+
+        mirror([1,0,0])
+        scale([logo_scale,logo_scale])
+          offset(-.75)
+            import("logo.svg");
+      }
+    }
 }
 
 module box_cover_frame(
