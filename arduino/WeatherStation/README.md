@@ -27,6 +27,8 @@ Indentation means transitive dependency, but such a library must be installed as
   * Json Streaming Parser (by Daniel Eichhorn)
 * DHT sensor library (by Adafruit)
   * Adafruit Unified Sensor (by Adafruit)
+* Support for Sensirion's humidity and temperature sensors - Supported sensors: SHTC1, SHTC3, SHTW1, SHTW2, SHT3x-DIS (I2C), SHT85, SHT3x-ARP, SHT4x
+  * arduino-sht
 * ESP8266 Influxdb (by Tobias Schürg, InfluxData)
 * ESP Github Updater - from https://github.com/bonitoo-io/ESP-Github-Updater
 * ESPAsyncWebServer - from https://github.com/bonitoo-io/ESPAsyncWebServer/ branch [feat/global_filter](https://github.com/bonitoo-io/ESPAsyncWebServer/tree/feat/global_filter)
