@@ -46,7 +46,7 @@ class InfluxDBHelper {
   bool writeResetInfo();
   bool writeStatus();
   bool write( float temp, float hum, const float lat, const float lon);
-  bool loadTempHistory(const String &deviceID, bool metric);
+  bool loadTempHistory(const String &deviceID);
   bool release();
   String validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken);
   InfluxDBSettings *settings() { return _settings; }

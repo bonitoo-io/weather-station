@@ -2,13 +2,13 @@
 Board: NodeMCU 1.0 (ESP-12E Module)
 Executable segment sizes:
 ICACHE : 32768           - flash instruction cache 
-IROM   : 941596          - code in flash         (default or ICACHE_FLASH_ATTR) 
-IRAM   : 29617   / 32768 - code in IRAM          (IRAM_ATTR, ISRs...) 
+IROM   : 941024          - code in flash         (default or ICACHE_FLASH_ATTR) 
+IRAM   : 29649   / 32768 - code in IRAM          (IRAM_ATTR, ISRs...) 
 DATA   : 1712  )         - initialized variables (global, static) in RAM/HEAP 
-RODATA : 8052  ) / 81920 - constants             (global, static) in RAM/HEAP 
+RODATA : 8072  ) / 81920 - constants             (global, static) in RAM/HEAP 
 BSS    : 27960 )         - zeroed variables      (global, static) in RAM/HEAP 
-Sketch uses 980977 bytes (93%) of program storage space. Maximum is 1044464 bytes.
-Global variables use 37724 bytes (46%) of dynamic memory, leaving 44196 bytes for local variables. Maximum is 81920 bytes.
+Sketch uses 980457 bytes (93%) of program storage space. Maximum is 1044464 bytes.
+Global variables use 37744 bytes (46%) of dynamic memory, leaving 44176 bytes for local variables. Maximum is 81920 bytes.
 */
 
 #include <Arduino.h>
@@ -312,7 +312,7 @@ void loop() {
     initData();
   }
   // Ticker function - executed once per minute
-  if ((ui.getUiState()->frameState == FIXED) && (millis() - timeSinceLastUpdate >= 1000*60) || bForceUpdate) {
+  if (((ui.getUiState()->frameState == FIXED) && ((millis() - timeSinceLastUpdate) >= 1000*60)) || bForceUpdate) {
     WS_DEBUG_RAM("Loop 1");
     timeSinceLastUpdate = millis();
     lastUpdateMins++;

@@ -25,8 +25,8 @@ Indentation means transitive dependency, but such a library must be installed as
 * ESP8266 and ESP32 OLED driver for SSD1306 displays (by ThingPulse, Fabrice Weinberg)
 * ESP8266 Weather Station (by ThingPulse) optimized version - from https://github.com/bonitoo-io/esp8266-weather-station branch [all-fixes](https://github.com/bonitoo-io/esp8266-weather-station/tree/all-fixes)
   * Json Streaming Parser (by Daniel Eichhorn)
-* DHT sensor library (by Adafruit)
-  * Adafruit Unified Sensor (by Adafruit)
+* DHT sensor library - Class for DHT11, DHT12, DHT21 and DHT22 Sensors
+  * SDHT
 * Support for Sensirion's humidity and temperature sensors - Supported sensors: SHTC1, SHTC3, SHTW1, SHTW2, SHT3x-DIS (I2C), SHT85, SHT3x-ARP, SHT4x
   * arduino-sht
 * ESP8266 Influxdb (by Tobias Schürg, InfluxData)

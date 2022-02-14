@@ -61,7 +61,7 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   _sensor.addTag(F("HumiditySensor"), F("DHT11"));
   _sensor.addTag(F("TemperatureUnit"), F("C"));
   if(firstStart) {
-    loadTempHistory( deviceID, metric);
+    loadTempHistory( deviceID);
   }
   UNLOCK();
 }
@@ -171,7 +171,7 @@ bool InfluxDBHelper::writeResetInfo() {
 }
 
 // load temperature from InfluxDB - the last 90 minutes and the selected device
-bool InfluxDBHelper::loadTempHistory( const String &deviceID, bool metric) {
+bool InfluxDBHelper::loadTempHistory( const String &deviceID) {
   if(!_client || !_client->getServerUrl().length()) {
     return false;
   }
