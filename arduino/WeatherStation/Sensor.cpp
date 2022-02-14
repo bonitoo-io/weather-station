@@ -70,8 +70,8 @@ float Sensor::getTemp( bool forceCached) {
 
 void Sensor::_loadHum() {
   float h = _getHum(); //read humidity from the sensor
-  //Serial.println( "Humidity = " + String(h));
   _timeNextUpdate = millis() + _getMaxRefreshRateMs();    //next time to read metrics
+  //Serial.println( "Humidity = " + String(h));
   if (isnan(h)) {
     Serial.println( F("Received NAN humidity!"));
     return;
