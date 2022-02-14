@@ -54,12 +54,12 @@ float Sensor::getTemp( bool forceCached) {
     return _tempFilt.getValue();
   
   float t = _getTemp(); //read temperature from the sensor
+  _timeNextUpdate = millis() + _getMaxRefreshRateMs();    //next time to read metrics
   //Serial.println( "Temperature = " + String(t) + "->" + String(tempF2C(t)));
   if (isnan(t)) {
     Serial.println( F("Received NAN temperature!"));
     return _tempFilt.getValue();  //restore old value
   }
-  _timeNextUpdate = millis() + _getMaxRefreshRateMs();    //next time to read metrics
   _loadHum(); //also process humidity
   
   if (station.getAdvancedSettings()->tempOffset != 0) //Add offset
@@ -71,6 +71,7 @@ float Sensor::getTemp( bool forceCached) {
 void Sensor::_loadHum() {
   float h = _getHum(); //read humidity from the sensor
   //Serial.println( "Humidity = " + String(h));
+  _timeNextUpdate = millis() + _getMaxRefreshRateMs();    //next time to read metrics
   if (isnan(h)) {
     Serial.println( F("Received NAN humidity!"));
     return;
