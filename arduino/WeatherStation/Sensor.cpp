@@ -4,35 +4,45 @@
 #include "WeatherStation.h"
 #include "Sensor.h"
 #include "SensorDHT.h"
+#include "SensorSHT.h"
 
 Sensor* pSensor = nullptr;
 
 bool setupSensor() {
-  //prepare lastupdate -> test i2c adress -> initialize Sensor class
-  pSensor = new SensorDHT();
-  if (pSensor)
-    pSensor->setup(); //initialize sensor 
-  return true;
+  if (SensorSHT::detect()) {
+    Serial.println( F("Detected sensor SHTC3"));
+    pSensor = new SensorSHT(); 
+  } else {
+    Serial.println( F("Using sensor DHT11"));
+    pSensor = new SensorDHT();
+  }
+  if (pSensor) {
+    if (pSensor->setup())  //initialize sensor 
+      return true;
+    else  
+      Serial.println( F("Sensor setup error!"));
+  }
+  return false;
 }
 
 bool Sensor::setup() {
   _setup(); //initialize sensor
   Serial.println( String(F("Temp raw = ")) + String(_getTemp()));
   float h = _getHum();
-  Serial.println( String(F("Humidity calib = ")) + String(h));
+  Serial.println( String(F("Hum raw = ")) + String(h));
   //fix humidity offset overflow
   if ((station.getAdvancedSettings()->humOffset != 0) && (station.getAdvancedSettings()->humOffset + h > 100)) { 
     station.getAdvancedSettings()->humOffset = 0;
     Serial.println( F("DHT humidity overflow, zeroing offset"));
   }
   //autocalibrate sensors with faulty humidity
-  if (( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { 
-    station.getAdvancedSettings()->humOffset = 55 - h;
+  if (( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { //if humidity is less than 36% (faulty offset)
+    station.getAdvancedSettings()->humOffset = 55 - h;  //set humidity to 55%
     Serial.print( F("DHT humidity autocalibration offset: "));
     Serial.println( station.getAdvancedSettings()->humOffset);
   }
-  _tempFilt.init( _getTemp() + (station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset)); //prepare filter data
-  _humFilt.init( h + station.getAdvancedSettings()->humOffset); //prepare filter data
+  _tempFilt.init( _getTemp() + (station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset)); //prepare median filter data
+  _humFilt.init( float2Int(h + station.getAdvancedSettings()->humOffset)); //prepare median filter data
   //clean data
   for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
     _tempHistory[i] = NO_VALUE_INT;

@@ -11,7 +11,7 @@ protected:
   virtual bool _setup();
   virtual float _getTemp(); //temperatures always in fahrenheit
   virtual float _getHum();  //humidity always in percent
-  virtual uint16_t _getMaxRefreshRateMs() { return 2000;};  //DHT11 max 1Hz
+  virtual inline uint16_t _getMaxRefreshRateMs() { return 2000;};  //DHT11 max 1Hz, set 2s
 private:
   DHT* _dht = nullptr;
 };

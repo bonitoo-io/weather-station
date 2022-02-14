@@ -13,6 +13,7 @@ bool SensorDHT::_setup() {
   _dht->begin();
   if ( isnan(_dht->readTemperature()))
     return false;
+  return true;  
 }
 
 float SensorDHT::_getTemp() {

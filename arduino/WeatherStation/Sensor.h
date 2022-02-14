@@ -75,14 +75,13 @@ public:
   static String strHum( float h);
   static inline String strHumInt( int16_t h) { return strHum( int2Float( h));};
 protected:
-  virtual bool _setup() = 0;
+//virtual functions for temperature/humidity sensors
+  virtual bool _setup() = 0;  //setup the sensor, allocate sensor class
   virtual float _getTemp() = 0; //temperatures always in fahrenheit
   virtual float _getHum() = 0;  //humidity always in percent
-  virtual uint16_t _getMaxRefreshRateMs() { return 1000;};  //Default 1s
+  virtual inline uint16_t _getMaxRefreshRateMs() { return 1000;};  //default refresh is 1s (may be overwritten)
 private:
   void _loadHum();
-//all temperatures are in fahrenheit
-//all humidity is in in percent
   Median3Filter<float> _tempFilt;
   Median3Filter<int16_t> _humFilt;
   int16_t _tempHistory[TEMP_HIST_SIZE];
