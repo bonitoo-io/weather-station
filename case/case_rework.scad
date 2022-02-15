@@ -14,6 +14,7 @@ corner_support = 7;
 hex_enabled = true;
 hex_sides = true;
 hex_front = false;
+hex_sensor_wall = true;
 hex_dist = 1.25;
 shell_critical_places_dist = 1.5;
 
@@ -362,6 +363,7 @@ module hex_cuts() {
         rotate(90)
           hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
 
+        if (hex_sensor_wall)
         // sensor wall
         translate([-11,0,-5])
         translate([w+1.5, 0, 0])
@@ -578,7 +580,18 @@ module hex_fixes() {
 module ws_box(hex= false) {
   translate([0,0,shell_width-1.5]){  
     difference() {
-      shell();
+      union() {
+        shell();
+
+        if (hex) {
+          hex_fixes();
+
+          translate([ 18, -d / 2, 1.5 ])
+            cube([ sensor_wall_width, 28, 17 ]);
+        } else {
+          sensor_wall();
+        }
+      }
       if (hex)
       hex_cuts();
       translate([0,0,-1])
@@ -598,14 +611,6 @@ module ws_box(hex= false) {
         cylinder(20,5,6);
     }
 
-    if (hex) {
-      hex_fixes();
-
-      translate([ 18, -d / 2, 1.5 ])
-        cube([ sensor_wall_width, 28, 17 ]);
-    } else {
-      sensor_wall();
-    }
 
     translate([ -w / 2 + main_board_width / 2 + 1, 0, h - 4 ])
       main_board_socket();
