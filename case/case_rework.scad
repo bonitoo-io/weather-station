@@ -11,7 +11,9 @@ corner_width = 5;
 corner_support = 7;
 
 /* [Hex] */
-is_hex = true;
+hex_enabled = true;
+hex_sides = true;
+hex_front = false;
 hex_dist = 1.25;
 shell_critical_places_dist = 1.5;
 
@@ -35,7 +37,7 @@ sensor_wall_hole_width = 3;
 sensor_wall_hole_height = 50;
 
 /* [Cover] */
-use_cover_text = true;
+use_cover_text = false;
 cover_frame_polygon = [[0, 0], [3, 0], [0, 5]];
 // y=0 will use shell width
 box_cover_lock = [20, 0, .8]; 
@@ -49,10 +51,12 @@ h = 29;    // height
 main_board_width = 43.75;
 main_board_depth = 57;
 
+box_cover_lock_real = [box_cover_lock[0], box_cover_lock[1] == 0 ? shell_width : box_cover_lock[1], box_cover_lock[2]];
+
 if (render_parts == "all") {
   translate([-(w / 2) - shell_width - 1, 0, 0])
   {
-    ws_box(hex= is_hex);
+    ws_box(hex= hex_enabled);
 
     translate([w / 2 + shell_width + button_width2 + 2, h + button_width2 + 2, 0])
     color("red")
@@ -64,7 +68,7 @@ if (render_parts == "all") {
 }
 
 if (render_parts == "box") {
-  ws_box(hex= is_hex);
+  ws_box(hex= hex_enabled);
 }
 
 if (render_parts == "cover") {
@@ -322,48 +326,50 @@ module hex_cuts() {
   difference() {
     translate([-w / 2, -d / 2 ,0])
     union() {
-      translate([-3, -6, -.2 - shell_width + 1.5])
-      rotate(-13)
-      translate([-12*1,0,0])
-        hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 11, cols= 12);
+      if (hex_front)
+        translate([-3, -6, -.2 - shell_width + 1.5])
+        rotate(-13)
+        translate([-12*1,0,0])
+          hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 11, cols= 12);
 
-      translate([.5,0,0])
-      rotate(-90, [0,1,0])
-      translate([w / 2, -1 ,0])
-      rotate(90)
-        hex_wall(4, dist= hex_dist, h= shell_width + 2, rows= 4, cols= 10);
+      if (hex_sides)  {
+        translate([.5,0,0])
+        rotate(-90, [0,1,0])
+        translate([w / 2, -1 ,0])
+        rotate(90)
+          hex_wall(4, dist= hex_dist, h= shell_width + 2, rows= 4, cols= 10);
 
-      
-      translate([w+shell_width + .5, 0, 0])
-      rotate(-90, [0,1,0])
-      translate([w / 2, -1 ,0])
-      rotate(90)
-        hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
-
-
-      translate([0, -shell_width - .5, 0])
-      rotate(-90)
-      rotate(-90, [0,1,0])
-      translate([w / 2, -1 ,0])
-      rotate(90)
-        hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
+        
+        translate([w+shell_width + .5, 0, 0])
+        rotate(-90, [0,1,0])
+        translate([w / 2, -1 ,0])
+        rotate(90)
+          hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
 
 
-      translate([0, d - .5, 0])
-      rotate(-90)
-      rotate(-90, [0,1,0])
-      translate([w / 2, -1 ,0])
-      rotate(90)
-        hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
+        translate([0, -shell_width - .5, 0])
+        rotate(-90)
+        rotate(-90, [0,1,0])
+        translate([w / 2, -1 ,0])
+        rotate(90)
+          hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
 
-      // sensor wall
-      translate([-11,0,-5])
-      translate([w+1.5, 0, 0])
-      rotate(-90, [0,1,0])
-      translate([w / 2, -1 ,0 - sensor_wall_width + 1.5])
-      rotate(90)
-        hex_wall(4, dist= hex_dist, h= sensor_wall_width+1, rows= 3, cols= 5);
 
+        translate([0, d - .5, 0])
+        rotate(-90)
+        rotate(-90, [0,1,0])
+        translate([w / 2, -1 ,0])
+        rotate(90)
+          hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
+
+        // sensor wall
+        translate([-11,0,-5])
+        translate([w+1.5, 0, 0])
+        rotate(-90, [0,1,0])
+        translate([w / 2, -1 ,0 - sensor_wall_width + 1.5])
+        rotate(90)
+          hex_wall(4, dist= hex_dist, h= sensor_wall_width+1, rows= 3, cols= 5);
+      }
     }
 
     shellCriticalPlaces(shell_critical_places_dist);
@@ -415,7 +421,7 @@ module shell() {
 
     // button hole
     translate([ 12, 19, -1 ]) 
-      cylinder(r = button_width, h = 25, $fn = 20);
+      cylinder(r = button_width + button_clearance, h = 25, $fa = .1, $fs = .5);
   }
 
   difference(){
@@ -661,8 +667,8 @@ module box_cover_frame(
       cube_center_xy([w + .2, d + .2, 2 + 2], fillet= inner_fillet);
   }
 
-  translate([-box_cover_lock[0] / 2, -d / 2 - shell_width, 0])
-    cube([box_cover_lock[0], box_cover_lock[1] == 0 ? shell_width : box_cover_lock[1], box_cover_lock[2]]);
+  translate([-box_cover_lock_real[0] / 2, -d / 2 - shell_width, 0])
+    cube(box_cover_lock_real);
 }
 
 module cover() {
@@ -689,8 +695,8 @@ module cover() {
             polygon(cover_frame_polygon);
     
     // lock
-    translate([-box_cover_lock[0]/2 -1, -d/2 - shell_width -.1, -.1])
-      cube([box_cover_lock[0]+2,box_cover_lock[1]+.5+.1,box_cover_lock[2]+.1 + .3]);
+    translate([-box_cover_lock_real[0]/2 -1, -d/2 - shell_width -.1, -.1])
+      cube([box_cover_lock_real[0]+2,box_cover_lock_real[1]+.5+.1,box_cover_lock_real[2]+.1 + .3]);
   
     if (use_cover_text)
     for(i = [["github.com/",0], ["bonitoo-io/",1], ["weather-station",2]])
