@@ -8,13 +8,14 @@
 class SensorSHT : public Sensor {
 public:  
   ~SensorSHT();
-  static bool detect();
+  static bool driverDetect();
 protected:
-  virtual bool _setup();
-  virtual float _getTemp(); //temperatures always in fahrenheit
-  virtual float _getHum();  //humidity always in percent
+  virtual bool driverSetup();
+  virtual const __FlashStringHelper * driverName() { return F("SHTC3");} ; //get sensor name
+  virtual float driverGetTemp(); //temperatures always in fahrenheit
+  virtual float driverGetHum( bool secondRead);  //humidity always in percent
 private:
-  SHTSensor* _sht = nullptr;
+  SHTSensor* _pSht = nullptr;
 };
 
 #endif //STHC3_SENSOR_H

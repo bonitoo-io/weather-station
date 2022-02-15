@@ -57,6 +57,7 @@ public:
   int16_t getHist( uint8_t pos);
   inline void setHist( uint8_t pos, int16_t data) { if (pos < TEMP_HIST_SIZE) _tempHistory[pos]=data;};
   inline int16_t getRawHist(uint8_t pos) { return _tempHistory[pos];}
+  inline const __FlashStringHelper * getSensorName() { return driverName();}
   
 //Basic temperature and humidity handling functions (static - can be used without class instance)
   static int16_t temp2Int( float temp, bool metric);
@@ -76,16 +77,17 @@ public:
   static inline String strHumInt( int16_t h) { return strHum( int2Float( h));};
 protected:
 //virtual functions for temperature/humidity sensors
-  virtual bool _setup() = 0;  //setup the sensor, allocate sensor class
-  virtual float _getTemp() = 0; //temperatures always in fahrenheit
-  virtual float _getHum() = 0;  //humidity always in percent
-  virtual inline uint16_t _getMaxRefreshRateMs() { return 1000;};  //default refresh is 1s (may be overwritten)
+  virtual bool driverSetup() = 0;  //setup the sensor, allocate sensor class
+  virtual const __FlashStringHelper * driverName() = 0; //get sensor name
+  virtual float driverGetTemp() = 0; //temperatures always in fahrenheit
+  virtual float driverGetHum( bool secondRead) = 0;  //humidity always in percent
+  virtual inline uint16_t driverGetMaxRefreshRateMs() { return 1000;};  //default refresh is 1s (may be overwritten)
 private:
-  void _loadHum();
+  void internalLoadHum( bool secondRead);
   Median3Filter<float> _tempFilt;
   Median3Filter<int16_t> _humFilt;
   int16_t _tempHistory[TEMP_HIST_SIZE];
-  unsigned long _timeNextUpdate = 0;
+  unsigned long _timeNextUpdate;
 };
 
 bool setupSensor();

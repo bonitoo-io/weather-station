@@ -6,15 +6,15 @@
 #define DHT_TYPE DHT11  // Sensor DHT 11
 #define PIN_DHT D1      // Digital pin connected to the DHT 11 sensor - GPIO5
 
-float SensorDHT::_getTemp() {
+float SensorDHT::driverGetTemp() {
   if (_dht.read(DHT_TYPE, PIN_DHT))
     return Sensor::tempC2F((float)_dht.celsius / 10.0);
   else
     return NAN;
 }
 
-float SensorDHT::_getHum() {
-  if (_dht.read(DHT_TYPE, PIN_DHT))
+float SensorDHT::driverGetHum( bool secondRead) {
+  if (secondRead || _dht.read(DHT_TYPE, PIN_DHT))
     return (float)_dht.humidity / 10.0;
   else
     return NAN;

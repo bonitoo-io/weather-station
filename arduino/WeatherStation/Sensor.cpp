@@ -9,7 +9,7 @@
 Sensor* pSensor = nullptr;
 
 bool setupSensor() {
-  if (SensorSHT::detect()) {
+  if (SensorSHT::driverDetect()) {
     Serial.println( F("Detected sensor SHTC3"));
     pSensor = new SensorSHT(); 
   } else {
@@ -26,9 +26,11 @@ bool setupSensor() {
 }
 
 bool Sensor::setup() {
-  _setup(); //initialize sensor
-  Serial.println( String(F("Temp raw = ")) + String(_getTemp()));
-  float h = _getHum();
+  driverSetup(); //initialize sensor
+  float t = driverGetTemp();
+  _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
+  Serial.println( String(F("Temp raw = ")) + String(t));
+  float h = driverGetHum(true);
   Serial.println( String(F("Hum raw = ")) + String(h));
   //fix humidity offset overflow
   if ((station.getAdvancedSettings()->humOffset != 0) && (station.getAdvancedSettings()->humOffset + h > 100)) { 
@@ -41,7 +43,7 @@ bool Sensor::setup() {
     Serial.print( F("DHT humidity autocalibration offset: "));
     Serial.println( station.getAdvancedSettings()->humOffset);
   }
-  _tempFilt.init( _getTemp() + (station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset)); //prepare median filter data
+  _tempFilt.init( t + (station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset)); //prepare median filter data
   _humFilt.init( float2Int(h + station.getAdvancedSettings()->humOffset)); //prepare median filter data
   //clean data
   for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
@@ -53,14 +55,14 @@ float Sensor::getTemp( bool forceCached) {
   if (forceCached || (_timeNextUpdate >= millis()))
     return _tempFilt.getValue();
   
-  float t = _getTemp(); //read temperature from the sensor
-  _timeNextUpdate = millis() + _getMaxRefreshRateMs();    //next time to read metrics
+  float t = driverGetTemp(); //read temperature from the sensor
+  _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();    //next time to read metrics
   //Serial.println( "Temperature = " + String(t) + "->" + String(tempF2C(t)));
   if (isnan(t)) {
     Serial.println( F("Received NAN temperature!"));
     return _tempFilt.getValue();  //restore old value
   }
-  _loadHum(); //also process humidity
+  internalLoadHum( true); //also process humidity
   
   if (station.getAdvancedSettings()->tempOffset != 0) //Add offset
     t += station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset; 
@@ -68,9 +70,9 @@ float Sensor::getTemp( bool forceCached) {
   return _tempFilt.medianFilter(t);
 }
 
-void Sensor::_loadHum() {
-  float h = _getHum(); //read humidity from the sensor
-  _timeNextUpdate = millis() + _getMaxRefreshRateMs();    //next time to read metrics
+void Sensor::internalLoadHum( bool secondRead) {
+  float h = driverGetHum( secondRead); //read humidity from the sensor
+  _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();    //next time to read metrics
   //Serial.println( "Humidity = " + String(h));
   if (isnan(h)) {
     Serial.println( F("Received NAN humidity!"));
@@ -87,7 +89,7 @@ void Sensor::_loadHum() {
 
 float Sensor::getHum( bool forceCached) {
   if (!(forceCached || (_timeNextUpdate >= millis())))
-    _loadHum();
+    internalLoadHum( false);
   return int2Float( _humFilt.getValue());
 }
 
@@ -122,19 +124,19 @@ String Sensor::strHum( float h) {
 float Sensor::getHeatIndex(float temp, float hum) {
   if (isnan(temp))
     return NAN;
-  float hi;
-  if (hi > 79) {    
+  float hi = 0.5 * (temp + 61.0 + ((temp - 68.0) * 1.2) + (hum * 0.094));
+
+  if (hi > 79) {
+    hi = -42.379 + 2.04901523 * temp + 10.14333127 * hum +
+         -0.22475541 * temp * hum + -0.00683783 * pow(temp, 2) +
+         -0.05481717 * pow(hum, 2) + 0.00122874 * pow(temp, 2) * hum +
+         0.00085282 * temp * pow(hum, 2) + -0.00000199 * pow(temp, 2) * pow(hum, 2);
+    
     if ((hum < 13) && (temp >= 80.0) && (temp <= 112.0))
       hi -= ((13.0 - hum) * 0.25) * sqrt((17.0 - abs(temp - 95.0)) * 0.05882);
     else if ((hum > 85.0) && (temp >= 80.0) && (temp <= 87.0))
       hi += ((hum - 85.0) * 0.1) * ((87.0 - temp) * 0.2);
-    else
-      hi = -42.379 + 2.04901523 * temp + 10.14333127 * hum +
-         -0.22475541 * temp * hum + -0.00683783 * pow(temp, 2) +
-         -0.05481717 * pow(hum, 2) + 0.00122874 * pow(temp, 2) * hum +
-         0.00085282 * temp * pow(hum, 2) + -0.00000199 * pow(temp, 2) * pow(hum, 2);
-  } else
-    hi = 0.5 * (temp + 61.0 + ((temp - 68.0) * 1.2) + (hum * 0.094));
+  }
 
   return hi;
 }

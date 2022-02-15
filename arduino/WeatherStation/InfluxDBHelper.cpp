@@ -57,8 +57,8 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   _client->setWriteOptions(wo);
 
   _sensor.clearTags();
-  _sensor.addTag(F("TemperatureSensor"), F("DHT11"));
-  _sensor.addTag(F("HumiditySensor"), F("DHT11"));
+  _sensor.addTag(F("TemperatureSensor"), pSensor->getSensorName());
+  _sensor.addTag(F("HumiditySensor"), pSensor->getSensorName());
   _sensor.addTag(F("TemperatureUnit"), F("C"));
   if(firstStart) {
     loadTempHistory( deviceID);
