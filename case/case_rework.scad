@@ -1,6 +1,8 @@
-// case Roman - WIP!
+// case Roman
 
 render_parts = "all"; // ["all": All, "box": Box, "cover": Cover, "button": Button, "none": none, "display": Display test, "cover-test": Cover test , "hexbox1": Hexbox vizualization, "hexbox2": Hexbox vizualization 2]
+
+/* [Shell] */
 
 shell_width = 2.4; // [.2:.1:3]
 
@@ -40,16 +42,26 @@ shell_critical_places_dist = 1.5;
 button_use_shell_width = true; 
 // button stand out when use shell width enabled
 button_height_shell_added = .2;
+// bottom cylinder of button, this changes socket too
 button_height = 3;
+// height of securing cylinder preventing button from falling out
 button_height2 = 3;
+// width of button visible from outside
 button_width = 3;
+// upper width of securing cylinder, must be higher than button width
 button_width2 = 4;
+// width of slip-preventing button to board contact
 button_width3 = 4;
+// full height of button, can be dependent on button_use_shell_width
 button_height_full = 23;
+// distance between button and socket
 button_clearance = .15;
+// how strong is button socket
 button_socket_width = .8;
 
 /* [Ventilation] */
+vent_top = true;
+vent_side = false;
 vent_upper_width = 7;
 vent_upper_dist_side = 2;
 
@@ -84,7 +96,6 @@ if (render_parts == "all") {
     ws_box(hex= hex_enabled);
 
     translate([w / 2 + shell_width + button_width2 + 2, h + button_width2 + 2, 0])
-    color("red")
       button();
 
     translate([w+shell_width+2,0,0])
@@ -420,22 +431,22 @@ module shell() {
         translate([ -32 - shell_width, -0.8, 22.3 ]) 
         translate([ 0, (9.5 - usb_hole[0]) / 2, (3.8 - usb_hole[1]) ]) 
           cube([ 5 + shell_width, usb_hole[0], usb_hole[1] ]);
+        
+        if (vent_side)
+        for (i = [5,8,11]) {
+          for (j = [-25,-11]){
+            translate([ 28, j, i ]) vent();
+          }
+        }
 
-        // // ventilating holes side
-        // translate([ 28, -25, 5 ]) vent();
-        // translate([ 28, -25, 8 ]) vent();
-        // translate([ 28, -25, 11 ]) vent();
-        // translate([ 28, -15, 5 ]) vent();
-        // translate([ 28, -15, 8 ]) vent();
-        // translate([ 28, -15, 11 ]) vent();
-
-        // for (side = [-1:2:1]) {
-        //   translate([ side * (w / 2 - vent_upper_width / 2 - vent_upper_dist_side) - vent_upper_width / 2, d / 2 - 1, 5 ])
-        //   for (i = [0:2]) {
-        //     translate([0, 0, 3 * i])
-        //       cube([ vent_upper_width, shell_width + 2, 1.5 ]);
-        //   }
-        // }
+        if (vent_top)
+        for (side = [-1:2:1]) {
+          translate([ side * (w / 2 - vent_upper_width / 2 - vent_upper_dist_side) - vent_upper_width / 2, d / 2 - 1, 5 ])
+          for (i = [0:2]) {
+            translate([0, 0, 3 * i])
+              cube([ vent_upper_width, shell_width + 2, 1.5 ]);
+          }
+        }
 
         // translate([ 24, -27, -1 ])
         //   linear_extrude(.25+1)
