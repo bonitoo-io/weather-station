@@ -7,18 +7,39 @@ shell_width = 2.4; // [.2:.1:3]
 outer_fillet = 3.3;
 inner_fillet = 1;
 
+// hex recomended logo_position_x = 14.5;
+logo_position_x = 1; // [-12:.5:28]
+// hex recomended logo_position_y = -24.2;
+logo_position_y = -24; // [-28:.5:12]
+// hex recomended logo_scale = 1;
+logo_scale = 1.15; // [.5:.01:1.5]
+
+// previous usb_hole = [9.5, 3.8];
+usb_hole = [11.2, 8.5];
+
+/* [Main board] */
 corner_width = 5;
 corner_support = 7;
+board_height_modificator = -.5;
 
 /* [Hex] */
 hex_enabled = true;
-hex_sides = true;
+
 hex_front = false;
-hex_sensor_wall = true;
+hex_right = true;
+hex_left = true;
+hex_top = false;
+hex_bot = false;
+hex_sensor_wall = false;
+
 hex_dist = 1.25;
 shell_critical_places_dist = 1.5;
 
 /* [Button] */
+// button changes based on shell width
+button_use_shell_width = true; 
+// button stand out when use shell width enabled
+button_height_shell_added = .2;
 button_height = 3;
 button_height2 = 3;
 button_width = 3;
@@ -38,6 +59,7 @@ sensor_wall_hole_width = 3;
 sensor_wall_hole_height = 50;
 
 /* [Cover] */
+cover_lock_clearance = [ 2, .1, .4 ];
 use_cover_text = false;
 cover_frame_polygon = [[0, 0], [3, 0], [0, 5]];
 // y=0 will use shell width
@@ -51,6 +73,8 @@ h = 29;    // height
 
 main_board_width = 43.75;
 main_board_depth = 57;
+
+logo_position = [logo_position_x, logo_position_y];
 
 box_cover_lock_real = [box_cover_lock[0], box_cover_lock[1] == 0 ? shell_width : box_cover_lock[1], box_cover_lock[2]];
 
@@ -214,12 +238,8 @@ module hex_wall (size= 6, dist= 1, h= 1, rows= 10, cols= 10) {
 
 // translate([0,0, - 1.5 + rest_height])
 // difference() {
-
 //   union() {
 //     ws_box();
-//     translate([38,0,0])
-//     color("red")
-//       button();
 
 //     translate([ 0, 0, 1.5 - .1 + rest_height ])
 //     difference(){
@@ -244,7 +264,7 @@ module hex_wall (size= 6, dist= 1, h= 1, rows= 10, cols= 10) {
 //     }
 //   }
 
-//   translate([0,0,-1])
+//   translate([0,0,-2])
 //     cube_center_xy([100, 100, 1.5 + 1 - rest_height]);
 // }
 
@@ -296,7 +316,7 @@ module shellCriticalPlaces (dist= 2){
   }
 
   // main board holder
-  translate([ -w / 2 + main_board_width / 2 + 1, 0, h - 10 ])
+  translate([ -w / 2 + main_board_width / 2 + 1, 0, h - 10 + board_height_modificator])
   difference() {
     cube_center_xy([ main_board_width + 2 + dist * 2, main_board_depth + 2 + dist * 2 + 2 * 2 + shell_width*2, 10 ]);
 
@@ -318,8 +338,10 @@ module shellCriticalPlaces (dist= 2){
   }
 
   // usb hole
-  translate([ -32 - shell_width, -0.8 - dist, 22.3 - dist ]) 
-    cube([ 5 + shell_width, 9.5 + dist * 2, 3.8 + dist * 2 ]);
+  translate([0, -dist, -dist])
+  translate([ -32 - shell_width, -0.8, 22.3 ]) 
+  translate([ 0, (9.5 - usb_hole[0]) / 2, (3.8 - usb_hole[1]) ]) 
+    cube([ 5 + shell_width, usb_hole[0] + dist * 2, usb_hole[1] + dist * 2 ]);
 }
 
 
@@ -333,14 +355,14 @@ module hex_cuts() {
         translate([-12*1,0,0])
           hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 11, cols= 12);
 
-      if (hex_sides)  {
+      if (hex_right)
         translate([.5,0,0])
         rotate(-90, [0,1,0])
         translate([w / 2, -1 ,0])
         rotate(90)
           hex_wall(4, dist= hex_dist, h= shell_width + 2, rows= 4, cols= 10);
 
-        
+      if (hex_left)
         translate([w+shell_width + .5, 0, 0])
         rotate(-90, [0,1,0])
         translate([w / 2, -1 ,0])
@@ -348,6 +370,7 @@ module hex_cuts() {
           hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
 
 
+      if (hex_bot)
         translate([0, -shell_width - .5, 0])
         rotate(-90)
         rotate(-90, [0,1,0])
@@ -356,6 +379,7 @@ module hex_cuts() {
           hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
 
 
+      if (hex_top)
         translate([0, d - .5, 0])
         rotate(-90)
         rotate(-90, [0,1,0])
@@ -363,7 +387,7 @@ module hex_cuts() {
         rotate(90)
           hex_wall(4, dist= hex_dist, h= shell_width + 1, rows= 4, cols= 10);
 
-        if (hex_sensor_wall)
+      if (hex_sensor_wall)
         // sensor wall
         translate([-11,0,-5])
         translate([w+1.5, 0, 0])
@@ -371,7 +395,7 @@ module hex_cuts() {
         translate([w / 2, -1 ,0 - sensor_wall_width + 1.5])
         rotate(90)
           hex_wall(4, dist= hex_dist, h= sensor_wall_width+1, rows= 3, cols= 5);
-      }
+      
     }
 
     shellCriticalPlaces(shell_critical_places_dist);
@@ -394,7 +418,8 @@ module shell() {
 
         // usb socket
         translate([ -32 - shell_width, -0.8, 22.3 ]) 
-          cube([ 5 + shell_width, 9.5, 3.8 ]);
+        translate([ 0, (9.5 - usb_hole[0]) / 2, (3.8 - usb_hole[1]) ]) 
+          cube([ 5 + shell_width, usb_hole[0], usb_hole[1] ]);
 
         // // ventilating holes side
         // translate([ 28, -25, 5 ]) vent();
@@ -422,8 +447,8 @@ module shell() {
     }
 
     // button hole
-    translate([ 12, 19, -1 ]) 
-      cylinder(r = button_width + button_clearance, h = 25, $fa = .1, $fs = .5);
+    translate([ 12, 19, - shell_width + 1.5 - 1 ]) 
+      cylinder(r = button_width + button_clearance, h = shell_width + 2, $fa = .1, $fs = .5);
   }
 
   difference(){
@@ -513,17 +538,30 @@ module button(){
   $fs = .5;
   $fa = .1;
 
-  union(){
-    cylinder(button_height, button_width, button_width);
+  if (button_use_shell_width)
+    union(){
+    cylinder(button_height + (shell_width - 1.5) + button_height_shell_added, button_width, button_width);
 
-    translate([ 0, 0, button_height ])
+    translate([ 0, 0, button_height + (shell_width - 1.5) + button_height_shell_added ])
       cylinder(button_height2, button_width, button_width2);
 
-    translate([ 0, 0, button_height_full - 5])
+    translate([ 0, 0, button_height_full + (shell_width - 1.5) + button_height_shell_added - 5])
       cylinder(5, 2, button_width3);
 
-    cylinder(button_height_full,2,2);
+    cylinder(button_height_full + (shell_width - 1.5) + button_height_shell_added,2,2);
   }
+  else
+    union(){
+      cylinder(button_height, button_width, button_width);
+
+      translate([ 0, 0, button_height ])
+        cylinder(button_height2, button_width, button_width2);
+
+      translate([ 0, 0, button_height_full - 5])
+        cylinder(5, 2, button_width3);
+
+      cylinder(button_height_full,2,2);
+    }
 }
 
 module button_socket() {
@@ -534,20 +572,23 @@ module button_socket() {
   hole_upper = button_width2 + button_clearance;
   socket_outer = hole + button_socket_width;
   socket_outer_upper = hole_upper + button_socket_width;
-  
+
   difference(){
     cylinder(button_height, socket_outer, socket_outer);
     translate([ 0, 0, -2 ])
     cylinder(button_height + 5, hole, hole);
   }
 
-    translate([ 0, 0, button_height ])
-    {
-      difference(){
-        cylinder(button_height2, socket_outer, socket_outer_upper);
-        cylinder(button_height2, hole, hole_upper);
-      }
+  translate([ 0, 0, button_height ]) {
+    difference(){
+      cylinder(button_height2, socket_outer, socket_outer_upper);
+      cylinder(button_height2, hole, hole_upper);
+      translate([0,0,button_height2-.2])
+        cylinder(1, hole_upper, hole_upper);
+      translate([0,0,-1])
+        cylinder(2, hole, hole);
     }
+  }
   
 }
 
@@ -569,12 +610,12 @@ module hex_fixes() {
   translate([5 + 1 + 2.5 + .2, - d / 2 - shell_width/2, 19])
     linear_extrude(3, scale= [.7,1])
       square([5, shell_width], center= true);
-
-  translate([0,18-6,0])
-  rotate(-90)
-  translate([5 + 1 + 2.5, - d / 2 - shell_width/2, 19])
-    linear_extrude(3, scale= [.7,1])
-      square([7*2+7, shell_width], center= true);
+  // usb hole fix
+  // translate([0,18-6,0])
+  // rotate(-90)
+  // translate([5 + 1 + 2.5, - d / 2 - shell_width/2, 19])
+  //   linear_extrude(3, scale= [.7,1])
+  //     square([7*2+7, shell_width], center= true);
 }
 
 module ws_box(hex= false) {
@@ -594,10 +635,12 @@ module ws_box(hex= false) {
       }
       if (hex)
       hex_cuts();
-      translate([0,0,-1])
+
+    translate([0,0,-shell_width+1.5-1])
       linear_extrude(shell_width+2)
-      translate([14.5,-24.2,0]) {
-        translate([-4*2+.5, 4*2, 0])
+      translate(logo_position) {
+        scale(logo_scale)
+        translate([ -4*2+.5, 4*2 ])
           rotate(30-13)
           circle(8+2.5-.5, $fn= 6);
       }
@@ -612,21 +655,20 @@ module ws_box(hex= false) {
     }
 
 
-    translate([ -w / 2 + main_board_width / 2 + 1, 0, h - 4 ])
+    translate([ -w / 2 + main_board_width / 2 + 1, 0, h - 4 + board_height_modificator ])
       main_board_socket();
   }
 
-  logo_scale = .45;
-  
   linear_extrude(shell_width)
-    translate([14.5,-24.2,0]) {
+    translate(logo_position) {
+      scale(logo_scale)
       difference() {
-        translate([-4*2+.5, 4*2, 0])
+        translate([-4*2+.5, 4*2])
         rotate(30-13)
           circle(8+2.5, $fn= 6);
 
         mirror([1,0,0])
-        scale([logo_scale,logo_scale])
+        scale([.45,.45])
           offset(-.75)
             import("logo.svg");
       }
@@ -701,7 +743,11 @@ module cover() {
     
     // lock
     translate([-box_cover_lock_real[0]/2 -1, -d/2 - shell_width -.1, -.1])
-      cube([box_cover_lock_real[0]+2,box_cover_lock_real[1]+.5+.1,box_cover_lock_real[2]+.1 + .3]);
+      cube([
+        box_cover_lock_real[0]+cover_lock_clearance[0], 
+        box_cover_lock_real[1]+cover_lock_clearance[1],
+        box_cover_lock_real[2]+cover_lock_clearance[2]
+      ]);
   
     if (use_cover_text)
     for(i = [["github.com/",0], ["bonitoo-io/",1], ["weather-station",2]])
