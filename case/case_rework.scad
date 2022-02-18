@@ -1,5 +1,8 @@
 // case Roman
 
+// won't change result just render faster but can result in visual bugs in preview                                       ------------
+fast_render = true; 
+
 render_parts = "all"; // ["all": All, "box": Box, "cover": Cover, "button": Button, "none": none, "display": Display test, "cover-test": Cover test , "hexbox1": Hexbox vizualization, "hexbox2": Hexbox vizualization 2]
 
 /* [Shell] */
@@ -218,13 +221,11 @@ translate([-(w / 2) - 2, 0, 0]) {
   }
 }
 
-
-module hex_wall (size= 6, dist= 1, h= 1, rows= 10, cols= 10) {
+module hex_wall_3d (size= 6, dist= 1, h= 1, rows= 10, cols= 10) {
   w = size * sqrt(3);
   hex_h = 2 * size;
   h_dist = hex_h * 3 / 4;
 
-  union()
   translate([size, w / 2, 0])
   for (col = [0:(cols-1)]) {
     even_col = (col % 2) == 0;
@@ -235,6 +236,31 @@ module hex_wall (size= 6, dist= 1, h= 1, rows= 10, cols= 10) {
     }
   }
 }
+
+module hex_wall_2d (size= 6, dist= 1, rows= 10, cols= 10) {
+  w = size * sqrt(3);
+  hex_h = 2 * size;
+  h_dist = hex_h * 3 / 4;
+
+  translate([size, w / 2])
+  for (col = [0:(cols-1)]) {
+    even_col = (col % 2) == 0;
+    translate([0, even_col ? 0 : w / 2])
+    for(row = [0:(rows-1)]){
+      translate([h_dist * col, w * row])
+        circle(size-dist, $fn= 6);
+    }
+  }
+}
+
+module hex_wall(size= 6, dist= 1, h= 1, rows= 10, cols= 10) {
+  if (fast_render)
+    linear_extrude(h)
+      hex_wall_2d(size=size, dist=dist, rows=rows, cols=cols);
+  else 
+      hex_wall_3d(size=size, dist=dist, h=h, rows=rows, cols=cols);
+}
+
 
 // Single layer experiment
 
