@@ -11,9 +11,7 @@ AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *inf
   _wifiSettings(wifiSettings),
   _pRegionalSettings(pRegionalSettings),
   _fs(fs) {
-  server->on(ABOUT_ENDPOINT_PATH,
-             HTTP_GET,
-             std::bind(&AboutInfoEndpoint::aboutHandler, this, std::placeholders::_1));
+  server->on(F(ABOUT_ENDPOINT_PATH), HTTP_GET, std::bind(&AboutInfoEndpoint::aboutHandler, this, std::placeholders::_1));
 }
 
 void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
@@ -59,8 +57,8 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
 
 AboutServiceEndpoint::AboutServiceEndpoint(AsyncWebServer* server, FSPersistence* persistence):
   _persistence(persistence) {
-  server->on(String(F(SYSTEM_RESTART_ENDPOINT_PATH)).c_str(), HTTP_POST, std::bind(&AboutServiceEndpoint::restartHandler, this, std::placeholders::_1));
-  server->on(String(F(SYSTEM_FACTORY_RESET_ENDPOINT_PATH)).c_str(), HTTP_POST, std::bind(&AboutServiceEndpoint::factoryResetHandler, this, std::placeholders::_1));
+  server->on(F(SYSTEM_RESTART_ENDPOINT_PATH), HTTP_POST, std::bind(&AboutServiceEndpoint::restartHandler, this, std::placeholders::_1));
+  server->on(F(SYSTEM_FACTORY_RESET_ENDPOINT_PATH), HTTP_POST, std::bind(&AboutServiceEndpoint::factoryResetHandler, this, std::placeholders::_1));
 }
 
 void AboutServiceEndpoint::restartHandler(AsyncWebServerRequest* request) {

@@ -33,7 +33,7 @@ void InfluxDBHelper::begin(InfluxDBSettings *settings) {
     delete _client;
   }
   _settings = settings;
-  _client = new InfluxDBClient(_settings->serverURL.c_str(), _settings->org.c_str(), _settings->bucket.c_str(), _settings->authorizationToken.c_str(), InfluxDbCloud2CACert);
+  _client = new InfluxDBClient(_settings->serverURL, _settings->org, _settings->bucket, _settings->authorizationToken, InfluxDbCloud2CACert);
   _client->setStreamWrite(true);
   _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1).httpReadTimeout(20000));  
   _wasReleased = false;
@@ -214,7 +214,7 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID) {
 String InfluxDBHelper::validateConnection(const String &serverUrl, const String &org, const String &bucket, const String &authToken) {
   release();
   Serial.printf_P(PSTR("Validating InfluxDB params: %s, %s, %s, %s\n"),serverUrl.c_str(), org.c_str(), bucket.c_str(), authToken.c_str());
-  InfluxDBClient client(serverUrl.c_str(), org.c_str(), bucket.c_str(), authToken.c_str(), InfluxDbCloud2CACert );
+  InfluxDBClient client(serverUrl, org, bucket, authToken, InfluxDbCloud2CACert );
   FluxQueryResult res = client.query("buckets()");
   while(res.next()) yield();
   res.close();
@@ -267,7 +267,7 @@ int InfluxDBSettings::load(JsonObject& root) {
 // ****************** InfluxDBSettingsEndpoint ***************************
 
 InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings):
-    SettingsEndpoint(pServer, INFLUXDB_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
+    SettingsEndpoint(pServer, F(INFLUXDB_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
       if(idbSettings->authorizationToken.length()>4) {
@@ -286,7 +286,7 @@ InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPer
 // ****************** InfluxDBValidateParamsEndpoint ***************************
 
 InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer *pServer, InfluxDBHelper *pHelper):
-  ValidateParamsEndpoint(pServer, VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH),
+  ValidateParamsEndpoint(pServer, F(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH)),
   _validationSettings(nullptr),
   _pHelper(pHelper) { }
 

@@ -2,7 +2,7 @@
 #include "About.h"
 
 UploadFirmwareEndpoint::UploadFirmwareEndpoint(AsyncWebServer* server) {
-  server->on(UPLOAD_FIRMWARE_PATH,
+  server->on(F(UPLOAD_FIRMWARE_PATH),
              HTTP_POST,
              std::bind(&UploadFirmwareEndpoint::uploadComplete, this, std::placeholders::_1),
              std::bind(&UploadFirmwareEndpoint::handleUpload,

@@ -465,8 +465,8 @@ void WiFiConnectionHelperEndpoint::connectingStatus(AsyncWebServerRequest* reque
 // ****************** WiFiScannerEndpoint ***************************
 
 WiFiScannerEndpoint::WiFiScannerEndpoint(AsyncWebServer* server) {
-  server->on(SCAN_NETWORKS_ENDPOINT_PATH, HTTP_GET, std::bind(&WiFiScannerEndpoint::scanNetworks, this, std::placeholders::_1));
-  server->on(LIST_NETWORKS_ENDPOINT_PATH, HTTP_GET, std::bind(&WiFiScannerEndpoint::listNetworks, this, std::placeholders::_1));
+  server->on(F(SCAN_NETWORKS_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiScannerEndpoint::scanNetworks, this, std::placeholders::_1));
+  server->on(F(LIST_NETWORKS_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiScannerEndpoint::listNetworks, this, std::placeholders::_1));
 };
 
 void WiFiScannerEndpoint::scanNetworks(AsyncWebServerRequest* request) {
@@ -523,7 +523,7 @@ uint8_t WiFiScannerEndpoint::convertEncryptionType(uint8_t encryptionType) {
 // **************************** WiFiStatusEndpoint *********************************
 
 WiFiStatusEndpoint::WiFiStatusEndpoint(AsyncWebServer* server) {
-  server->on(WIFI_STATUS_ENDPOINT_PATH, HTTP_GET, std::bind(&WiFiStatusEndpoint::wifiStatusHandler, this, std::placeholders::_1));
+  server->on(F(WIFI_STATUS_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiStatusEndpoint::wifiStatusHandler, this, std::placeholders::_1));
 }
 
 void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
@@ -559,8 +559,8 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
 
 WiFiListSavedEndpoint::WiFiListSavedEndpoint(AsyncWebServer* server, FSPersistence *pFsp):
 _pFsp(pFsp) {
-  server->on(WIFI_LIST_ENDPOINT_PATH, HTTP_GET, std::bind(&WiFiListSavedEndpoint::listNetworks, this, std::placeholders::_1));
-  server->on(WIFI_LIST_ENDPOINT_PATH, HTTP_DELETE, std::bind(&WiFiListSavedEndpoint::deleteNetwork, this, std::placeholders::_1));
+  server->on(F(WIFI_LIST_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiListSavedEndpoint::listNetworks, this, std::placeholders::_1));
+  server->on(F(WIFI_LIST_ENDPOINT_PATH), HTTP_DELETE, std::bind(&WiFiListSavedEndpoint::deleteNetwork, this, std::placeholders::_1));
 };
 
 
@@ -614,11 +614,11 @@ void sendError(AsyncWebServerRequest* request, const String &err) {
 }
 
 std::vector<String> getKnownWiFiNetworksNames(FSPersistence *pFS) {
-  return pFS->listConfigs(WIFI_CONFIG_DIRECTORY, true);
+  return pFS->listConfigs(F(WIFI_CONFIG_DIRECTORY), true);
 }
 
 int getKnownWiFiNetworksCount(FSPersistence *pFS) {
-  std::vector<String> files = pFS->listConfigs(WIFI_CONFIG_DIRECTORY, true);
+  std::vector<String> files = pFS->listConfigs(F(WIFI_CONFIG_DIRECTORY), true);
   return files.size();
 }
 
@@ -683,13 +683,6 @@ std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved)
             }
         }
     }
-
-    // // Print sorted indices
-    // Serial.println(F("[WIFIM] Sorted indices: "));
-    // for (int8_t i = 0; i < numNetworks; i++) {
-    //     Serial.println(F("  %d "), known[i]);
-    // }
-    // Serial.println(F("\n"));
 
       // Connect to known WiFi AP's sorted by RSSI
     for (int8_t i = 0; i < numNetworks; i++) {

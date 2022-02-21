@@ -21,9 +21,9 @@ void WiFiSettings::print(const __FlashStringHelper *title) {
 char *createDefaultHostname() {
     uint8_t mac[6];
     wifi_get_macaddr(STATION_IF, mac);
-    auto len = 13+strlen(WIFI_HOSTNAME_PREFIX)+1;
+    auto len = 13+strlen_P(PSTR(WIFI_HOSTNAME_PREFIX))+1;
     char *hostname = new char[len];
-    snprintf(hostname, len, WIFI_HOSTNAME_PREFIX "%02x%02x", mac[4], mac[5]);
+    snprintf_P(hostname, len, PSTR(WIFI_HOSTNAME_PREFIX "%02x%02x"), mac[4], mac[5]);
     return hostname;
 }
 
@@ -83,7 +83,7 @@ int WiFiSettings::load(JsonObject& root) {
 
 
 WiFiSettingsEndpoint::WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, Settings *pSettings):
-    SettingsEndpoint(pServer, WIFI_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
+    SettingsEndpoint(pServer, F(WIFI_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
       if(wifiSettings->password.length()>2) {

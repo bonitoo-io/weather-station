@@ -184,7 +184,7 @@ void WeatherStation::registerEndpoints() {
     _aboutServiceEndpoint = new AboutServiceEndpoint(_server, &_persistence);
     _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_server, _influxDBHelper);
     _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_server, &_persistence);
-    _pRegionalSettingsEndpoint = new SettingsEndpoint(_server, REGIONAL_SETTINGS_ENDPOINT_PATH, &_persistence, &_regionalSettings);
+    _pRegionalSettingsEndpoint = new SettingsEndpoint(_server, F(REGIONAL_SETTINGS_ENDPOINT_PATH), &_persistence, &_regionalSettings);
     _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &_advancedSettings);
     _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
     _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);

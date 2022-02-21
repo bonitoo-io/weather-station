@@ -5,7 +5,7 @@
 
 static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message = nullptr);
 
-ValidateParamsEndpoint::ValidateParamsEndpoint(AsyncWebServer* server, const char *uri):
+ValidateParamsEndpoint::ValidateParamsEndpoint(AsyncWebServer* server, const  String &uri):
   _status(ValidationStatus::Idle) {
   AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(uri, 
                     std::bind(&ValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2),
@@ -85,7 +85,7 @@ void  ValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request) {
 
 
 RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(AsyncWebServer* server, AdvancedSettings *pAdvSetting):
-  ValidateParamsEndpoint(server, REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH),
+  ValidateParamsEndpoint(server, F(REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH)),
   _pAdvSetting(pAdvSetting) {}
 
 void RegionalSettingsValidateEndpoint::saveParams(JsonVariant& json) {
@@ -112,7 +112,7 @@ void RegionalSettingsValidateEndpoint::runValidation() {
 }
 
 AdvancedSettingsValidateEndpoint::AdvancedSettingsValidateEndpoint(AsyncWebServer* server, RegionalSettings *pRegSettings):
-  ValidateParamsEndpoint(server, ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH),
+  ValidateParamsEndpoint(server, F(ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH)),
   _pRegSettings(pRegSettings) {}
 
 void AdvancedSettingsValidateEndpoint::saveParams(JsonVariant& json) {

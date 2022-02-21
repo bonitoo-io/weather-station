@@ -17,7 +17,7 @@ enum class ValidationStatus {
 
 class ValidateParamsEndpoint {
 public:
-  ValidateParamsEndpoint(AsyncWebServer* server, const char *uri);
+  ValidateParamsEndpoint(AsyncWebServer* server, const  String &uri);
   virtual ~ValidateParamsEndpoint() {};
   void loop();
 protected:

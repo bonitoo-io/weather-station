@@ -2,7 +2,7 @@
 #include "IPUtils.h"
 #include "FSPersistance.h"
 
-SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const char *endpointPath, FSPersistence *pPersistence, Settings *pSettings, DataManipulator fetchManipulator, DataManipulator updateManipulator):
+SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, Settings *pSettings, DataManipulator fetchManipulator, DataManipulator updateManipulator):
     _pSettings(pSettings), 
     _pPersistence(pPersistence),
     _fetchManipulator(fetchManipulator),

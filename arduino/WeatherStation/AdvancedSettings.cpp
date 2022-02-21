@@ -5,8 +5,8 @@ const char *OpenweatherApiKeyStr PROGMEM = "openWeatherAPIKey";
 
 AdvancedSettings::AdvancedSettings():
   updateDataInterval(ADVANCED_DEFAUT_UPDATE_INTERVAL),
-  openWeatherAPIKey(ADVANCED_DEFAUT_OPENWEATHER_API_KEY),
-  ntpServers(ADVANCED_DEFAUT_NTP_SERVERS),
+  openWeatherAPIKey(F(ADVANCED_DEFAUT_OPENWEATHER_API_KEY)),
+  ntpServers(F(ADVANCED_DEFAUT_NTP_SERVERS)),
   tempOffset(ADVANCED_DEFAUT_TEMPERATURE_OFFSET),
   humOffset(ADVANCED_DEFAUT_HUMIDITY_OFFSET),
   screenRotateInterval(ADVANCED_DEFAUT_SCREEN_ROTATE_INTERVAL),
@@ -54,7 +54,7 @@ int AdvancedSettings::load(JsonObject& root) {
 
 
 AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings):
-    SettingsEndpoint(pServer, ADVANCED_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
+    SettingsEndpoint(pServer, F(ADVANCED_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
       if(advSettings->openWeatherAPIKey.length()>4) {
