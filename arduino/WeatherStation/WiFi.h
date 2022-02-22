@@ -89,6 +89,8 @@ public:
     int getLastDisconnectReason() const { return _lastDisconnectReason; }
     bool isConnectingToWiFi() const { return _connectingToWifi; }
     bool isConnectTestSuccessful() const { return _connectTestSuccess; }
+    // callback from status endpoint
+    void statusResponseSent();
     void connectToSavedNetwork(int index);
     int getDisconnectsCount() const { return _disconnectsCount; }
     void resetDisconnectsCount() { _disconnectsCount = 0; }

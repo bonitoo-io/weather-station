@@ -126,11 +126,12 @@ void WiFiManager::manageSTA() {
             startSTA(_pSettings);
             return;
           }
-          // we have no configured wifis, start AP directly
+          
           int c = getKnownWiFiNetworksCount(_pFsp);
           Serial.printf_P(PSTR("[WIFIM] Found %d save networks\n"),c);
           _firstStart = c == 0;
           if(!c) {
+            // we have no configured wifis, start AP directly
             manageAP();
             return;
           }
@@ -371,15 +372,20 @@ void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& ev
   Serial.print(F("[WIFIM] WiFi Connected. SSID="));
   Serial.println(event.ssid);
   _connectingToWifi = false;
+  _lastDisconnectReason = 0;
   if(_state == WiFiConnectingState::TestingConfig || _state == WiFiConnectingState::ConnectingToSaved ) {
     // Mark test success only when comming from testing states
     _connectTestSuccess = true;
   }
   _state = WiFiConnectingState::ConnectingSuccess;
   notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
-  if(_apInfo.running) {
-    // stop ap after a time, so connected client gets a HTTP reponse about successful connection
-    _forceAPStop = millis()+10000;
+}
+
+void WiFiManager::statusResponseSent() {
+  if(_connectTestSuccess && _apInfo.running) {
+    // stop AP (and restart) after successfull connection
+    // wait a bit to have a user notice a notification
+    _forceAPStop = millis()+1000;
   }
 }
 
@@ -458,6 +464,9 @@ void WiFiConnectionHelperEndpoint::connectingStatus(AsyncWebServerRequest* reque
     }
     response->addHeader(F("Cache-Control"),F("No-Store"));
     response->setLength();
+    request->onDisconnect([this](){
+      _pWiFiManager->statusResponseSent();
+    });
     request->send(response);
   }
 }

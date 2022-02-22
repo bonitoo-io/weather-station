@@ -1,4 +1,12 @@
 # Changelog
+## 0.58 rc7
+## Features
+ - Sensirion SHTC3 temperature and humidity sensor support
+ - Autocalibration of DHT11
+## Fixes
+ - Fixed initial WiFi settings delay
+ - Fixed HTTP server response on cached URL
+ 
 ## 0.58 rc6
 ## Features
  - Dual color OLED support
