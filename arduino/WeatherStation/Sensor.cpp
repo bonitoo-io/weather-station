@@ -38,7 +38,7 @@ bool Sensor::setup() {
     Serial.println( F("DHT humidity overflow, zeroing offset"));
   }
   //autocalibrate sensors with faulty humidity
-  if (( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { //if humidity is less than 36% (faulty offset)
+  if (!isnan(h) && (h > 0) && ( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { //if humidity is less than 36% (faulty offset)
     station.getAdvancedSettings()->humOffset = 55 - h;  //set humidity to 55%
     Serial.print( F("DHT humidity autocalibration offset: "));
     Serial.println( station.getAdvancedSettings()->humOffset);
