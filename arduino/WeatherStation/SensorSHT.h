@@ -10,10 +10,10 @@ public:
   ~SensorSHT();
   static bool driverDetect();
 protected:
-  virtual bool driverSetup();
-  virtual const __FlashStringHelper * driverName() { return F("SHTC3");} ; //get sensor name
-  virtual float driverGetTemp(); //temperatures always in fahrenheit
-  virtual float driverGetHum( bool secondRead);  //humidity always in percent
+  virtual bool driverSetup() override;
+  virtual const __FlashStringHelper * driverName() override { return F("SHTC3");} ; //get sensor name
+  virtual float driverGetTemp() override; //temperatures always in fahrenheit
+  virtual float driverGetHum( bool secondRead) override;  //humidity always in percent
 private:
   SHTSensor* _pSht = nullptr;
 };
