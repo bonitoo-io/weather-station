@@ -108,7 +108,7 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
   // OPTIONS get a straight up 200 response
   if (uri.equals(F("/index.html"))) {
     _server->onNotFound([this,requestHandler](AsyncWebServerRequest* request) {
-      Serial.println(" Not found");
+      Serial.println(F(" Not found"));
       bool ewr = _endpointsRegistered;
       if(!_endpointsRegistered) {
         registerEndpoints();
@@ -122,7 +122,7 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
       } else if (request->method() == HTTP_OPTIONS) {
         request->send(200);
       } else {
-        request->send(404);
+        requestHandler(request);
       }
     });
   }
