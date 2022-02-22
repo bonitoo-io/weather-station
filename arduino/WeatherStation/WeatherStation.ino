@@ -61,7 +61,7 @@ unsigned int lastUpdateMins = 0;
 String wifiSSID;
 bool shouldSetupInfluxDb = false;
 bool shouldDrawWifiProgress = false;
-bool isAPRunning = false;
+APInfo *pAPInfo = nullptr;
 bool initialized = false;
 String resetReason;
 
@@ -74,7 +74,7 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
 
 void initData() {
-  if(!initialized && WiFi.isConnected() && !isAPRunning) {
+  if(!initialized && WiFi.isConnected() && !pAPInfo) {
     WS_DEBUG_RAM("InitData");
     updater.init(station.getUpdaterSettings(), VERSION);
     
@@ -405,7 +405,11 @@ void loop() {
   unsigned int loops = 0;
   while (digitalRead(PIN_BUTTON) == LOW) {  //Pushed boot button?
     if (loops == 0) {
-      ui.nextFrame();   //jump to the next frame
+      if(!pAPInfo) {
+        ui.nextFrame();   //jump to the next frame
+      } else {
+        drawAPInfo(&display, pAPInfo);
+      }
     }
     if (loops > 4)
       showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (station.getAdvancedSettings()->updateDataInterval - ((lastUpdateMins % station.getAdvancedSettings()->updateDataInterval)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
@@ -419,7 +423,7 @@ void loop() {
     delay(100);
   }
 
-  if(initialized && !isAPRunning && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
+  if(initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
     ESP.wdtFeed();
     int remainingTimeBudget = ui.update();
     nextUIUpdate = millis()+remainingTimeBudget;
@@ -462,14 +466,15 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
         station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       }
       drawAPInfo(&display, info);
-      isAPRunning = true;
+      pAPInfo = info;
       station.startServer();
       break;
     case WifiAPEvent::ClientConnected:
       drawAPInfo(&display, info);
+      pAPInfo = info;
       break;
     case WifiAPEvent::APStopped:
-      isAPRunning = false;
+      pAPInfo = nullptr;;
       break;
     case WifiAPEvent::ClientDisconnected:
       break;  
