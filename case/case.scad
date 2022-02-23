@@ -7,7 +7,7 @@ render_parts = "all"; // ["all": All, "box": Box, "cover": Cover, "button": Butt
 
 /* [Shell] */
 
-shell_width = 2.4; // [.2:.1:3]
+shell_width = 1.5; // [.2:.1:3]
 
 outer_fillet = 3.3;
 inner_fillet = 1;
@@ -20,7 +20,7 @@ logo_position_y = -24; // [-28:.5:12]
 logo_scale = 1.15; // [.5:.01:1.5]
 
 // previous usb_hole = [9.5, 3.8];
-usb_hole = [11.2, 8.5];
+usb_hole = [14.2, 5.5];
 
 /* [Main board] */
 corner_width = 5;
@@ -63,7 +63,7 @@ button_clearance = .15;
 button_socket_width = .8;
 
 /* [Ventilation] */
-vent_top = true;
+vent_top = false;
 vent_side = false;
 vent_upper_width = 7;
 vent_upper_dist_side = 2;
