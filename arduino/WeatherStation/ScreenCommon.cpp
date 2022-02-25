@@ -146,6 +146,8 @@ void drawAPInfo(OLEDDisplay *display, APInfo *info) {
     display->setFont(ArialMT_Plain_16);
     display->drawString(0, 45, String(F("http://")) + info->ipAddress.toString());
   }
+  if ( isnan( pSensor->getTemp()) || isnan( pSensor->getHum()) || (pSensor->getTemp() == 0) || (pSensor->getHum() == 0))
+    display->drawXbm( 0, 0, 8, 8, warning_8x8);
   display->display();
 }
 

@@ -35,7 +35,7 @@ Global variables use 37744 bytes (46%) of dynamic memory, leaving 44176 bytes fo
 #define PIN_BUTTON D3   //Boot button pin  GPIO0
 // I2C settings
 #define PIN_SDA    D4   //GPIO2
-#define PIN_SDC    D5   //GPIO14
+#define PIN_SCL    D5   //GPIO14
 #define I2C_OLED_ADDRESS 0x3c
 
 #include "custom_dev.h" //Custom development configuration - remove or comment it out 
@@ -47,7 +47,7 @@ tConfig conf = {
 };
 
 // Initialize the oled display
-SSD1306Wire display(I2C_OLED_ADDRESS, PIN_SDA, PIN_SDC);
+SSD1306Wire display(I2C_OLED_ADDRESS, PIN_SDA, PIN_SCL);
 OLEDDisplayUi ui( &display);
 
 InfluxDBHelper influxdbHelper;
