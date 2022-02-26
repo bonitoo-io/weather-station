@@ -474,9 +474,12 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
       pAPInfo = info;
       break;
     case WifiAPEvent::APStopped:
-      pAPInfo = nullptr;;
+      pAPInfo = nullptr;
       break;
     case WifiAPEvent::ClientDisconnected:
+      if(info) {
+        drawAPInfo(&display, info);
+      }
       break;  
   }
 }

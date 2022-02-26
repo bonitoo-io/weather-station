@@ -97,5 +97,5 @@ WiFiSettingsEndpoint::WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence
       if(strstr(pass, ReplaceMark)) {
         jsonObject[FPSTR(StringPassword)] = wifiSettings->password;
       }
-    }) {}
+    }, false) {}
 

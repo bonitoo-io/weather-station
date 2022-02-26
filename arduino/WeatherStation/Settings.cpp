@@ -2,11 +2,13 @@
 #include "IPUtils.h"
 #include "FSPersistance.h"
 
-SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, Settings *pSettings, DataManipulator fetchManipulator, DataManipulator updateManipulator):
+SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, Settings *pSettings, 
+    DataManipulator fetchManipulator, DataManipulator updateManipulator, bool persist):
     _pSettings(pSettings), 
     _pPersistence(pPersistence),
     _fetchManipulator(fetchManipulator),
-    _updateManipulator(updateManipulator)
+    _updateManipulator(updateManipulator),
+    _persist(persist)
      {
     AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(endpointPath, 
                 std::bind(&SettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
@@ -39,7 +41,9 @@ void SettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVarian
     }
     //TODO: double JSON serialization
     _pSettings->load(jsonObject);
-    _pPersistence->writeToFS(_pSettings);
+    if(_persist) {
+        _pPersistence->writeToFS(_pSettings);
+    }
     AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
     jsonObject = response->getRoot().to<JsonObject>();
     _pSettings->save(jsonObject);

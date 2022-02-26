@@ -29,6 +29,7 @@ struct APInfo {
     String password;
     bool running;
     uint8_t clientsCount;
+    bool forceAPStop;
 };
 
 enum class WifiConnectionEvent {
@@ -47,6 +48,7 @@ enum class WiFiConnectingState {
     ConnectingSuccess,
     ConnectingToHidden,
     TestingConfig,
+    SaveConfig,
     TestingConfigFailed,
     ConnectingToSaved, //when conencting from external request
     Idle
@@ -97,7 +99,7 @@ public:
  private:
   void reconfigureWiFiConnection();
   void manageSTA();
-  void manageAP();
+  void manageAP(bool forceStop);
   void startAP();
   void stopAP();
   void handleDNS();
@@ -117,7 +119,7 @@ public:
   bool _firstStart = true;
   FSPersistence *_pFsp;
   WiFiSettings *_pSettings;
-  APInfo _apInfo;
+  APInfo *_pApInfo = nullptr;
   WifiAPEvent *_asyncEventToFire = nullptr;
   // Variable manage delay
   uint _manageDelay = MANAGE_NETWORK_DELAY;
@@ -134,8 +136,6 @@ public:
   WiFiEventHandler _onStationModeGotIPHandler;
   WiFiEventHandler _onSoftAPModeStationConnectedHandler;
   WiFiEventHandler _onSoftAPModeStationDisconnectedHandler;
-  // time when ap should stop
-  uint32_t _forceAPStop = 0;
   uint8_t _connectAttempts = 0;
   // Index to network list when searching for connetable network
   uint8_t _wifiNetworkIndex = 0;

@@ -37,6 +37,7 @@ WiFiManager::WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings):
       setPreviousNetwork(WiFi.SSID().c_str());
     }
     _connectTestSuccess = false;
+    _manageDelay = SCAN_NETWORK_DELAY;
     // Config is changed by posting to endpoint
     enterState(WiFiConnectingState::TestingConfig, true);
   });
@@ -45,7 +46,6 @@ WiFiManager::WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings):
 void WiFiManager::reconfigureWiFiConnection() {
   // reset last connection attempt to force loop to reconnect immediately
   _lastConnectionAttempt = 0;
-  _connectAttempts = 0;
   // disconnect and de-configure wifi
   WiFi.disconnect(true);
 }
@@ -72,7 +72,7 @@ void WiFiManager::notifyWifiEvent(WifiConnectionEvent event) {
 
 void WiFiManager::notifyAPEvent(WifiAPEvent event) {
   if(_apEventHandler) {
-    _apEventHandler(event, &_apInfo);
+    _apEventHandler(event, _pApInfo);
   }
 }
 
@@ -88,9 +88,9 @@ void WiFiManager::loop() {
       manageSTA();
       _lastConnectionAttempt = currentMillis;
     }
-    // try AP after only first conn attempt   
-    if ((_forceAPStop &&  _forceAPStop <= millis()) || (!_forceAPStop &&  manageElapsed >= WIFI_RECONNECTION_DELAY)) {
-        manageAP();
+    // try AP after only first conn attempt 
+    if (manageElapsed >= WIFI_RECONNECTION_DELAY) {
+        manageAP(false);
     }
     handleDNS();
 }
@@ -115,7 +115,7 @@ void WiFiManager::enterState(WiFiConnectingState newState, bool reconFigure) {
 
 void WiFiManager::manageSTA() {
   if(!_connectingToWifi) {
-    Serial.printf_P(PSTR("ManageSTA::state %d\n"), _state);
+    Serial.printf_P(PSTR("[WIFIM] state %d\n"), _state);
     switch(_state) {
       case WiFiConnectingState::NotConnected:
         {
@@ -132,7 +132,7 @@ void WiFiManager::manageSTA() {
           _firstStart = c == 0;
           if(!c) {
             // we have no configured wifis, start AP directly
-            manageAP();
+            manageAP(false);
             return;
           }
           notifyWifiEvent(WifiConnectionEvent::ConnectingStarted);
@@ -201,6 +201,9 @@ again:
         _manageDelay = MANAGE_NETWORK_DELAY;
         cleanNetworks();
         enterState(WiFiConnectingState::Idle);
+        if(_pApInfo && _pApInfo->forceAPStop) {
+          manageAP(true);
+        }
         break;
       case WiFiConnectingState::Idle:
         // Do nothing
@@ -212,10 +215,15 @@ again:
           enterState(WiFiConnectingState::TestingConfigFailed);  
         }
         break;
+      case WiFiConnectingState::SaveConfig:
+        Serial.println(F("[WIFIM] Saving WiFi config"));
+        _pFsp->writeToFS(_pSettings);
+        enterState(WiFiConnectingState::ConnectingSuccess);
+        break;
+      break;
       case WiFiConnectingState::TestingConfigFailed:
-        Serial.println(F("[WIFIM] Testing config failed. removing"));
-        _manageDelay = SCAN_NETWORK_DELAY;
-        removeNetwork(_pFsp, _pSettings->ssid);
+        Serial.println(F("[WIFIM] Testing config failed."));
+        _manageDelay = getKnownWiFiNetworksCount(_pFsp)?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
         break;
       case WiFiConnectingState::ConnectingToSaved:
@@ -260,17 +268,16 @@ bool WiFiManager::startSTA(WiFiSettings *pConfig, WiFiNetwork *pNetwork) {
     WiFi.begin(pConfig->ssid.c_str(), pConfig->password.c_str());
   }
   _connectingToWifi = true;
-  _connectAttempts++;
   return true;
 }
 
-void WiFiManager::manageAP() {
+void WiFiManager::manageAP(bool forceStop) {
     WiFiMode_t currentWiFiMode = WiFi.getMode();
     if ( WiFi.status() != WL_CONNECTED ) {
       if (currentWiFiMode == WIFI_OFF || currentWiFiMode == WIFI_STA) {
         startAP();
       }
-    } else if (_forceAPStop || ((currentWiFiMode == WIFI_AP ||  currentWiFiMode == WIFI_AP_STA) && !WiFi.softAPgetStationNum())) {
+    } else if (forceStop || ((currentWiFiMode == WIFI_AP ||  currentWiFiMode == WIFI_AP_STA) && !WiFi.softAPgetStationNum())) {
         stopAP();
     }
 }
@@ -278,26 +285,27 @@ void WiFiManager::manageAP() {
 char *createAPSSID() {
     uint8_t mac[6];
     wifi_get_macaddr(STATION_IF, mac);
-    auto len = 13+strlen(AP_SSID_PREFIX)+1;
+    auto len = 13+strlen_P(PSTR(AP_SSID_PREFIX))+1;
     char *ssid = new char[len];
-    snprintf(ssid, len, AP_SSID_PREFIX "%02x%02x", mac[4], mac[5]);
+    snprintf_P(ssid, len, PSTR(AP_SSID_PREFIX "%02x%02x"), mac[4], mac[5]);
     return ssid;
 }
 
 void WiFiManager::startAP() {
-    if(!_apInfo.ssid.length()) {
+    if(!_pApInfo) {
+        _pApInfo = new APInfo;
         char *ssid = createAPSSID();
-        _apInfo.ssid = ssid;
+        _pApInfo->ssid = ssid;
         delete [] ssid;
-        _apInfo.password = AP_PASSWORD;
-        _apInfo.ipAddress = ipFromString(AP_LOCAL_IP);
+        _pApInfo->password = AP_PASSWORD;
+        _pApInfo->ipAddress = ipFromString(AP_LOCAL_IP);
     }
-    _apInfo.clientsCount = 0;
+    _pApInfo->clientsCount = 0;
     Serial.println(F("[WIFIM] Starting software access point"));
     Serial.println(F("[WIFIM]    config: IP: " AP_LOCAL_IP " , GW IP: " AP_GATEWAY_IP ", Mask: " AP_SUBNET_MASK));
-    Serial.printf_P(PSTR("[WIFIM]          SSID: %s, Pass: " AP_PASSWORD "\n"), _apInfo.ssid.c_str());
-    WiFi.softAPConfig(_apInfo.ipAddress, ipFromString(AP_GATEWAY_IP), ipFromString(AP_SUBNET_MASK));
-    WiFi.softAP(_apInfo.ssid.c_str(), _apInfo.password.c_str(), AP_CHANNEL, AP_SSID_HIDDEN, AP_MAX_CLIENTS);
+    Serial.printf_P(PSTR("[WIFIM]          SSID: %s, Pass: " AP_PASSWORD "\n"), _pApInfo->ssid.c_str());
+    WiFi.softAPConfig(_pApInfo->ipAddress, ipFromString(AP_GATEWAY_IP), ipFromString(AP_SUBNET_MASK));
+    WiFi.softAP(_pApInfo->ssid.c_str(), _pApInfo->password.c_str(), AP_CHANNEL, AP_SSID_HIDDEN, AP_MAX_CLIENTS);
     if (!_dnsServer) {
         IPAddress apIp = WiFi.softAPIP();
         // TODO: to display
@@ -306,7 +314,7 @@ void WiFiManager::startAP() {
         _dnsServer = new DNSServer;
         _dnsServer->start(DNS_PORT, "*", apIp);
     }
-    _apInfo.running = true;
+    _pApInfo->running = true;
     notifyAPEvent(WifiAPEvent::APStarted);
 }
 
@@ -319,9 +327,11 @@ void WiFiManager::stopAP() {
     }
     Serial.println(F("[WIFIM] Stopping software access point"));
     WiFi.softAPdisconnect(true);
-    _apInfo.running = false;
-    _forceAPStop = 0;
+    _pApInfo->running = false;
+    _pApInfo->forceAPStop = false;
     notifyAPEvent(WifiAPEvent::APStopped);
+    delete _pApInfo;
+    _pApInfo = nullptr;
     if(_firstStart) {
       WiFi.disconnect(true);
       ESP.restart();
@@ -339,10 +349,6 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
   Serial.println(event.reason);
   _lastDisconnectReason = event.reason;
   WiFi.disconnect(true);
-  //// speed up reconnecting
-  // if(_connectAttempts < 3) {
-  //   _lastConnectionAttempt = 0;
-  // }
   _connectingToWifi = false;
   ++_disconnectsCount;
   if(!_ignoreDisconnect) {
@@ -361,6 +367,8 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
         _manageDelay = SCAN_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
         break;
+      default:
+        break;
     }
     notifyWifiEvent(WifiConnectionEvent::ConnectingFailed);
   } else {
@@ -377,15 +385,19 @@ void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& ev
     // Mark test success only when comming from testing states
     _connectTestSuccess = true;
   }
-  _state = WiFiConnectingState::ConnectingSuccess;
+  if(_state == WiFiConnectingState::TestingConfig) {
+    enterState(WiFiConnectingState::SaveConfig);  
+  } else {
+    enterState(WiFiConnectingState::ConnectingSuccess);
+  }
   notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
 }
 
 void WiFiManager::statusResponseSent() {
-  if(_connectTestSuccess && _apInfo.running) {
+  if(_connectTestSuccess && _pApInfo && _pApInfo->running) {
     // stop AP (and restart) after successfull connection
     // wait a bit to have a user notice a notification
-    _forceAPStop = millis()+1000;
+    _pApInfo->forceAPStop = true;
   }
 }
 
@@ -394,15 +406,19 @@ void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
 }
 
 void WiFiManager::onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
-  Serial.println(F("[WIFIM] WiFi AP Client connected."));
-  _apInfo.clientsCount++;
+  Serial.print(F("[WIFIM] WiFi AP Client connected: "));
+  Serial.printf_P(PSTR("%02x:%02x:%02x:%02x:%02x:%02x\n"), event.mac[0], event.mac[1],event.mac[2], event.mac[3],event.mac[4], event.mac[5]);
+  _pApInfo->clientsCount++;
   // APevents must be propagated async
   _asyncEventToFire = new WifiAPEvent(WifiAPEvent::ClientConnected);
 }
 
 void WiFiManager::onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& event) {
-  Serial.println(F("[WIFIM] WiFi AP Client disconnected."));
-  _apInfo.clientsCount--;
+  Serial.print(F("[WIFIM] WiFi AP Client disconnected: "));
+  Serial.printf_P(PSTR("%02x:%02x:%02x:%02x:%02x:%02x\n"), event.mac[0], event.mac[1],event.mac[2], event.mac[3],event.mac[4], event.mac[5]);
+  if(_pApInfo) {
+     _pApInfo->clientsCount--;
+  }
   // APevents must be propagated async
   _asyncEventToFire = new WifiAPEvent(WifiAPEvent::ClientDisconnected);
 }
@@ -424,7 +440,7 @@ void WiFiManager::connectToSavedNetwork(int index) {
 
 WiFiConnectionHelperEndpoint::WiFiConnectionHelperEndpoint(AsyncWebServer* pServer, WiFiManager *pWiFiManager)
 :_pWiFiManager(pWiFiManager) {
-  AsyncCallbackJsonWebHandler *pConnectHandler = new AsyncCallbackJsonWebHandler(CONNECT_TO_SAVED_ENDPOINT_PATH, 
+  AsyncCallbackJsonWebHandler *pConnectHandler = new AsyncCallbackJsonWebHandler(F(CONNECT_TO_SAVED_ENDPOINT_PATH), 
                 std::bind(&WiFiConnectionHelperEndpoint::connectToSaved, this, std::placeholders::_1, std::placeholders::_2),
                 DEFAULT_BUFFER_SIZE);
     pConnectHandler->setMethod(HTTP_POST);
@@ -578,7 +594,7 @@ void WiFiListSavedEndpoint::listNetworks(AsyncWebServerRequest* request) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
   JsonArray networks = root.createNestedArray(F("networks"));
-  for (int i = 0; i < _savedNetworks.size(); i++) {
+  for (size_t i = 0; i < _savedNetworks.size(); i++) {
       JsonObject network = networks.createNestedObject();
       network[FPSTR(StringId)] = i+1;
       network[FPSTR(StringSSID)] = _savedNetworks[i];

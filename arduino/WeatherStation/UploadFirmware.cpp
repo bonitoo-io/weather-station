@@ -17,7 +17,7 @@ UploadFirmwareEndpoint::UploadFirmwareEndpoint(AsyncWebServer* server) {
 }
 
 void UploadFirmwareEndpoint::handleUpload(AsyncWebServerRequest* request,
-                                         const String& filename,
+                                         const String& /*filename*/,
                                          size_t index,
                                          uint8_t* data,
                                          size_t len,
