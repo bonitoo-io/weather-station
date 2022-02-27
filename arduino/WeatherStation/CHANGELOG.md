@@ -4,9 +4,9 @@
  - Sensirion SHTC3 temperature and humidity sensor support
  - Autocalibration of DHT11
 ## Fixes
- - Fixed initial WiFi settings delay
+ - Improved initial WiFi settings behavior
  - Fixed HTTP server response on cached URL
- 
+
 ## 0.58 rc6
 ## Features
  - Dual color OLED support
