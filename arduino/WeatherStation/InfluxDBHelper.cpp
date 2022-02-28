@@ -35,7 +35,7 @@ void InfluxDBHelper::begin(InfluxDBSettings *settings) {
   _settings = settings;
   _client = new InfluxDBClient(_settings->serverURL, _settings->org, _settings->bucket, _settings->authorizationToken, InfluxDbCloud2CACert);
   _client->setStreamWrite(true);
-  _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1).httpReadTimeout(20000));  
+  _client->setHTTPOptions(HTTPOptions().connectionReuse(_settings->writeInterval == 1).httpReadTimeout(20000));
   _wasReleased = false;
 }
 
@@ -82,16 +82,23 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
    // Print what are we exactly writing
   Serial.print(F("Writing: "));
   Serial.println(_client->pointToLineProtocol(_sensor));
-  _client->writePoint(_sensor);
+  
   // Write point
-  bool res = true;
-  if (!_client->flushBuffer()) {
+  bool res = _client->writePoint(_sensor);
+  if (!res) {  
     Serial.print(F("InfluxDB write failed: "));
+    Serial.println(_client->getLastErrorMessage());
+  }
+  
+  if ( !_client->flushBuffer()) { 
+    Serial.print(F("InfluxDB flush failed: "));
     Serial.println(_client->getLastErrorMessage());
     res = false;
   }
-  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received?
+
+  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received (skip only IP connection issues)?`
     writeSuccess++;
+  
   UNLOCK();
   return res;
 }
@@ -112,21 +119,26 @@ bool InfluxDBHelper::writeStatus() {
   Serial.println(_client->pointToLineProtocol(status));
   _client->writePoint(status);
 
+  bool res = true;
   // Write all statuses except write
-  for(uint8_t i = 0; i < SyncServices::ServiceDBWriteStatus; i++) {
+  for (uint8_t i = 0; i < SyncServices::ServiceDBWriteStatus; i++) {
     Point *point = ServicesTracker.serviceStatisticToPoint((SyncServices)i);
     Serial.print(F("Writing service status: "));
     Serial.println(_client->pointToLineProtocol(*point));
-    _client->writePoint(*point);
+    if (!_client->writePoint(*point)) {
+      Serial.print(F("InfluxDB write failed: "));
+      Serial.println(_client->getLastErrorMessage());
+      res = false;
+    }      
     delete point;
   }
 
   if(_pResetInfo) {
     writeResetInfo();
   }
-  bool res = true;
+  
   if (!_client->flushBuffer()) {
-    Serial.print(F("InfluxDB write failed: "));
+    Serial.print(F("InfluxDB flush failed: "));
     Serial.println(_client->getLastErrorMessage());
     res = false;
   }
