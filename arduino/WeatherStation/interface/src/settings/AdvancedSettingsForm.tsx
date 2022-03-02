@@ -289,7 +289,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
       })
       .catch(error => {
         if (error.name !== RETRY_EXCEPTION_TYPE) {
-          this.props.enqueueSnackbar("Validation error: " + error.message, {
+          this.props.enqueueSnackbar(error.message, {
             variant: 'error',
           });
           this.setState({ validatingParams: false });

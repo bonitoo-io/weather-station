@@ -295,7 +295,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
       })
       .catch(error => {
         if (error.name !== RETRY_EXCEPTION_TYPE) {
-          this.props.enqueueSnackbar("Validation error: " + error.message, {
+          this.props.enqueueSnackbar(error.message, {
             variant: 'error',
           });
           this.setState({ validatingParams: false });
