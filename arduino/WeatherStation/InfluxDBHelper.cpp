@@ -221,7 +221,6 @@ String InfluxDBHelper::validateConnection(const String &serverUrl, const String 
   if(res.getError().length()) {
     Serial.printf_P(PSTR("    error: %s\n"),res.getError().c_str());
   }
-  begin(_settings);
   return res.getError();
 }
 

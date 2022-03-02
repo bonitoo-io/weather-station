@@ -368,6 +368,7 @@ void loop() {
 
       if(influxdbHelper.wasReleased()) {
         influxdbHelper.begin(station.getInfluxDBSettings());
+        influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
       }
 
       //Update data?
