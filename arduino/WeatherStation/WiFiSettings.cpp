@@ -7,7 +7,7 @@ const char *StringPassword PROGMEM = "password";
 void WiFiSettings::print(const __FlashStringHelper *title) {
     Serial.print(title);
     Serial.print(F(" ssid: "));Serial.print(ssid);
-    Serial.print(F(", password: "));Serial.print(obfuscateToken(password,2));
+    Serial.print(F(", password: "));Serial.print(obfuscateToken(password,0));
     Serial.print(F(", hostname: "));Serial.print(hostname);
     Serial.print(F(", static_ip_config: "));Serial.print(staticIPConfig);
     Serial.print(F(", local_ip: "));Serial.print(localIP);
@@ -86,15 +86,13 @@ WiFiSettingsEndpoint::WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence
     SettingsEndpoint(pServer, F(WIFI_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
-      if(wifiSettings->password.length()>2) {
-        jsonObject[FPSTR(StringPassword)] = obfuscateToken(wifiSettings->password, 2);
-      }
+      jsonObject[FPSTR(StringPassword)] = obfuscateToken(wifiSettings->password, 0);
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
       const char *ssid = jsonObject[FPSTR(StringSSID)].as<const char *>();
       wifiSettings->setFilePath(String(F(WIFI_CONFIG_DIRECTORY "/")) + ssid);
       const char *pass = jsonObject[FPSTR(StringPassword)].as<const char *>();
-      if(strstr(pass, ReplaceMark)) {
+      if(!strcmp(pass, ReplaceMark)) {
         jsonObject[FPSTR(StringPassword)] = wifiSettings->password;
       }
     }, false) {}
