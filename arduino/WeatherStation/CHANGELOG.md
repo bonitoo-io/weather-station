@@ -6,6 +6,7 @@
 ## Fixes
  - Improved initial WiFi settings behavior
  - Fixed HTTP server response on cached URL
+ - Improved Web UI validation messages
 
 ## 0.58 rc6
 ## Features
