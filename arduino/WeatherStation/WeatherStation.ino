@@ -97,7 +97,7 @@ bool bForceUpdate = false;
 
 void setup() {
   // Prepare serial port
-  Serial.begin(74880);
+  Serial.begin(115200);
   
   //Initialize OLED
   display.init();
