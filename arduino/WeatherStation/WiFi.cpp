@@ -201,8 +201,15 @@ again:
         _manageDelay = MANAGE_NETWORK_DELAY;
         cleanNetworks();
         enterState(WiFiConnectingState::Idle);
-        if(_pApInfo && _pApInfo->forceAPStop) {
-          manageAP(true);
+        if(_pApInfo) {
+          if(_pApInfo->forceAPStop) {
+            manageAP(true);
+          } else {
+            // Sth happend shutdown AP on next cycle
+            _pApInfo->forceAPStop = true;
+            _manageDelay = AP_SHUTDOWN_DELAY;
+            enterState(WiFiConnectingState::ConnectingSuccess);
+          }
         }
         break;
       case WiFiConnectingState::Idle:
@@ -334,6 +341,7 @@ void WiFiManager::stopAP() {
     _pApInfo = nullptr;
     if(_firstStart) {
       WiFi.disconnect(true);
+      delay(500);
       ESP.restart();
     }
 }
@@ -397,6 +405,7 @@ void WiFiManager::statusResponseSent() {
   if(_connectTestSuccess && _pApInfo && _pApInfo->running) {
     // stop AP (and restart) after successfull connection
     // wait a bit to have a user notice a notification
+    Serial.println(F("[WIFIM] Success confirmed to UI"));
     _pApInfo->forceAPStop = true;
   }
 }

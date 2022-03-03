@@ -312,15 +312,15 @@ class WiFiSettingsForm extends Component<WiFiSettingsFormProps, WiFiSettingsForm
       .then(json => {
         const status : ConnectingStatus = json
         if (status.success) {
-          this.props.enqueueSnackbar("Update successful.", {
+          this.props.enqueueSnackbar("Connection successful.", {
             variant: 'success',
           });
           this.setState({ validatingParams: false });
           return;
         } else if (status.disconnect_reason === 202) {
-          throw Error("Invalid password")
+          throw Error("Incorrect password. Update password or select another WiFi.")
         } else {
-          throw Error("WiFi connection failed")
+          throw Error("WiFi connection failed. Try again or select another WiFi.")
         }
       })
       .catch(error => {
@@ -328,7 +328,7 @@ class WiFiSettingsForm extends Component<WiFiSettingsFormProps, WiFiSettingsForm
           if(error instanceof  TypeError) {
             this.setState({ validatingParams: false, reconnectionInfo: true });
           } else {
-            this.props.enqueueSnackbar("Validation error: " + error.message, {
+            this.props.enqueueSnackbar(error.message, {
               variant: 'error',
             });
             this.setState({ validatingParams: false });

@@ -114,7 +114,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
             Save
           </FormButton>
           <FormButton startIcon={<CheckCircle />} variant="contained" color="secondary" onClick={this.onValidateParams} disabled={this.state.validatingParams}>
-              {this.state.validatingParams?<CircularProgress />:<div>Validate</div>}
+              {this.state.validatingParams?<CircularProgress />:<div>Test Connection</div>}
           </FormButton>
         </FormActions>
       </ValidatorForm>
@@ -202,7 +202,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
       .then(json => {
         const status : ValidationStatusResponse = json
         if (status.status === ValidationStatus.Finished) {
-          this.props.enqueueSnackbar("Success", {
+          this.props.enqueueSnackbar("Connection successful", {
             variant: 'success',
           });
           this.setState({ validatingParams: false });
@@ -220,7 +220,7 @@ class InfluxDBSettingsForm extends React.Component<InfluxDBSettingsFormProps, In
       })
       .catch(error => {
         if (error.name !== RETRY_EXCEPTION_TYPE) {
-          this.props.enqueueSnackbar("Validation error: " + error.message, {
+          this.props.enqueueSnackbar(error.message, {
             variant: 'error',
           });
           this.setState({ validatingParams: false });
