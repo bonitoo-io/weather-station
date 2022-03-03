@@ -79,6 +79,7 @@ use_cover_text = false;
 cover_frame_polygon = [[0, 0], [3, 0], [0, 5]];
 // y=0 will use shell width
 box_cover_lock = [20, 0, .8]; 
+batch_number = "2203";
 
 module _() {}
 // vnitřní rozměry v mm
@@ -764,10 +765,12 @@ module cover() {
         cube_center_xy([w, d, 2]);
     }
 
+    // 4x groove
     for (i = [0:3])
       translate([0, - w / 2 + 6 + (i * 2), 1])
         cube_center_xy([15, 1, 3]);
 
+    //cover polygon
     for (i = [0:1])
       mirror([i,0,0])
       translate([0,0,5])
@@ -791,5 +794,10 @@ module cover() {
       translate([-w/2 + 5, d/2-9-i[1]*9, 2-.3])
         linear_extrude(4)
           text(i[0], size= 5, halign ="left");
+
+    if (batch_number != "")
+      translate([0, d/2-9*5+.6, 2-.3])
+        linear_extrude(.3)
+          text(batch_number, size= 4, halign ="center");
   }
 }
