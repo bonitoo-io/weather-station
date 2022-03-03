@@ -119,6 +119,10 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
       display->drawString(88, 36, getStr(s_or_wait_for_setup));
       display->drawString(88, 47, String(F("v")) + version);
     }
+
+    if ( isnan( pSensor->getTemp()) || isnan( pSensor->getHum()) || (pSensor->getTemp() == 0) || (pSensor->getHum() == 0))
+      display->drawXbm( 0, 0, 8, 8, warning_8x8);
+
     display->display();    
     wifiProgressCounter++;
     wifiProgressLastDrown = millis();
@@ -241,7 +245,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
   if ( secToReset > 5) {
     display->drawString(0,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
     display->drawString(0,  9, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(0, 18, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F(" s")));
+    display->drawString(0, 18, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F("s ")) + (isnan( pSensor->getTemp()) ? String( F("None")) : String(pSensor->getSensorName())));
     display->drawString(0, 29, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
     display->drawString(0, 38, String("v") + version + String(F(" tz: ")) + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + station.getRegionalSettings()->language);
     display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());

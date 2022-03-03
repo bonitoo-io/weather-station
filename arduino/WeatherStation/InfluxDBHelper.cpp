@@ -96,7 +96,7 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
     res = false;
   }
 
-  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received (skip only IP connection issues)?`
+  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received (skip only IP connection issues)?
     writeSuccess++;
   
   UNLOCK();

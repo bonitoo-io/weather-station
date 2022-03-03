@@ -98,22 +98,31 @@ bool bForceUpdate = false;
 void setup() {
   // Prepare serial port
   Serial.begin(115200);
-  
-  //Initialize OLED
-  display.init();
-  display.clear();
-  display.display();
   delay(1000);
   Serial.println();
   Serial.println();
+
   ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
   Serial.println(F("Starting Weather station v" VERSION " built " __DATE__ " " __TIME__));
   WS_DEBUG_RAM("Setup 1");
+
   if(ESP.getResetInfoPtr()->reason != REASON_DEEP_SLEEP_AWAKE) {
     resetReason = ESP.getResetReason();
     Serial.print(F(" Reset reason: "));
     Serial.println(resetReason);
   }
+
+  //Initialize OLED
+  display.init();
+  display.clear();
+  display.display();
+
+  // Configure pins
+  pinMode(PIN_BUTTON, INPUT);
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite( PIN_LED, HIGH);
+  setupSensor();
+
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
   
@@ -142,12 +151,6 @@ void setup() {
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
   WS_DEBUG_RAM("Setup 2");
-
-  // Configure pins
-  pinMode(PIN_BUTTON, INPUT);
-  pinMode(PIN_LED, OUTPUT);
-  digitalWrite( PIN_LED, HIGH);
-  setupSensor();
 
   setLanguage( pRegionalSettings->language.c_str());  
   WS_DEBUG_RAM("Setup 3");
