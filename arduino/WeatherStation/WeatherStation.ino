@@ -162,6 +162,8 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     if (influxdbHelper.getWriteSuccess() == 0) { //without any successfull write?
       Serial.println(F("Failed all writes to InfluxDB, restarting!"));
       //TODO: store status to identify reason of restart
+      WiFi.disconnect(true);
+      delay(500);
       ESP.restart();
     }
     Serial.print(F("InfluxDB successful writes: "));
@@ -418,6 +420,8 @@ void loop() {
     loops++;
     if (loops > 200) {  //factory reset after 20 seconds
       station.getPersistence()->removeConfigs();
+      WiFi.disconnect(true);
+      delay(500);
       ESP.restart();
     }
 
@@ -511,6 +515,7 @@ void fwUploadFinishedHandler() {
   drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
   Serial.println(F("restarting"));
   station.end();
+  delay(500);
   ESP.restart();
 }
 

@@ -341,6 +341,7 @@ void WiFiManager::stopAP() {
     _pApInfo = nullptr;
     if(_firstStart) {
       WiFi.disconnect(true);
+      delay(500);
       ESP.restart();
     }
 }
