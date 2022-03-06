@@ -1,4 +1,11 @@
 # Changelog
+## 0.58-rc8
+## Fixes
+ - Improved Web UI validation messages
+ - Improved DB write error handling
+ - Fixed occasionally missing tags
+ - Fixed update version comparing
+ 
 ## 0.58 rc7
 ## Features
  - Sensirion SHTC3 temperature and humidity sensor support
