@@ -1,4 +1,8 @@
 # Changelog
+## 0.58-rc9
+## Fixes
+- Fixed update version comparing
+
 ## 0.58-rc8
 ## Fixes
  - Improved Web UI validation messages
