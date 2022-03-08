@@ -25,11 +25,11 @@ bool Updater::checkUpdate() {
   String ver = ghUpdater.getLatestVersion(_settings->checkBeta);
   bool res = ver.length();
   if(res) {
-    Serial.printf_P(PSTR("Updater: Curent version %s, latest version: %s\n"), _currentVersion, ver.c_str());
+    int c = strcmp(_currentVersion, ver.c_str());
+    Serial.printf_P(PSTR("Updater: Curent version '%s', latest version: '%s'. Cmp result: %d\n"), _currentVersion, ver.c_str(), c);
     // check if new version is higher or final 
     // e.g. latest: 0.58, current 0.58-rc-8
-    int c = strcmp(_currentVersion, ver.c_str());
-    if( c == -1 || (c == 1 && strstr(_currentVersion, ver.c_str()) )) {
+    if( c < 0 || (c > 0 && strstr(_currentVersion, ver.c_str()) )) {
       Serial.println(F("Updater: Starting update"));
       if(_startCb) {
         _startCb(ver.c_str());
