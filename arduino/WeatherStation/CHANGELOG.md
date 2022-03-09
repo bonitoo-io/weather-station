@@ -1,4 +1,7 @@
 # Changelog
+## 0.58
+ - Fixed update version comparing
+ 
 ## 0.58-rc9
 ## Fixes
 - Fixed update version comparing
