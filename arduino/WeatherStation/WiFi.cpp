@@ -202,6 +202,7 @@ again:
         cleanNetworks();
         enterState(WiFiConnectingState::Idle);
         if(_pApInfo) {
+          Serial.printf_P(PSTR("[WIFIM] Managing AP. Force: %s\n"), _pApInfo->forceAPStop?"true":"false");
           if(_pApInfo->forceAPStop) {
             manageAP(true);
           } else {
