@@ -76,10 +76,10 @@ bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
 void initData() {
   if(!initialized && WiFi.isConnected() && !pAPInfo) {
     WS_DEBUG_RAM("InitData");
-    updater.init(station.getUpdaterSettings(), VERSION);
+    updater.init(station.getAdvancedSettings(), VERSION);
     
     //Initialize OLED UI
-    initOLEDUI(&ui, station.getAdvancedSettings());
+    initOLEDUI(&ui, station.getDisplaySettings());
     if(resetReason.length()) {
       influxdbHelper.registerResetInfo(resetReason);
       resetReason = (char *)nullptr;
@@ -130,8 +130,9 @@ void setup() {
     shouldSetupInfluxDb =  true;
   });
   
-  station.getUpdaterSettings()->setHandler([](){
-    updater.init(station.getUpdaterSettings(), VERSION);
+  station.getAdvancedSettings()->setHandler([](){
+    updater.init(station.getAdvancedSettings(), VERSION);
+    bForceUpdate = true;
   });
 
   RegionalSettings *pRegionalSettings = station.getRegionalSettings();
@@ -142,9 +143,8 @@ void setup() {
     bForceUpdate = true; 
   });
 
-  station.getAdvancedSettings()->setHandler([](){
-      configureUI(&ui, station.getAdvancedSettings());
-      bForceUpdate = true;
+  station.getDisplaySettings()->setHandler([](){
+      configureUI(&ui, station.getDisplaySettings());
   });
   
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
@@ -216,7 +216,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 
 
   drawUpdateProgress(display, 20, getStr(s_Checking_update));
-  if(firstStart && station.getUpdaterSettings()->updateTime < 2400) {
+  if(firstStart && station.getAdvancedSettings()->updateTime < 2400) {
     ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
     ServicesTracker.save();
     WS_DEBUG_RAM("Before GH update");
@@ -324,13 +324,13 @@ void loop() {
     ServicesTracker.reset();
 
     if(WiFi.isConnected()) {
-      if(station.getUpdaterSettings()->updateTime < 2400) {
+      if(station.getAdvancedSettings()->updateTime < 2400) {
         //TODO: change to an alarm like functionality
         time_t tnow = time(nullptr);
         struct tm timeinfo;
         localtime_r(&tnow, &timeinfo);
         uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
-        if (curtm == station.getUpdaterSettings()->updateTime ) {
+        if (curtm == station.getAdvancedSettings()->updateTime ) {
           influxdbHelper.release();
           WS_DEBUG_RAM("After release");
           station.stopServer();

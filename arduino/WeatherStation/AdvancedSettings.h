@@ -2,6 +2,7 @@
 #define WS_ADVANCED_SETTINGS_H
 
 #include "Settings.h"
+#include "RegionalSettings.h"
 
 
 #define ADVANCED_DEFAUT_UPDATE_INTERVAL 60
@@ -9,7 +10,13 @@
 #define ADVANCED_DEFAUT_NTP_SERVERS "pool.ntp.org,time.nis.gov,time.google.com"
 #define ADVANCED_DEFAUT_TEMPERATURE_OFFSET 0
 #define ADVANCED_DEFAUT_HUMIDITY_OFFSET 0
-#define ADVANCED_DEFAUT_SCREEN_ROTATE_INTERVAL 10
+#define ADVANCED_DEFAULT_OWNER F("bonitoo-io")
+#define ADVANCED_DEFAULT_REPO F("weather-station")
+#define ADVANCED_DEFAULT_BIN_FILE F("ws-firmware-%version%.bin")
+#define ADVANCED_DEFAULT_MD5_FILE F("ws-firmware-%version%.md5")
+#define ADVANCED_DEFAULT_UPDATETIME 300 //HHMM
+#define ADVANCED_DEFAULT_CHECKBETA  false
+#define ADVANCED_DEFAULT_VERIFY_CERT  true
 #define ADVANCED_SETTINGS_ENDPOINT_PATH "/api/advancedSettings"
 #define ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH "/api/validateAdvancedSettings"
 
@@ -27,10 +34,20 @@ class AdvancedSettings : public Settings {
     float tempOffset;
     // humidity compenstation coefficient
     float humOffset;
-    // Interval of screens changes, in seconds
-    uint8_t screenRotateInterval;
-    // Letters of visible screens
-    String screens;
+    // Update repo owner
+    String owner;
+    // Update repo name
+    String repo;
+    // Update binary filename
+    String binFile;
+    // Update md5 filename
+    String md5File;
+    // Update time H*100+min
+    uint16_t updateTime;
+    // Update to beta releases
+    bool checkBeta;
+    // Verify github cert
+    bool verifyCert;
   public:
     AdvancedSettings();
     virtual ~AdvancedSettings() {};
@@ -41,8 +58,10 @@ class AdvancedSettings : public Settings {
 };
 
 class AdvancedSettingsEndpoint : public SettingsEndpoint {
-public:
-    AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings);
+  public:
+    AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings);
+  protected:
+    RegionalSettings *_pRegionalSettings;
 };
 
 #endif //WS_ADVANCED_SETTINGS_H

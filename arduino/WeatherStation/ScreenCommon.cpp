@@ -36,8 +36,8 @@ String ScreenConstants::getDefaultList() {
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
 OverlayCallback overlays[] = { drawHeaderOverlay};
 
-void initOLEDUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
-  configureUI(ui, pAdvancedSettings);
+void initOLEDUI(OLEDDisplayUi *ui, DisplaySettings *pDisplaySettings) {
+  configureUI(ui, pDisplaySettings);
   ui->init(); // Inital UI takes care of initalising the display too
 }
 
@@ -70,9 +70,9 @@ FrameCallback getFrameCallback(char c) {
 
 static FrameCallback *pFrames = nullptr;
 
-void configureUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
+void configureUI(OLEDDisplayUi *ui, DisplaySettings *pDisplaySettings) {
   ui->setTargetFPS(30);
-  ui->setTimePerFrame(pAdvancedSettings->screenRotateInterval*1000);
+  ui->setTimePerFrame(pDisplaySettings->screenRotateInterval*1000);
   ui->setActiveSymbol(activeSymbole);
   ui->setInactiveSymbol(inactiveSymbole);
   ui->setIndicatorPosition(TOP);
@@ -82,9 +82,9 @@ void configureUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings) {
   if(pFrames) {
     delete [] pFrames;
   }
-  pFrames = new FrameCallback[pAdvancedSettings->screens.length()];
+  pFrames = new FrameCallback[pDisplaySettings->screens.length()];
   int8_t i=0;
-  for(char c: pAdvancedSettings->screens) {
+  for(char c: pDisplaySettings->screens) {
     FrameCallback f = getFrameCallback(c);
     if(f) {
       pFrames[i++] = f;

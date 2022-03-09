@@ -7,7 +7,7 @@ Updater::Updater() {
 
 }
 
-void Updater::init(UpdaterSettings *settings, const char *currentVersion) {
+void Updater::init(AdvancedSettings *settings, const char *currentVersion) {
   _settings = settings;
   _currentVersion = currentVersion;
 }
@@ -56,58 +56,3 @@ bool Updater::checkUpdate() {
   }
   return res;
 }
-
-UpdaterSettings::UpdaterSettings():
-  owner(UPDATER_DEFAULT_OWNER),
-  repo(UPDATER_DEFAULT_REPO),
-  binFile(UPDATER_DEFAULT_BIN_FILE),
-  md5File(UPDATER_DEFAULT_MD5_FILE),
-  updateTime(UPDATER_DEFAULT_UPDATETIME),
-  checkBeta(UPDATER_DEFAULT_CHECKBETA),
-  verifyCert(UPDATER_DEFAULT_VERIFY_CERT) {
-}
-
-void UpdaterSettings::print(const __FlashStringHelper *title) {
-  Serial.print(title);
-  Serial.print(F(" owner: "));Serial.print(owner);
-  Serial.print(F(", repo: "));Serial.print(repo);
-  Serial.print(F(", binFile: "));Serial.print(binFile);
-  Serial.print(F(", md5File: "));Serial.print(md5File);
-  Serial.print(F(", updateTime: "));Serial.print(updateTime);
-  Serial.print(F(", checkBeta: "));Serial.print(checkBeta);
-  Serial.print(F(", verifyCert: "));Serial.print(verifyCert);
-  Serial.println();
-}
-
-int UpdaterSettings::save(JsonObject& root) {
-  root[F("owner")] = owner;
-  root[F("repo")] = repo;
-  root[F("binFile")] = binFile;
-  root[F("md5File")] = md5File;
-  root[F("updateTime")] = updateTime;
-  root[F("checkBeta")] = checkBeta;
-  root[F("verifyCert")] = verifyCert;
-  print(F("UpdaterSettings::Save"));
-  return 0;
-}
-
-int UpdaterSettings::load(JsonObject& root) {
-    owner = root[F("owner")].as<const char *>();
-    repo = root[F("repo")].as<const char *>();
-    binFile = root[F("binFile")].as<const char *>();
-    md5File = root[F("md5File")].as<const char *>();;
-    updateTime = root[F("updateTime")];
-    checkBeta = root[F("checkBeta")];
-    verifyCert = root[F("verifyCert")] | UPDATER_DEFAULT_VERIFY_CERT;
-    print(F("UpdaterSettings::Load"));
-    return 1;
-}
-
-UpdaterSettingEnpoint::UpdaterSettingEnpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, 
-        UpdaterSettings *pSettings, RegionalSettings *pRegionalSettings)
-  :SettingsEndpoint(pServer, UPDATER_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, 
-  [this](Settings *, JsonObject jsonObject) {
-    jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
-  }),
-  _pRegionalSettings(pRegionalSettings) { }
-
