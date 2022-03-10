@@ -294,7 +294,7 @@ char *createAPSSID() {
     wifi_get_macaddr(STATION_IF, mac);
     auto len = 13+strlen_P(PSTR(AP_SSID_PREFIX))+1;
     char *ssid = new char[len];
-    snprintf_P(ssid, len, PSTR(AP_SSID_PREFIX "%02x%02x"), mac[4], mac[5]);
+    snprintf_P(ssid, len, PSTR(AP_SSID_PREFIX "%02X%02X"), mac[4], mac[5]);
     return ssid;
 }
 
@@ -732,4 +732,3 @@ std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved)
 void removeNetwork(FSPersistence *pFsp, const String &ssid) {
   pFsp->removeConfig(F(WIFI_CONFIG_DIRECTORY "/") + ssid);
 }
-

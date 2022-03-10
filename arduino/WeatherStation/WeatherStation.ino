@@ -431,7 +431,8 @@ void loop() {
 
     delay(100);
   }
-
+  if (pAPInfo)
+    drawAPInfo(&display, pAPInfo);
   if(initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
     ESP.wdtFeed();
     int remainingTimeBudget = ui.update();
