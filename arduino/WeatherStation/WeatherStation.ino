@@ -411,6 +411,7 @@ void loop() {
   unsigned int loops = 0;
   while (digitalRead(PIN_BUTTON) == LOW) {  //Pushed boot button?
     if (loops == 0) {
+      Serial.println( F("Button BOOT"));
       if(!pAPInfo) {
         ui.nextFrame();   //jump to the next frame
       } else {
