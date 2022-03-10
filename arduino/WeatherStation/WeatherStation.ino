@@ -418,7 +418,7 @@ void loop() {
         drawAPInfo(&display, pAPInfo);
       }
     }
-    if (loops > 4)
+    if ((loops > 4) || pAPInfo)
       showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (station.getAdvancedSettings()->updateDataInterval - ((lastUpdateMins % station.getAdvancedSettings()->updateDataInterval)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
 
     loops++;
