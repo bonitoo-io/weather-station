@@ -1,4 +1,8 @@
 # Changelog
+## unreleased
+ - Improved OLED debug screen
+ - Added repeated resets check
+
 ## 0.58
  - Fixed update version comparing
  

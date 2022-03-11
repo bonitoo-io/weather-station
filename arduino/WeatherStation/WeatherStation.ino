@@ -64,6 +64,8 @@ bool shouldDrawWifiProgress = false;
 APInfo *pAPInfo = nullptr;
 bool initialized = false;
 String resetReason;
+bool bForceUpdate = false;
+uint16_t nextUIUpdate = 0;
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -93,8 +95,6 @@ void initData() {
   }
 }
 
-bool bForceUpdate = false;
-
 void setup() {
   // Prepare serial port
   Serial.begin(115200);
@@ -112,10 +112,22 @@ void setup() {
     Serial.println(resetReason);
   }
 
+  ServicesTracker.load();
+
   //Initialize OLED
   display.init();
   display.clear();
   display.display();
+
+  Serial.print(F("WS crash reset count: "));
+  Serial.println(ServicesTracker.getResetCount()-1);
+  // repeated reset
+  if(ServicesTracker.getResetCount() > 3) {
+    for(int i=0; i<100;i++) {
+      drawUpdateProgress(&display, i, getStr(s_Reset_wait));
+      delay(1000);  
+    }
+  }
 
   // Configure pins
   pinMode(PIN_BUTTON, INPUT);
@@ -154,7 +166,7 @@ void setup() {
 
   setLanguage( pRegionalSettings->language.c_str());  
   WS_DEBUG_RAM("Setup 3");
-  ServicesTracker.load();
+  
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
@@ -300,7 +312,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   digitalWrite( PIN_LED, HIGH);
 }
 
-uint16_t nextUIUpdate = 0;
+
 
 void loop() {
   station.loop();
@@ -418,8 +430,9 @@ void loop() {
         drawAPInfo(&display, pAPInfo);
       }
     }
-    if ((loops > 4) || pAPInfo)
+    if ((loops > 4) || pAPInfo) {
       showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (station.getAdvancedSettings()->updateDataInterval - ((lastUpdateMins % station.getAdvancedSettings()->updateDataInterval)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
+    }
 
     loops++;
     if (loops > 200) {  //factory reset after 20 seconds
@@ -431,12 +444,16 @@ void loop() {
 
     delay(100);
   }
-  if (pAPInfo)
+  if (pAPInfo) {
     drawAPInfo(&display, pAPInfo);
+  }
+
   if(initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
     ESP.wdtFeed();
     int remainingTimeBudget = ui.update();
     nextUIUpdate = millis()+remainingTimeBudget;
+    // reached basic bussiness loop end
+    ServicesTracker.clearResetCount();
   }
 }
 

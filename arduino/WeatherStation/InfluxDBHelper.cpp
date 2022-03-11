@@ -104,10 +104,15 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
 }
 
 bool InfluxDBHelper::writeStatus() {
+  bool res = true;
   if(!_client || !_client->getServerUrl().length()) {
     return false;
   }
   LOCK();
+  if(_pResetInfo) {
+    res = writeResetInfo();
+  }
+
   Point status("device_status");
   status.addField(F("free_heap"), ESP.getFreeHeap());
   status.addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
@@ -117,9 +122,13 @@ bool InfluxDBHelper::writeStatus() {
   
   Serial.print(F("Writing device status: "));
   Serial.println(_client->pointToLineProtocol(status));
-  _client->writePoint(status);
-
-  bool res = true;
+  
+  if (!_client->writePoint(status)) {
+    Serial.print(F("InfluxDB write failed: "));
+    Serial.println(_client->getLastErrorMessage());
+    res = false;
+  }
+  
   // Write all statuses except write
   for (uint8_t i = 0; i < SyncServices::ServiceDBWriteStatus; i++) {
     Point *point = ServicesTracker.serviceStatisticToPoint((SyncServices)i);
@@ -133,9 +142,6 @@ bool InfluxDBHelper::writeStatus() {
     delete point;
   }
 
-  if(_pResetInfo) {
-    writeResetInfo();
-  }
   
   if (!_client->flushBuffer()) {
     Serial.print(F("InfluxDB flush failed: "));
@@ -150,11 +156,14 @@ void InfluxDBHelper::registerResetInfo(const String &resetReason) {
   if(_pResetInfo) {
     delete _pResetInfo;
   }
-  _pResetInfo = new Point("device_status");
+  _pResetInfo = new Point(F("device_status"));
   _pResetInfo->addTag(F("reset_reason"), resetReason);
   _pResetInfo->addField(F("free_heap"), ESP.getFreeHeap());
   _pResetInfo->addField(F("max_alloc_heap"), ESP.getMaxFreeBlockSize());
   _pResetInfo->addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
+  if(ServicesTracker.getResetCount()> 1) {
+    _pResetInfo->addField(F("crash_resets"), ServicesTracker.getResetCount()-1);
+  }
   for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
     ServiceStatistic &stat = ServicesTracker.getServiceStatics((SyncServices)i);
     if(stat.state == ServiceState::SyncStarted) {

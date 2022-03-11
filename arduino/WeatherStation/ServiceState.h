@@ -40,9 +40,14 @@ struct ServiceStatistic {
   MemoryStatistic memAfter;
 };
 
+struct DataBlock {
+  ServiceStatistic services[SyncServices::ServiceLastMark];
+  uint8_t resetCount;
+};
+
 //204 bytes
 struct RtcMemBlock {
-  ServiceStatistic services[SyncServices::ServiceLastMark];
+  DataBlock data;
   uint32_t crc32;
 };
 
@@ -59,8 +64,11 @@ class ServicesStatusTracker {
   void serviceStatisticToPoint(SyncServices service, Point *point);
   Point *serviceStatisticToPoint(SyncServices service);
   void printStatistics(const String &title);
-  ServiceStatistic& getServiceStatics(SyncServices service) { return _statistics.services[service]; }
+  ServiceStatistic& getServiceStatics(SyncServices service) { return _statistics.data.services[service]; }
+  void clearResetCount();
+  uint8_t getResetCount() { return _statistics.data.resetCount; }
 private:
+  uint8_t _bootCount = 0;
   RtcMemBlock _statistics;
 };
 

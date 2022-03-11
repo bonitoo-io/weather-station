@@ -6,10 +6,11 @@ static const char *serviceNames[] PROGMEM = {"location", "clock", "update","astr
 ServicesStatusTracker ServicesTracker;
 
 ServicesStatusTracker::ServicesStatusTracker() {
+  _statistics.data.resetCount = 0;
 }
 
 void ServicesStatusTracker::updateServiceState(SyncServices service, ServiceState state) {
-  ServiceStatistic *stat = &_statistics.services[service];
+  ServiceStatistic *stat = &_statistics.data.services[service];
   stat->state = state;
   switch(state) {
     case ServiceState::NotRun:
@@ -28,7 +29,8 @@ void ServicesStatusTracker::updateServiceState(SyncServices service, ServiceStat
 void ServicesStatusTracker::load() {
   bool ok = false;
   if(ESP.rtcUserMemoryRead(0, (uint32_t*) &_statistics, sizeof(_statistics))) {
-     uint32_t crcOfData = calculateCRC32((uint8_t*) &_statistics.services[0], sizeof(_statistics.services));
+    Serial.printf_P(PSTR("Load RTC memory: data len %d\n"), sizeof(_statistics.data));
+     uint32_t crcOfData = calculateCRC32((uint8_t*) &_statistics.data, sizeof(_statistics.data));
      ok = _statistics.crc32 == crcOfData;
      if(ok) {
        printStatistics(F("Load"));
@@ -40,11 +42,13 @@ void ServicesStatusTracker::load() {
   }
   if(!ok) {
     reset();
+    clearResetCount();
   }
+  ++_statistics.data.resetCount;
 }
 
 void ServicesStatusTracker::save(bool print) {
-  _statistics.crc32 = calculateCRC32((uint8_t*) &_statistics.services[0], sizeof(_statistics.services));
+  _statistics.crc32 = calculateCRC32((uint8_t*) &_statistics.data, sizeof(_statistics.data));
   // Write struct to RTC memory
   if (ESP.rtcUserMemoryWrite(0, (uint32_t*) &_statistics, sizeof(_statistics))) {
     if(print) {
@@ -57,21 +61,24 @@ void ServicesStatusTracker::save(bool print) {
 
 void ServicesStatusTracker::reset() {
   for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
-    resetServiceStatistic(&_statistics.services[i]);
+    resetServiceStatistic(&_statistics.data.services[i]);
   }
 }
 
+void ServicesStatusTracker::clearResetCount() {
+  _statistics.data.resetCount = 0;
+}
 
 void ServicesStatusTracker::serviceStatisticToPoint(SyncServices service, Point *point) {
-  point->addField(F("state"),(uint8_t) _statistics.services[service].state);
-  if(_statistics.services[service].state != ServiceState::NotRun) {
-    point->addField(F("before_mem_free"), _statistics.services[service].memBefore.freeMem);
-    point->addField(F("before_mem_max_free_block"), _statistics.services[service].memBefore.maxFreeBlock);
-    point->addField(F("before_mem_framentation"), _statistics.services[service].memBefore.heapFragmentation);
-    if(_statistics.services[service].state != ServiceState::SyncStarted) {
-      point->addField(F("after_mem_free"), _statistics.services[service].memAfter.freeMem);
-      point->addField(F("after_mem_max_free_block"), _statistics.services[service].memAfter.maxFreeBlock);
-      point->addField(F("after_mem_framentation"), _statistics.services[service].memAfter.heapFragmentation);
+  point->addField(F("state"),(uint8_t) _statistics.data.services[service].state);
+  if(_statistics.data.services[service].state != ServiceState::NotRun) {
+    point->addField(F("before_mem_free"), _statistics.data.services[service].memBefore.freeMem);
+    point->addField(F("before_mem_max_free_block"), _statistics.data.services[service].memBefore.maxFreeBlock);
+    point->addField(F("before_mem_framentation"), _statistics.data.services[service].memBefore.heapFragmentation);
+    if(_statistics.data.services[service].state != ServiceState::SyncStarted) {
+      point->addField(F("after_mem_free"), _statistics.data.services[service].memAfter.freeMem);
+      point->addField(F("after_mem_max_free_block"), _statistics.data.services[service].memAfter.maxFreeBlock);
+      point->addField(F("after_mem_framentation"), _statistics.data.services[service].memAfter.heapFragmentation);
     }
   }
 }
@@ -89,9 +96,9 @@ void ServicesStatusTracker::printStatistics(const String &title) {
   for(uint8_t i = 0; i < SyncServices::ServiceLastMark; i++) {
       Serial.print(F("\t"));
       Serial.print(FPSTR(getServiceName((SyncServices)i)));
-      Serial.printf_P(PSTR(" - State %u, memory: \n"), _statistics.services[i].state);
-      Serial.printf_P(PSTR("\t\tbefore: free %u, block: %u, fragmentation: %u\n"),_statistics.services[i].memBefore.freeMem,_statistics.services[i].memBefore.maxFreeBlock, _statistics.services[i].memBefore.heapFragmentation);
-      Serial.printf_P(PSTR("\t\tafter: free %u, block: %u, fragmentation: %u\n"),_statistics.services[i].memAfter.freeMem,_statistics.services[i].memAfter.maxFreeBlock, _statistics.services[i].memAfter.heapFragmentation);
+      Serial.printf_P(PSTR(" - State %u, memory: \n"), _statistics.data.services[i].state);
+      Serial.printf_P(PSTR("\t\tbefore: free %u, block: %u, fragmentation: %u\n"),_statistics.data.services[i].memBefore.freeMem,_statistics.data.services[i].memBefore.maxFreeBlock, _statistics.data.services[i].memBefore.heapFragmentation);
+      Serial.printf_P(PSTR("\t\tafter: free %u, block: %u, fragmentation: %u\n"),_statistics.data.services[i].memAfter.freeMem,_statistics.data.services[i].memAfter.maxFreeBlock, _statistics.data.services[i].memAfter.heapFragmentation);
   }
 }
 
