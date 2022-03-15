@@ -72,6 +72,9 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
     return false;
   }
   LOCK();
+  Serial.print(F("InfluxDB server connected: "));
+  Serial.println(_client->isConnected());
+
   _sensor.clearFields();
   // Report temperature and humidity
   _sensor.addField(F("Temperature"), temp);
@@ -96,9 +99,10 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
     res = false;
   }
 
-  if (res || (_client->getLastStatusCode() > 0)) //successful write or some http error code received (skip only IP connection issues)?
+  if (res || (_client->getLastStatusCode() > 0)) { //successful write or some http error code received (skip only IP connection issues)?
     writeSuccess++;
-  
+  }
+ 
   UNLOCK();
   return res;
 }
@@ -109,6 +113,9 @@ bool InfluxDBHelper::writeStatus() {
     return false;
   }
   LOCK();
+  Serial.print(F("InfluxDB server connected: "));
+  Serial.println(_client->isConnected());
+
   if(_pResetInfo) {
     res = writeResetInfo();
   }
