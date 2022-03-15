@@ -296,7 +296,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     //Save temperature for the chart
     pSensor->saveTempHist();
   }
-  drawUpdateProgress(display, 100, getStr(s_Done));
+  drawUpdateProgress(display, 90, getStr(s_Saving_Status));
   
   WS_DEBUG_RAM("After updates");
 
@@ -308,6 +308,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncFailed);
   }
   ServicesTracker.save();
+  drawUpdateProgress(display, 100, getStr(s_Done));
   WS_DEBUG_RAM("After write status");
   digitalWrite( PIN_LED, HIGH);
 }
