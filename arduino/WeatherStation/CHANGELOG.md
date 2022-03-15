@@ -1,7 +1,10 @@
 # Changelog
-## unreleased
+## 0.59
+## Features
  - Improved OLED debug screen
  - Added repeated resets check
+## Fixes
+ - Trying update weather info more times
 
 ## 0.58
  - Fixed update version comparing
