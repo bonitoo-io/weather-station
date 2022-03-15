@@ -25,7 +25,16 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   currentWeatherClient.setMetric(false);  //always fahrenheit
   currentWeatherClient.setLanguage(pRegionalSettings->language);
   _currentWeather.temp = NAN;
-  currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
+
+  // Try 3 times
+  for(int i=0;i<3;i++) {
+    Serial.printf_P(PSTR("Downloading current weather, attempt: %d\n"),i+1);
+    currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
+    if (!isnan(_currentWeather.temp)) {
+      break;
+    }
+    delay(500);
+  }
   if (isnan(_currentWeather.temp)) {
     currentWeather.temp =  NO_VALUE_INT;
     return false;  
@@ -46,12 +55,21 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
-  _forecasts[0].temp = NAN;
   forecastClient.setMetric(false);  //always fahrenheit
   forecastClient.setLanguage(pRegionalSettings->language);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
-  forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS);
+  _forecasts[0].temp = NAN;
+
+  // Try 3 times
+  for(int i=0;i<3;i++) {
+    Serial.printf_P(PSTR("Downloading weather forecast, attempt: %d\n"),i+1);
+    forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS);
+    if (!isnan(_forecasts[0].temp)) {
+      break;
+    }
+    delay(500);
+  }
 
   if (isnan(_forecasts[0].temp)) {
     forecasts[0].temp = NO_VALUE_INT;
