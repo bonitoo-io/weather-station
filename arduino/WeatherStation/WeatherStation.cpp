@@ -40,9 +40,9 @@ void WeatherStation::begin() {
   delete m;
   
   _persistence.readFromFS(&_influxDBSettings);
-  _persistence.readFromFS(&_updaterSettings);
   _persistence.readFromFS(&_regionalSettings);
   _persistence.readFromFS(&_advancedSettings);
+  _persistence.readFromFS(&_displaySettings);
   
   _wifiManager.begin();
 }
@@ -177,7 +177,6 @@ void WeatherStation::registerEndpoints() {
     _wifiScannerEndpoint = new WiFiScannerEndpoint(_server);
     _wifiSettingsEndpoint = new WiFiSettingsEndpoint(_server, &_persistence, &_wifiSettings);
     _influxDBSettingsEndpoint = new InfluxDBSettingsEndpoint(_server, &_persistence, &_influxDBSettings);
-    _updaterSettingsEndpoint = new UpdaterSettingEnpoint(_server, &_persistence, &_updaterSettings, &_regionalSettings);
     _wifiStatusEndpoint = new WiFiStatusEndpoint(_server);
     _wifiConnectionHelperEndpoint = new WiFiConnectionHelperEndpoint(_server, &_wifiManager);
     _aboutInfoEndpoint = new AboutInfoEndpoint(_server, _influxDBHelper, &_influxDBSettings, &_wifiSettings, &_regionalSettings, &LittleFS);
@@ -188,8 +187,9 @@ void WeatherStation::registerEndpoints() {
     _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &_advancedSettings);
     _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
     _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
-    _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(_server, &_persistence, &_advancedSettings);
+    _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(_server, &_persistence, &_advancedSettings, &_regionalSettings);
     _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(_server, &_regionalSettings);
+    _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(_server, &_persistence, &_displaySettings);
     // Serve static resources from PROGMEM
     WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler, 
       this, 
@@ -212,8 +212,6 @@ void WeatherStation::registerEndpoints() {
     _wifiSettingsEndpoint = nullptr;
     delete _influxDBSettingsEndpoint;
     _influxDBSettingsEndpoint = nullptr;
-    delete _updaterSettingsEndpoint ;
-    _updaterSettingsEndpoint = nullptr;
     delete _wifiStatusEndpoint;
     _wifiStatusEndpoint = nullptr;
     delete _wifiConnectionHelperEndpoint;
@@ -234,6 +232,8 @@ void WeatherStation::registerEndpoints() {
     _pAdvancedSettingsEndpoint = nullptr;
     delete _pAdvancedSettingsValidateEndpoint;
     _pAdvancedSettingsValidateEndpoint = nullptr;
+    delete _pDisplaySettingsEndpoint;
+    _pDisplaySettingsEndpoint = nullptr;
     _endpointsRegistered = false;
    }
  }

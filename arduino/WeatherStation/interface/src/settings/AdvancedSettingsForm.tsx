@@ -1,14 +1,16 @@
 import React, { Component, RefObject } from 'react';
 import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 
-import { isValidScreens } from '../validators';
 import SaveIcon from '@material-ui/icons/Save';
 
-import { RestFormProps, FormActions, FormButton } from '../components';
+import { RestFormProps, FormActions, FormButton, BlockFormControlLabel } from '../components';
+import { MaterialUiPickersDate  } from '@material-ui/pickers/typings/date'
+import { TimePicker, MuiPickersUtilsProvider  } from '@material-ui/pickers'
+import DateFnsUtils from '@date-io/date-fns'
 
 import { AdvancedSettings, ValidationStatus, ValidationStatusResponse } from './types';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
-import { LinearProgress, Link, Typography } from '@material-ui/core';
+import { Checkbox, LinearProgress, Link, Typography } from '@material-ui/core';
 import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
 
 
@@ -33,6 +35,13 @@ interface AdvancedSettingsFormState {
   errorMessage?: string;
 }
 
+function numberToTime(tm: number) {
+  let dt : MaterialUiPickersDate = new Date(0)
+  dt.setHours(Math.floor(tm/100))
+  dt.setMinutes(Math.floor(tm % 100))
+  return dt
+}
+
 const UpdateDataErrorText = 'Must be a number between 30 and 1440 (24 hours)'
 
 class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, AdvancedSettingsFormState> {
@@ -53,10 +62,6 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     this.form = React.createRef();
     const { saveData } = this.props;
     this.saveData = saveData;
-  }
-
-  componentDidMount = () => {
-    ValidatorForm.addValidationRule('isValidScreens', isValidScreens);
   }
 
   toUpperCase = (name: keyof AdvancedSettings, valueSetter: (name: string, val: any)=>void ) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,8 +89,18 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     )
   }
 
+  changeTime = (valueSetter: (name: string, val: any)=>void ) =>(date: MaterialUiPickersDate) => {
+    if(!date) {
+      return
+    }
+    const val = date.getHours()*100+date.getMinutes()
+    valueSetter('updateTime', val)
+  } 
+
+
   render() {
     const { data, handleValueChange, handleDirectValueChange, classes}  = this.props;
+    const updateTime = numberToTime(data.updateTime)
     const { validatingParams } = this.state
 
     return (
@@ -97,31 +112,6 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
                 Validating&hellip;
               </Typography>
           </div>}
-          <TextValidator
-              validators={['required','isValidScreens']}
-              errorMessages={['Display Screens is required','Invalid screen code']}
-              name="screens"
-              label="Display Screens"
-              fullWidth
-              variant="outlined"
-              value={data.screens}
-              onChange={this.toUpperCase('screens', handleDirectValueChange)}
-              margin="normal"
-              inputProps={{ style: { textTransform: "uppercase" } }}  
-              helperText="Screens (letter is in brackets): (A)nalog time; (D)igital time; (I)ndoor temperature/humidity; (T)emperature chart; Covid-19 (S)pread risk; (O)utdoor weather; weather (F)orecast; (W)ind forecast; (M)oon phase rise/set; (C)onfiguration info"
-            />
-          <TextValidator
-              validators={['required', 'isNumber', 'minNumber:1']}
-              errorMessages={['Screen Rotate Interval is required', 'Must be a number at least 1', 'Must be a number at least 1']}
-              name="screenRotateInterval"
-              label="Screen Rotate Interval (in seconds)"
-              fullWidth
-              variant="outlined"
-              value={data.screenRotateInterval}
-              onChange={handleValueChange('screenRotateInterval')}
-              margin="normal"
-              helperText="How long a screen on display stays before changes"
-            />
           <TextValidator
               validators={['required', 'isFloat']}
               errorMessages={['Temperature Offset is required', 'Must be a real number']}
@@ -181,6 +171,40 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
               onChange={handleValueChange('openWeatherAPIKey')}
               margin="normal"
               helperText={this.renderAPIKeyHelperText()}
+            />
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <TimePicker
+                label="Firmware Auto Upgrade Time"
+                value={updateTime}
+                ampm={!data.use24Hours}
+                onChange={this.changeTime(handleDirectValueChange)}
+                margin = "normal"
+                fullWidth
+              />
+            </MuiPickersUtilsProvider>
+            <BlockFormControlLabel
+              value="start"
+              control={
+                <Checkbox
+                value="checkBeta"
+                checked={data.checkBeta}
+                onChange={handleValueChange("checkBeta")}
+              />
+              }
+              label="Upgrade to beta releases"
+              labelPlacement="end"
+            />
+            <BlockFormControlLabel
+              value="start"
+              control={
+                <Checkbox
+                value="verifyCert"
+                checked={data.verifyCert}
+                onChange={handleValueChange("verifyCert")}
+              />
+              }
+              label="Verify Github certificate"
+              labelPlacement="end"
             />
           <FormActions>
             <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">

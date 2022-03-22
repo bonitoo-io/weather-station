@@ -5,7 +5,6 @@
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
 #include "Settings.h"
-#include "AdvancedSettings.h"
 
 #define REGIONAL_SETTINGS_DEFAULT_DETECT true
 #define REGIONAL_SETTINGS_DEFAULT_CITY F("San Francisco,US")

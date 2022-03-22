@@ -13,6 +13,7 @@
 #include "RegionalSettings.h"
 #include "UploadFirmware.h"
 #include "AdvancedSettings.h"
+#include "DisplaySettings.h"
 #include "Validation.h"
 
 class WeatherStation {
@@ -30,16 +31,16 @@ public:
         return &_influxDBSettings;
     }
 
-    UpdaterSettings *getUpdaterSettings() {
-        return &_updaterSettings;
-    }
-
     RegionalSettings *getRegionalSettings() {
         return &_regionalSettings;
     }
 
     AdvancedSettings *getAdvancedSettings() {
         return &_advancedSettings;
+    }
+
+    DisplaySettings *getDisplaySettings() {
+        return &_displaySettings;
     }
 
     FSPersistence *getPersistence() {
@@ -61,9 +62,9 @@ private:
     InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;
     InfluxDBSettings _influxDBSettings;
-    UpdaterSettings _updaterSettings;
     RegionalSettings _regionalSettings;
     AdvancedSettings _advancedSettings;
+    DisplaySettings _displaySettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
     bool _endpointsRegistered = false;
@@ -72,7 +73,6 @@ private:
     WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;
     WiFiConnectionHelperEndpoint *_wifiConnectionHelperEndpoint = nullptr;
     InfluxDBSettingsEndpoint *_influxDBSettingsEndpoint = nullptr;
-    UpdaterSettingEnpoint *_updaterSettingsEndpoint = nullptr;
     WiFiStatusEndpoint *_wifiStatusEndpoint = nullptr;
     WiFiListSavedEndpoint *_wiFiListSavedEndpoint = nullptr;
     AboutInfoEndpoint *_aboutInfoEndpoint = nullptr;
@@ -84,6 +84,7 @@ private:
     FWUploadFinishedCallback _fwUploadFinishedCallback = nullptr;
     AdvancedSettingsEndpoint *_pAdvancedSettingsEndpoint = nullptr;
     AdvancedSettingsValidateEndpoint *_pAdvancedSettingsValidateEndpoint = nullptr;
+    DisplaySettingsEndpoint *_pDisplaySettingsEndpoint = nullptr;
 };
 
 extern WeatherStation station;

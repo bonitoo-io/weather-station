@@ -4,7 +4,7 @@
 #include <OLEDDisplayUi.h>
 #include "WiFi.h"
 #include "InfluxDBHelper.h"
-#include "AdvancedSettings.h"
+#include "DisplaySettings.h"
 
 class ScreenConstants { 
  public:
@@ -26,8 +26,8 @@ class ScreenConstants {
 
 int16_t getCurrentWeatherTemperature();
 
-void initOLEDUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings);
-void configureUI(OLEDDisplayUi *ui, AdvancedSettings *pAdvancedSettings);
+void initOLEDUI(OLEDDisplayUi *ui, DisplaySettings *pDisplaySettings);
+void configureUI(OLEDDisplayUi *ui, DisplaySettings *pDisplaySettings);
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label);
 void startWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);
 void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssid);

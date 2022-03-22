@@ -20,16 +20,6 @@ export interface ValidationStatusResponse {
   message?:string
 }
 
-export interface UpdateSettings {
-  owner: string;
-  repo: string;
-  binFile: string;
-  md5File: string;
-  updateTime: number;
-  checkBeta: boolean;
-  verifyCert: boolean;
-  use24Hours: boolean;
-}
 
 export interface RegionalSettings {
   detectAutomatically: boolean;
@@ -51,6 +41,18 @@ export interface AdvancedSettings {
   ntpServers: string;
   tempOffset: number;
   humOffset: number;
+  owner: string;
+  repo: string;
+  binFile: string;
+  md5File: string;
+  updateTime: number;
+  checkBeta: boolean;
+  verifyCert: boolean;
+  use24Hours: boolean;
+}
+
+
+export interface DisplaySettings {
   // in seconds
   screenRotateInterval: number;
   screens: string;
