@@ -23,7 +23,7 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   OpenWeatherMapCurrent currentWeatherClient;
   OpenWeatherMapCurrentData _currentWeather;
   currentWeatherClient.setMetric(false);  //always fahrenheit
-  currentWeatherClient.setLanguage(pRegionalSettings->language);
+  currentWeatherClient.setLanguage(pRegionalSettings->forceEngMessages ? "en" : pRegionalSettings->language);
   _currentWeather.temp = NAN;
 
   // Try 3 times
@@ -56,7 +56,7 @@ bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
   OpenWeatherMapForecast forecastClient;
   OpenWeatherMapForecastData _forecasts[MAX_FORECASTS];
   forecastClient.setMetric(false);  //always fahrenheit
-  forecastClient.setLanguage(pRegionalSettings->language);
+  forecastClient.setLanguage(pRegionalSettings->forceEngMessages ? "en" : pRegionalSettings->language);
   uint8_t allowedHours[] = {12};
   forecastClient.setAllowedHours(allowedHours, sizeof(allowedHours));
   _forecasts[0].temp = NAN;

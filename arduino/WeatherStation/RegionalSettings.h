@@ -33,6 +33,7 @@ public:
     bool useMetricUnits;
     bool use24Hours;
     bool useYMDFormat;
+    bool forceEngMessages;  //calculated variable, do not store
 public:
   RegionalSettings();
   virtual ~RegionalSettings() {}

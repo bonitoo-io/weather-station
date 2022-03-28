@@ -49,7 +49,7 @@ void tIPListener::value(String value) {
 const char Countries12h[] PROGMEM = "EG" "BD" "IN" "JO" "PK" "PH" "MY" "SA" "US" "SV" "HN" "NI" "IE" "CA" "MX" "AU" "NZ" "CO";
 const char CountriesFahrenheit[] PROGMEM = "US" "BZ" "PW" "BS" "KY";
 const char CountriesDateYMD[] PROGMEM = "BT" "CN" "HU" "JP" "KP" "KR" "LT" "MN" "TW" "US";
-
+const char nonLatinLang2Eng[] PROGMEM = "ar" "th" "zh" "he" "ja" "ko";
 
 bool findCountry( const char* country, const char* list) {
   uint16_t cw = (country[1] << 8) + country[0];
@@ -161,4 +161,9 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
   }
 
   return changed?2:1;
+}
+
+
+bool nonLatin2Eng( const char* lang) {
+  return findCountry(lang, nonLatinLang2Eng);
 }

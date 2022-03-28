@@ -1,5 +1,7 @@
 #include "RegionalSettings.h"
 
+bool nonLatin2Eng( const char* lang); //from location.cpp
+
 void RegionalSettings::print(const __FlashStringHelper *title) {
     Serial.print(title);
     Serial.print(F(" detectAutomatically: "));Serial.print(detectAutomatically);
@@ -11,6 +13,7 @@ void RegionalSettings::print(const __FlashStringHelper *title) {
     Serial.print(F(", useMetricUnits: "));Serial.print(useMetricUnits);
     Serial.print(F(", use24Hours: "));Serial.print(use24Hours);
     Serial.print(F(", useYMDFormat: "));Serial.print(useYMDFormat);
+    Serial.print(F(", forceEngMessages: "));Serial.print(forceEngMessages);
     Serial.println();
 }
 
@@ -24,7 +27,8 @@ RegionalSettings::RegionalSettings():
   longitude(REGIONAL_SETTINGS_DEFAULT_LONGITUDE),
   useMetricUnits(REGIONAL_SETTINGS_DEFAULT_USE_METRICS),
   use24Hours(REGIONAL_SETTINGS_DEFAULT_USE_24HOURS),
-  useYMDFormat(REGIONAL_SETTINGS_DEFAULT_USE_YMD)
+  useYMDFormat(REGIONAL_SETTINGS_DEFAULT_USE_YMD),
+  forceEngMessages(false)
   { 
 }
 
@@ -53,6 +57,7 @@ int RegionalSettings::load(JsonObject& root) {
   useMetricUnits = root[F("useMetricUnits")];
   use24Hours = root[F("use24Hours")];
   useYMDFormat = root[F("useYMDFormat")];
+  forceEngMessages = nonLatin2Eng( language.c_str());
 
   print(F("Load Regional settings"));
   return 0;
