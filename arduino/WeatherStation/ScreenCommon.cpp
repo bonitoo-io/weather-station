@@ -18,20 +18,7 @@ const char ScreenConstants::Astronomy = 'M';
 const char ScreenConstants::TemperatureChart = 'T';
 const char ScreenConstants::Config = 'C';
 
-String ScreenConstants::getDefaultList() {
-  String list;
-  list.concat(DateTimeAnalog);
-  list.concat(DateTimeDigital);
-  list.concat(SensorValues);
-  list.concat(TemperatureChart);
-  list.concat(Covid19);
-  list.concat(CurrentWeather);
-  list.concat(WeatherForecast);
-  list.concat(WindForecast);
-  list.concat(Astronomy);
-  list.concat(Config);
-  return list;
-}
+const char ScreenConstants::defaultList[] = {DateTimeAnalog, DateTimeDigital, SensorValues, TemperatureChart, Covid19, CurrentWeather, WeatherForecast, WindForecast, Astronomy, Config, '\0'};
 
 // This array keeps function pointers to all frames, frames are the single views that slide from right to left
 OverlayCallback overlays[] = { drawHeaderOverlay};
@@ -203,7 +190,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     for (int8_t j = 0; j < 2 * (i + 1); j++) {
       if (quality > i * 25 || j == 0)
         display->setPixel(120 + 2 * i, 6 - j);
-     }
+    }
   }
 
   //Draw InfluxDB write mark

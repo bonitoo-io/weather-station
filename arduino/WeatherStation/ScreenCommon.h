@@ -20,7 +20,9 @@ class ScreenConstants {
   static const char TemperatureChart;
   static const char Config;
 
-  static String getDefaultList();
+  static constexpr const char* getDefaultList() { return defaultList;};
+private:
+  static const char defaultList[];  
 };
 
 

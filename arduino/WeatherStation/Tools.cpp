@@ -7,7 +7,7 @@ static const char DAYS_ENG[] PROGMEM = "Sun\0" "Mon\0" "Tue\0" "Wed\0" "Thu\0" "
 static const char MONTHS_ENG[] PROGMEM = "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0" "Jul\0" "Aug\0" "Sep\0" "Oct\0" "Nov\0" "Dec\0";
 static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first quarter\0" "waxing gibbous\0" "full moon\0" "waning gibbous\0" "third quarter\0" "waning crescent\0";
 static const char STR_ENG[] PROGMEM = 
-"Connecting WiFi\0" "Searching...\0" "or wait for setup\0" "Connecting IoT Center\0" "Delaying reset\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Writing status\0" "Done\0"
+"Connecting WiFi\0" "Searching...\0" "or wait for setup\0" "Connecting IoT Center\0" "Delaying reset\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Sending status\0" "Done\0"
 "Found update \0" "Starting update\0" "Update successful\0" "Restarting...\0" "Update failed \0" "Updating \0" "Restarting\0" "connect the following WiFi\nvia your phone or laptop\0" "follow the WiFi config steps\nor open browser with\0" "DEVICE CONFIGURATION:\0"
 "Weather Station\0" "Configure via:\0" "Forecast error\0"
 "In:\0" " Out:\0" "now\0" "Temperature sensor error!\0"
