@@ -48,6 +48,8 @@ class AdvancedSettings : public Settings {
     bool checkBeta;
     // Verify github cert
     bool verifyCert;
+  protected:
+    void setUpdateTime(uint16_t time);
   public:
     AdvancedSettings();
     virtual ~AdvancedSettings() {};

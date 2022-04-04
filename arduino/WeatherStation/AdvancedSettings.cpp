@@ -3,6 +3,12 @@
 
 const char *OpenweatherApiKeyStr PROGMEM = "openWeatherAPIKey";
 
+static uint16_t getDefaultUpdateTime() {
+  uint8_t mac[6];
+  wifi_get_macaddr(STATION_IF, mac);
+  return ADVANCED_DEFAULT_UPDATETIME + mac[5]; 
+}
+
 AdvancedSettings::AdvancedSettings():
   updateDataInterval(ADVANCED_DEFAUT_UPDATE_INTERVAL),
   openWeatherAPIKey(F(ADVANCED_DEFAUT_OPENWEATHER_API_KEY)),
@@ -13,10 +19,20 @@ AdvancedSettings::AdvancedSettings():
   repo(ADVANCED_DEFAULT_REPO),
   binFile(ADVANCED_DEFAULT_BIN_FILE),
   md5File(ADVANCED_DEFAULT_MD5_FILE),
-  updateTime(ADVANCED_DEFAULT_UPDATETIME),
   checkBeta(ADVANCED_DEFAULT_CHECKBETA),
   verifyCert(ADVANCED_DEFAULT_VERIFY_CERT)  {
-    
+  setUpdateTime(getDefaultUpdateTime());
+}
+
+void AdvancedSettings::setUpdateTime(uint16_t time) {
+  uint8_t h = time/100;
+  uint8_t m = time%100;
+  if(m >= 60) {
+    ++h;
+    m = m - 60;
+    time = h*100+m; 
+  }
+  updateTime = time;
 }
 
 void AdvancedSettings::print(const __FlashStringHelper *title) {
@@ -64,7 +80,7 @@ int AdvancedSettings::load(JsonObject& root) {
   repo = root[F("repo")] | String(ADVANCED_DEFAULT_REPO);
   binFile = root[F("binFile")] | String(ADVANCED_DEFAULT_BIN_FILE);
   md5File = root[F("md5File")] | String(ADVANCED_DEFAULT_MD5_FILE); 
-  updateTime = root[F("updateTime")] | ADVANCED_DEFAULT_UPDATETIME;
+  setUpdateTime(root[F("updateTime")] | getDefaultUpdateTime());
   checkBeta = root[F("checkBeta")];
   verifyCert = root[F("verifyCert")] | ADVANCED_DEFAULT_VERIFY_CERT;
 
