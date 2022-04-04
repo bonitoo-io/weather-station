@@ -1,4 +1,12 @@
 # Changelog
+## 1.00
+## Features
+ - Restructured settings UI
+  - Introduced Display settings
+  - Update setting moved to Advanced settings
+## Fixes
+ - Non-latin languages forced to English
+
 ## 0.59
 ## Features
  - Improved OLED debug screen
