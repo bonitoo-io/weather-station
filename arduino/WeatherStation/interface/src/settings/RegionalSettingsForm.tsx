@@ -1,7 +1,7 @@
 import React, { Component, RefObject } from 'react';
-import { SelectValidator, TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
+import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 
-import { Checkbox,  LinearProgress, Typography,  MenuItem} from '@material-ui/core';
+import { Checkbox,  LinearProgress, Typography } from '@material-ui/core';
 
 import SaveIcon from '@material-ui/icons/Save';
 
@@ -96,7 +96,7 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
               disabled = {data.detectAutomatically}
               helperText="City name with optional country code"
             />
-            <SelectValidator
+            <TextValidator
               validators={['required']}
               errorMessages={['Language is required']}
               name="language"
@@ -107,10 +107,14 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
               onChange={handleValueChange('language')}
               margin="normal"
               disabled = {data.detectAutomatically}
+              inputProps={{
+                maxLength: 2,
+                minLength: 2,
+                style: { textTransform: "lowercase" }
+              }}
+              helperText="Two letters language code"
               >
-                <MenuItem value="en">En</MenuItem>
-                <MenuItem value="cz">Cz</MenuItem>
-            </SelectValidator>
+            </TextValidator>
             <TextValidator
               validators={['required', 'isNumber', 'minNumber:-50400', 'maxNumber:50400']}
               errorMessages={['UTC Offset is required', UTCOffsetErrorText, UTCOffsetErrorText, UTCOffsetErrorText]}
