@@ -1,4 +1,10 @@
 # Changelog
+## 1.01
+## Fixes
+  - Fixed limit on list of scanned WiFi networks 
+  - Updated Github certificate for firmware download
+  - Firmware update does not verify certificate by default
+  - Reliable web server start after regional settings update
 ## 1.00
 ## Features
  - Restructured settings UI
