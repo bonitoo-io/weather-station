@@ -512,27 +512,26 @@ void WiFiScannerEndpoint::scanNetworks(AsyncWebServerRequest* request) {
 }
 
 void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
-    int numNetworks = WiFi.scanComplete();
-    if (numNetworks > -1) {
-        AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
-        JsonObject root = response->getRoot();
-        JsonArray networks = root.createNestedArray(F("networks"));
-        for (int i = 0; i < numNetworks; i++) {
-            JsonObject network = networks.createNestedObject();
-            network[F("rssi")] = WiFi.RSSI(i);
-            network[FPSTR(StringSSID)] = WiFi.SSID(i);
-            network[F("bssid")] = WiFi.BSSIDstr(i);
-            network[F("channel")] = WiFi.channel(i);
-            network[F("encryption_type")] = convertEncryptionType(WiFi.encryptionType(i));
-        }
-        response->addHeader(F("Cache-Control"),F("No-Store"));
-        response->setLength();
-        request->send(response);
-    } else if (numNetworks == -1) {
-        request->send(202);
-    } else {
-        scanNetworks(request);
+  int numNetworks = WiFi.scanComplete();
+  if (numNetworks > -1) {
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    response->addHeader(F("Cache-Control"),F("No-Store"));
+    response->print(F("{\"networks\":["));
+    for (int i = 0; i < numNetworks; i++) {
+      if(i>0) {
+        response->print(F(","));
+      }
+      response->printf_P(PSTR("{\"rssi\":%d,\"ssid\":\"%s\",\"bssid\":\"%s\",\"channel\":%d,\"encryption_type\":%d}"),
+        WiFi.RSSI(i), WiFi.SSID(i).c_str(), WiFi.BSSIDstr(i).c_str(),WiFi.channel(i), convertEncryptionType(WiFi.encryptionType(i))); 
+      Serial.printf_P(PSTR("[WIFISE] Scan adding %s, chan %d, rssi %d\n"), WiFi.SSID(i).c_str(), WiFi.channel(i), WiFi.RSSI(i));
     }
+    response->print(F("]}"));
+    request->send(response);
+  } else if (numNetworks == -1) {
+    request->send(202);
+  } else {
+    scanNetworks(request);
+  }
 }
 
 /*
