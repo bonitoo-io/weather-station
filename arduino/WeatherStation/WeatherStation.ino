@@ -211,7 +211,6 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     } 
     
     WS_DEBUG_RAM("After IPloc");
-    station.startServer();
     if(!firstStart) {
       influxdbHelper.begin(station.getInfluxDBSettings());
     }
@@ -309,6 +308,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
   ServicesTracker.save();
   drawUpdateProgress(display, 100, getStr(s_Done));
+  station.startServer();
   WS_DEBUG_RAM("After write status");
   digitalWrite( PIN_LED, HIGH);
 }
@@ -417,6 +417,9 @@ void loop() {
         digitalWrite( PIN_LED, HIGH);
         WS_DEBUG_RAM("After write");
       }
+    }
+    if(!station.isServerStarted()) {
+       station.startServer();
     }
   }
       

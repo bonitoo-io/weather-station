@@ -52,6 +52,7 @@ public:
     }
     void startServer();
     void stopServer();
+    bool isServerStarted() const { return _server != nullptr; }
     void registerEndpoints();
     void saveRegionalSettings();
     void registerHandler(const String& uri, const String& contentType, const uint8_t* content, size_t len);

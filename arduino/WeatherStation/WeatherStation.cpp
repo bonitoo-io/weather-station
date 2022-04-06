@@ -152,6 +152,13 @@ void WeatherStation::startServer() {
   if(!_server) {
     Serial.println(F("Starting HTTP server."));
     _server = new AsyncWebServer(80);
+    auto code = _server->begin();
+    if(code) {
+      Serial.printf_P(PSTR(" Server start error: %d\n"), code);
+      delete _server;
+      _server = nullptr;
+      return;
+    }
     _server->setFilter(std::bind(&WeatherStation::globalFilterHandler, 
       this, 
       std::placeholders::_1));
@@ -166,7 +173,6 @@ void WeatherStation::startServer() {
       std::placeholders::_2,
       std::placeholders::_3,
       std::placeholders::_4));
-    _server->begin();
    }
  }
 

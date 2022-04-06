@@ -32,4 +32,4 @@ Indentation means transitive dependency, but such a library must be installed as
 * ESP8266 Influxdb (by Tobias Schürg, InfluxData)
 * ESP Github Updater - from https://github.com/bonitoo-io/ESP-Github-Updater
 * ESPAsyncWebServer - from https://github.com/bonitoo-io/ESPAsyncWebServer/ branch [feat/global_filter](https://github.com/bonitoo-io/ESPAsyncWebServer/tree/feat/global_filter)
-  * ESPAsyncTCP - from https://github.com/me-no-dev/ESPAsyncWebServer
+  * ESPAsyncTCP - from https://github.com/bonitoo-io/ESPAsyncTCP
