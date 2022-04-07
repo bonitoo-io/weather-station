@@ -511,21 +511,47 @@ void WiFiScannerEndpoint::scanNetworks(AsyncWebServerRequest* request) {
   request->send(202);
 }
 
+const char *NetworkTemplate PROGMEM = "{\"rssi\":%d,\"ssid\":\"%s\",\"bssid\":\"%s\",\"channel\":%d,\"encryption_type\":%d}";
+
 void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
   int numNetworks = WiFi.scanComplete();
   if (numNetworks > -1) {
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
-    response->addHeader(F("Cache-Control"),F("No-Store"));
-    response->print(F("{\"networks\":["));
-    for (int i = 0; i < numNetworks; i++) {
-      if(i>0) {
-        response->print(F(","));
+    int netIndex = 0;
+    Serial.printf_P(PSTR("[WIFISE] found %d networks\n"), numNetworks);
+    AsyncWebServerResponse *response = request->beginChunkedResponse("application/json", [netIndex,numNetworks](uint8_t *buffer, size_t maxLen, size_t index)  mutable {
+      //Write up to "maxLen" bytes into "buffer" and return the amount written.
+      //index equals the amount of bytes that have been already sent
+      //You will be asked for more data until 0 is returned
+      //Keep in mind that you can not delay or yield waiting for more data!
+      if(netIndex >= numNetworks) {
+        return (size_t)0;
+      } 
+      size_t len = strlen_P(NetworkTemplate) + WiFi.SSID(netIndex).length() + WiFi.BSSIDstr(netIndex).length() + 3;
+      //Serial.printf_P(PSTR("[WIFISE] Chunked resp: buff %d, len %d, index: %d\n"), maxLen, len, netIndex);
+      size_t w = 0;
+      if(netIndex == 0 ) {
+        w = sprintf_P((char*)buffer, PSTR("{\"networks\":["));
       }
-      response->printf_P(PSTR("{\"rssi\":%d,\"ssid\":\"%s\",\"bssid\":\"%s\",\"channel\":%d,\"encryption_type\":%d}"),
-        WiFi.RSSI(i), WiFi.SSID(i).c_str(), WiFi.BSSIDstr(i).c_str(),WiFi.channel(i), convertEncryptionType(WiFi.encryptionType(i))); 
-      Serial.printf_P(PSTR("[WIFISE] Scan adding %s, chan %d, rssi %d\n"), WiFi.SSID(i).c_str(), WiFi.channel(i), WiFi.RSSI(i));
-    }
-    response->print(F("]}"));
+      while((w+len) <= maxLen) {
+        if(netIndex > 0) {
+          w += sprintf_P((char*)(buffer+w), PSTR(","));
+        }
+        Serial.printf_P(PSTR("[WIFISE] Scan adding %d.: %s, chan %d, rssi %d\n"), netIndex, WiFi.SSID(netIndex).c_str(), WiFi.channel(netIndex), WiFi.RSSI(netIndex));
+        w += sprintf_P((char*)(buffer+w), NetworkTemplate, WiFi.RSSI(netIndex), WiFi.SSID(netIndex).c_str(), WiFi.BSSIDstr(netIndex).c_str(),WiFi.channel(netIndex), WiFiScannerEndpoint::convertEncryptionType(WiFi.encryptionType(netIndex)));
+        ++netIndex;
+        if(netIndex == numNetworks) {
+          break;
+        }
+        len = strlen_P(NetworkTemplate) + WiFi.SSID(netIndex).length() + WiFi.BSSIDstr(netIndex).length() + 3;
+      }
+      if(netIndex == numNetworks) {
+        w += sprintf_P((char*)(buffer+w), PSTR("]}"));
+      }
+      ++netIndex;
+      return w;
+    });
+
+    response->addHeader(F("Cache-Control"),F("No-Store"));
     request->send(response);
   } else if (numNetworks == -1) {
     request->send(202);

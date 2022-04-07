@@ -179,7 +179,7 @@ class WiFiScannerEndpoint {
   void scanNetworks(AsyncWebServerRequest* request);
   void listNetworks(AsyncWebServerRequest* request);
 
-  uint8_t convertEncryptionType(uint8_t encryptionType);
+  static uint8_t convertEncryptionType(uint8_t encryptionType);
 };
 
 
