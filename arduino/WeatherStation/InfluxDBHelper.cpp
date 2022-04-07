@@ -79,8 +79,8 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
   // Report temperature and humidity
   _sensor.addField(F("Temperature"), temp);
   _sensor.addField(F("Humidity"), hum);
-  _sensor.addField(F("lat"), lat, 6);
-  _sensor.addField(F("lon"), lon, 6);
+  _sensor.addField(F("Lat"), lat, 6);
+  _sensor.addField(F("Lon"), lon, 6);
 
    // Print what are we exactly writing
   Serial.print(F("Writing: "));
