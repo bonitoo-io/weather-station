@@ -31,8 +31,8 @@ int DisplaySettings::save(JsonObject& root) {
 int DisplaySettings::load(JsonObject& root) {
   screenRotateInterval = root[F("screenRotateInterval")];
   screens = root[F("screens")].as<const char *>();
-  nightModeBegin = root[F("nightModeBegin")];
-  nightModeEnd = root[F("nightModeEnd")];
+  nightModeBegin = root[F("nightModeBegin")] | DISPLAY_DEFAUT_NIGHT_MODE_BEGIN ;
+  nightModeEnd = root[F("nightModeEnd")] | DISPLAY_DEFAUT_NIGHT_MODE_END;
   print(F("Load Display settings"));
   return 0;
 }
