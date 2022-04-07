@@ -412,7 +412,7 @@ void WiFiManager::statusResponseSent() {
 }
 
 void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
-  Serial.printf_P(PSTR("[WIFIM] WiFi Got IP. localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
+  Serial.printf_P(PSTR("[WIFIM] WiFi got localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
 }
 
 void WiFiManager::onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
