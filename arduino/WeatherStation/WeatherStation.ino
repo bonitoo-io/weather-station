@@ -65,7 +65,8 @@ APInfo *pAPInfo = nullptr;
 bool initialized = false;
 String resetReason;
 bool bForceUpdate = false;
-uint16_t nextUIUpdate = 0;
+unsigned long nextUIUpdate = 0;
+bool skipNightScreen = false;
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -74,6 +75,8 @@ bool updateClock( bool firstStart, int utc_offset, const String &ntp);
 bool updateAstronomy(bool firstStart, const float lat, const float lon);
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey);
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
+void drawNight(OLEDDisplay *display);
+uint8_t isNightMode( DisplaySettings *pDisplaySettings);
 
 void initData() {
   if(!initialized && WiFi.isConnected() && !pAPInfo) {
@@ -171,7 +174,10 @@ void setup() {
 
 void updateData(OLEDDisplay *display, bool firstStart) {
   WS_DEBUG_RAM("UpdateData");
-  digitalWrite( PIN_LED, LOW);
+  skipNightScreen = false; //restore night screen mode if skipped
+  
+  if (!isNightMode(station.getDisplaySettings()))
+    digitalWrite( PIN_LED, LOW);
 
   if (!firstStart) {
     if (influxdbHelper.getWriteSuccess() == 0) { //without any successfull write?
@@ -368,7 +374,8 @@ void loop() {
 
       //Sync IoT Center configuration
       if (lastUpdateMins % conf.iotRefreshMin == 0 && conf.iotCenterUrl.length()) {
-        digitalWrite( PIN_LED, LOW);
+        if (!isNightMode(station.getDisplaySettings()))
+          digitalWrite( PIN_LED, LOW);
         // TODO: better solution for updating Settings from IoT center
         auto influxDBSettings = station.getInfluxDBSettings();
         ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
@@ -391,7 +398,8 @@ void loop() {
 
       //Update data?
       if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || bForceUpdate) {
-        digitalWrite( PIN_LED, LOW);
+        if (!isNightMode(station.getDisplaySettings()))
+          digitalWrite( PIN_LED, LOW);
         updateData(&display,false);
         digitalWrite( PIN_LED, HIGH);
         bForceUpdate = false;
@@ -399,7 +407,8 @@ void loop() {
 
       //Write into InfluxDB
       if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
-        digitalWrite( PIN_LED, LOW);
+        if (!isNightMode(station.getDisplaySettings()))
+          digitalWrite( PIN_LED, LOW);
         pSensor->saveTempHist();  //Save temperature for the chart
         ESP.wdtFeed();
         ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
@@ -427,6 +436,9 @@ void loop() {
   unsigned int loops = 0;
   while (digitalRead(PIN_BUTTON) == LOW) {  //Pushed boot button?
     if (loops == 0) {
+      skipNightScreen ^= 1; //flip skip night screen status
+      if (skipNightScreen)
+        nextUIUpdate = 0; //reset counter to show immediatelly standard screens
       Serial.println( F("Button BOOT"));
       if(!pAPInfo) {
         ui.nextFrame();   //jump to the next frame
@@ -452,10 +464,16 @@ void loop() {
     drawAPInfo(&display, pAPInfo);
   }
 
-  if(initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis())<=0 ))) {
+  if (initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
     ESP.wdtFeed();
-    int remainingTimeBudget = ui.update();
-    nextUIUpdate = millis()+remainingTimeBudget;
+    if (skipNightScreen || !isNightMode(station.getDisplaySettings())) {
+      int remainingTimeBudget = ui.update();
+      nextUIUpdate = millis() + remainingTimeBudget;
+    } else {
+      drawNight(&display);
+      nextUIUpdate = millis() + ((uint16_t)isNightMode(station.getDisplaySettings()) * 1000);
+      //Serial.println( "Night screen: " + String(isNightMode(station.getDisplaySettings())) + " millis: " + String(millis()) + " next: " + String(nextUIUpdate));
+    }
     // reached basic bussiness loop end
     ServicesTracker.clearResetCount();
   }
