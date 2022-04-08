@@ -11,7 +11,7 @@ import DateFnsUtils from '@date-io/date-fns'
 import { AdvancedSettings, ValidationStatus, ValidationStatusResponse } from './types';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Checkbox, LinearProgress, Link, Typography } from '@material-ui/core';
-import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
+import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT, numberToTime, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
 
 
 const styles = (theme: Theme) => createStyles({ 
@@ -35,12 +35,6 @@ interface AdvancedSettingsFormState {
   errorMessage?: string;
 }
 
-function numberToTime(tm: number) {
-  let dt : MaterialUiPickersDate = new Date(0)
-  dt.setHours(Math.floor(tm/100))
-  dt.setMinutes(Math.floor(tm % 100))
-  return dt
-}
 
 const UpdateDataErrorText = 'Must be a number between 30 and 1440 (24 hours)'
 
@@ -89,12 +83,12 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     )
   }
 
-  changeTime = (valueSetter: (name: string, val: any)=>void ) =>(date: MaterialUiPickersDate) => {
+  changeTime = (name: string, valueSetter: (name: string, val: any)=>void ) =>(date: MaterialUiPickersDate) => {
     if(!date) {
       return
     }
     const val = date.getHours()*100+date.getMinutes()
-    valueSetter('updateTime', val)
+    valueSetter(name, val)
   } 
 
 
@@ -177,7 +171,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
                 label="Firmware Auto Upgrade Time"
                 value={updateTime}
                 ampm={!data.use24Hours}
-                onChange={this.changeTime(handleDirectValueChange)}
+                onChange={this.changeTime('updateTime', handleDirectValueChange)}
                 margin = "normal"
                 fullWidth
               />

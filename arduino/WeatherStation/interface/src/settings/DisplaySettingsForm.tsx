@@ -4,10 +4,15 @@ import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 import { isValidScreens } from '../validators';
 import SaveIcon from '@material-ui/icons/Save';
 
-import { RestFormProps, FormActions, FormButton } from '../components';
+import { RestFormProps, FormActions, FormButton, BlockFormControlLabel } from '../components';
 
 import { DisplaySettings } from './types';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
+import { numberToTime } from '../api';
+import { Checkbox, FormHelperText } from '@material-ui/core';
+import { MuiPickersUtilsProvider, TimePicker } from '@material-ui/pickers';
+import DateFnsUtils from '@date-io/date-fns';
+import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 
 
 const styles = (theme: Theme) => createStyles({ 
@@ -53,9 +58,31 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
     valueSetter(name, val.toUpperCase())
   }
 
+  handleEnableNightMode =  (event: React.ChangeEvent<HTMLInputElement>) => {
+    const {data} = this.props
+    if(event.target.checked) {
+      data.nightModeBegin = 2200
+      data.nightModeEnd = 700
+    } else {
+      data.nightModeBegin = data.nightModeEnd = 0
+    }
+    this.setState({data})
+  }
+
+
+  changeTime = (name: string, valueSetter: (name: string, val: any)=>void ) =>(date: MaterialUiPickersDate) => {
+    if(!date) {
+      return
+    }
+    const val = date.getHours()*100+date.getMinutes()
+    valueSetter(name, val)
+  } 
+
   render() {
     const { data, handleValueChange, handleDirectValueChange }  = this.props;
-
+    const nightModeBegin = numberToTime(data.nightModeBegin)
+    const nightModeEnd = numberToTime(data.nightModeEnd)
+    const nightModeDisabled = data.nightModeBegin === data.nightModeEnd
     return (
         <ValidatorForm onSubmit={this.saveData} ref={this.form}>
           <TextValidator
@@ -83,6 +110,41 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
               margin="normal"
               helperText="How long a screen on display stays before changes"
             />
+            <BlockFormControlLabel
+            control={
+              <Checkbox
+                value="nightModeDisabled"
+                checked={!nightModeDisabled}
+                onChange={this.handleEnableNightMode}
+              />
+            }
+            label="Night Mode"
+          />
+          <FormHelperText>
+            OLED screen displays just time in the Night Mode
+          </FormHelperText >
+          <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <TimePicker
+                label="Night Mode Start"
+                value={nightModeBegin}
+                ampm={!data.use24Hours}
+                onChange={this.changeTime('nightModeBegin', handleDirectValueChange)}
+                margin = "normal"
+                fullWidth
+                disabled = {nightModeDisabled}
+              />
+            </MuiPickersUtilsProvider>
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <TimePicker
+                label="Night Mode End"
+                value={nightModeEnd}
+                ampm={!data.use24Hours}
+                onChange={this.changeTime('nightModeEnd', handleDirectValueChange)}
+                margin = "normal"
+                fullWidth
+                disabled = {nightModeDisabled}
+              />
+            </MuiPickersUtilsProvider>
           
           <FormActions>
             <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">

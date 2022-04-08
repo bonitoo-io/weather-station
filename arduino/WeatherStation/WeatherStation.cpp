@@ -195,7 +195,7 @@ void WeatherStation::registerEndpoints() {
     _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
     _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(_server, &_persistence, &_advancedSettings, &_regionalSettings);
     _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(_server, &_regionalSettings);
-    _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(_server, &_persistence, &_displaySettings);
+    _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(_server, &_persistence, &_displaySettings, &_regionalSettings);
     // Serve static resources from PROGMEM
     WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler, 
       this, 

@@ -56,4 +56,7 @@ export interface DisplaySettings {
   // in seconds
   screenRotateInterval: number;
   screens: string;
+  nightModeBegin: number;
+  nightModeEnd: number;
+  use24Hours: boolean;
 }

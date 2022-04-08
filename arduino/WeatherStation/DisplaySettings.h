@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 #include "AdvancedSettings.h"
+#include "RegionalSettings.h"
 
 #define DISPLAY_DEFAUT_SCREEN_ROTATE_INTERVAL 10
 #define DISPLAY_SETTINGS_ENDPOINT_PATH "/api/displaySettings"
@@ -31,7 +32,9 @@ class DisplaySettings : public Settings {
 
 class DisplaySettingsEndpoint : public SettingsEndpoint {
 public:
-    DisplaySettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, DisplaySettings *pSettings);
+  DisplaySettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, DisplaySettings *pSettings, RegionalSettings *pRegionalSettings);
+private:
+  RegionalSettings *_pRegionalSettings;
 };
 
 #endif //WS_DISPLAY_SETTINGS_H
