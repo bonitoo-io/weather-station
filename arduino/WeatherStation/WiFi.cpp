@@ -193,12 +193,18 @@ again:
         } else {
           // not possible to found any connectable network
           Serial.println(F("[WIFIM] Not possible to connect"));
-          _manageDelay = MANAGE_NETWORK_DELAY;
+          // Some AP rejects first connect with WIFI_DISCONNECT_REASON_ASSOC_EXPIRE or WIFI_DISCONNECT_REASON_ASSOC_LEAVE
+          if(_connectAttempts < 3 && (_lastDisconnectReason == WIFI_DISCONNECT_REASON_ASSOC_EXPIRE || _lastDisconnectReason == WIFI_DISCONNECT_REASON_ASSOC_LEAVE)) {
+            _manageDelay = SCAN_NETWORK_DELAY;
+          } else {
+            _manageDelay = MANAGE_NETWORK_DELAY;
+          }
           enterState(WiFiConnectingState::NotConnected);
         }
         break;  
       case WiFiConnectingState::ConnectingSuccess:
         _manageDelay = MANAGE_NETWORK_DELAY;
+        _connectAttempts = 0;
         cleanNetworks();
         enterState(WiFiConnectingState::Idle);
         if(_pApInfo) {
@@ -258,6 +264,7 @@ bool WiFiManager::startSTA(WiFiSettings *pConfig, WiFiNetwork *pNetwork) {
     Serial.println(F("[WIFIM] error, empty ssid!"));
     return false;
   }
+  ++_connectAttempts;
   if (pConfig->staticIPConfig) {
       // configure for static IP
       WiFi.config(pConfig->localIP, pConfig->gatewayIP, pConfig->subnetMask, pConfig->dnsIP1, pConfig->dnsIP2);
