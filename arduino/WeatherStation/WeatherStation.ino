@@ -176,8 +176,9 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   WS_DEBUG_RAM("UpdateData");
   skipNightScreen = false; //restore night screen mode if skipped
   
-  if (!isNightMode(station.getDisplaySettings()))
+  if (!isNightMode(station.getDisplaySettings())) {
     digitalWrite( PIN_LED, LOW);
+  }
 
   if (!firstStart) {
     if (influxdbHelper.getWriteSuccess() == 0) { //without any successfull write?
@@ -374,8 +375,9 @@ void loop() {
 
       //Sync IoT Center configuration
       if (lastUpdateMins % conf.iotRefreshMin == 0 && conf.iotCenterUrl.length()) {
-        if (!isNightMode(station.getDisplaySettings()))
+        if (!isNightMode(station.getDisplaySettings())) {
           digitalWrite( PIN_LED, LOW);
+        }
         // TODO: better solution for updating Settings from IoT center
         auto influxDBSettings = station.getInfluxDBSettings();
         ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
@@ -398,8 +400,9 @@ void loop() {
 
       //Update data?
       if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || bForceUpdate) {
-        if (!isNightMode(station.getDisplaySettings()))
+        if (!isNightMode(station.getDisplaySettings())) {
           digitalWrite( PIN_LED, LOW);
+        }
         updateData(&display,false);
         digitalWrite( PIN_LED, HIGH);
         bForceUpdate = false;
@@ -407,8 +410,9 @@ void loop() {
 
       //Write into InfluxDB
       if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
-        if (!isNightMode(station.getDisplaySettings()))
+        if (!isNightMode(station.getDisplaySettings())) {
           digitalWrite( PIN_LED, LOW);
+        }
         pSensor->saveTempHist();  //Save temperature for the chart
         ESP.wdtFeed();
         ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
