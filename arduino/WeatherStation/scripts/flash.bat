@@ -1,6 +1,6 @@
 @echo off
-SET COM_PORT=COM6
-SET BIN_FILE=ws-firmware-0.58-rc9.bin
+SET COM_PORT=COM14
+SET BIN_FILE=ws-firmware-1.01.bin
 SET SDK_VERSION=3.0.2
 SET SDK_VERSION_TOOLS=3.7.2-post1
 

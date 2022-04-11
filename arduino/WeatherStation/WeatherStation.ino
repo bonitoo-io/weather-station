@@ -24,6 +24,7 @@ Global variables use 37172 bytes (45%) of dynamic memory, leaving 44748 bytes fo
 #include "Version.h"
 #include "ServiceState.h"
 #include "ScreenCommon.h"
+#include "WiFi.h"
 
 //See https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define OPEN_WEATHER_MAP_API_KEY ""
@@ -136,8 +137,7 @@ void setup() {
   pinMode(PIN_BUTTON, INPUT);
   pinMode(PIN_LED, OUTPUT);
   digitalWrite( PIN_LED, HIGH);
-  setupSensor();
-
+  
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
   
@@ -165,6 +165,7 @@ void setup() {
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
+  setupSensor(getKnownWiFiNetworksCount(station.getPersistence()) == 0);
   WS_DEBUG_RAM("Setup 2");
 
   setLanguage( pRegionalSettings->language.c_str());  
@@ -321,7 +322,6 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 }
 
 
-
 void loop() {
   station.loop();
   // Needs to be done asynchronously
@@ -442,7 +442,7 @@ void loop() {
     if (loops == 0) {
       skipNightScreen ^= 1; //flip skip night screen status
       if (skipNightScreen)
-        nextUIUpdate = 0; //reset counter to show immediatelly standard screens
+        nextUIUpdate = 0; //reset counter to show immediately standard screens
       Serial.println( F("Button BOOT"));
       if(!pAPInfo) {
         ui.nextFrame();   //jump to the next frame

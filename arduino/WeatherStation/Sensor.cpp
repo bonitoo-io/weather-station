@@ -8,7 +8,7 @@
 
 Sensor* pSensor = nullptr;
 
-bool setupSensor() {
+bool setupSensor( bool ignoreSensorOffsets) {
   if (SensorSHT::driverDetect()) {
     Serial.println( F("Detected sensor SHTC3"));
     pSensor = new SensorSHT(); 
@@ -17,7 +17,7 @@ bool setupSensor() {
     pSensor = new SensorDHT();
   }
   if (pSensor) {
-    if (pSensor->setup())  //initialize sensor 
+    if (pSensor->setup(ignoreSensorOffsets))  //initialize sensor 
       return true;
     else  
       Serial.println( F("Sensor setup error!"));
@@ -25,7 +25,7 @@ bool setupSensor() {
   return false;
 }
 
-bool Sensor::setup() {
+bool Sensor::setup( bool ignoreSensorOffsets) {
   driverSetup(); //initialize sensor
   float t = driverGetTemp();
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
@@ -42,6 +42,11 @@ bool Sensor::setup() {
     station.getAdvancedSettings()->humOffset = 55 - h;  //set humidity to 55%
     Serial.print( F("DHT humidity autocalibration offset: "));
     Serial.println( station.getAdvancedSettings()->humOffset);
+  }
+  if (ignoreSensorOffsets) {
+    Serial.println( F("Clearing temp and hum offsets"));
+    station.getAdvancedSettings()->tempOffset = 0;
+    station.getAdvancedSettings()->humOffset = 0;
   }
   _tempFilt.init( t + (station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset)); //prepare median filter data
   _humFilt.init( float2Int(h + station.getAdvancedSettings()->humOffset)); //prepare median filter data
@@ -182,5 +187,5 @@ void drawSensor(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawString(80 + x, 15 + y, Sensor::strHum(pSensor->getHum()));
 
   display->setFont(Meteocons_Plain_21);
-  display->drawString(-7 + x, 19 + y, F("'")); //show thermomether symbol
+  display->drawString(-7 + x, 19 + y, F("'")); //show thermometer symbol
 }
