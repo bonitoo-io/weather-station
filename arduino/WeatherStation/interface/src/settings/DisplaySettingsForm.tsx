@@ -16,16 +16,8 @@ import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 
 
 const styles = (theme: Theme) => createStyles({ 
-   connectingSettings: {
-    margin: theme.spacing(0.5),
-  },
-  connectingSettingsDetails: {
-    margin: theme.spacing(4),
-    textAlign: "center"
-  },
-  connectingProgress: {
-    margin: theme.spacing(4),
-    textAlign: "center"
+  info: {
+    margin: theme.spacing(0.0)
   }
 });
 
@@ -39,6 +31,9 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
   form: RefObject<ValidatorForm>;
 
   saveData: () => void 
+
+  oldNighModeStartTime: number = 0;
+  oldNighModeEndTime: number = 0;
 
 
   constructor(props: DisplaySettingsFormProps) {
@@ -61,9 +56,11 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
   handleEnableNightMode =  (event: React.ChangeEvent<HTMLInputElement>) => {
     const {data} = this.props
     if(event.target.checked) {
-      data.nightModeBegin = 2200
-      data.nightModeEnd = 700
+      data.nightModeBegin = this.oldNighModeStartTime !==0?this.oldNighModeStartTime:2200
+      data.nightModeEnd = this.oldNighModeEndTime !==0?this.oldNighModeEndTime:700
     } else {
+      this.oldNighModeEndTime = data.nightModeEnd;
+      this.oldNighModeStartTime = data.nightModeBegin;
       data.nightModeBegin = data.nightModeEnd = 0
     }
     this.setState({data})
@@ -79,7 +76,7 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
   } 
 
   render() {
-    const { data, handleValueChange, handleDirectValueChange }  = this.props;
+    const { data, handleValueChange, handleDirectValueChange, classes }  = this.props;
     const nightModeBegin = numberToTime(data.nightModeBegin)
     const nightModeEnd = numberToTime(data.nightModeEnd)
     const nightModeDisabled = data.nightModeBegin === data.nightModeEnd
@@ -111,7 +108,7 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
               helperText="How long a screen on display stays before changes"
             />
             <BlockFormControlLabel
-            control={
+             control={
               <Checkbox
                 value="nightModeDisabled"
                 checked={!nightModeDisabled}
@@ -120,8 +117,8 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
             }
             label="Night Mode"
           />
-          <FormHelperText>
-            OLED screen displays just time in the Night Mode
+          <FormHelperText className={classes.info}>
+          Reduces light overnight. Screen shows only the current time. Press a button next to the screen to temporarily disable it.
           </FormHelperText >
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
               <TimePicker
