@@ -1,3 +1,4 @@
+
 // case Roman
 
 // won't change result just render faster but can result in visual bugs in preview                                       ------------
@@ -46,7 +47,7 @@ button_use_shell_width = true;
 // button stand out when use shell width enabled
 button_height_shell_added = .2;
 // bottom cylinder of button, this changes socket too
-button_height = 3;
+button_height = 4;
 // height of securing cylinder preventing button from falling out
 button_height2 = 3;
 // width of button visible from outside
@@ -56,7 +57,7 @@ button_width2 = 4;
 // width of slip-preventing button to board contact
 button_width3 = 4;
 // full height of button, can be dependent on button_use_shell_width
-button_height_full = 23;
+button_height_full = 24;
 // distance between button and socket
 button_clearance = .15;
 // how strong is button socket
