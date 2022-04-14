@@ -78,7 +78,7 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
       Serial.print(millis()-s);
       Serial.println(F("ms "));
     });  
-    if (request->header("If-Modified-Since").equals(htmlBuildTime)) {
+    if (request->header("If-None-Match").equals(ETag)) {
       // send not modified
       Serial.println(F(" Not modified"));
       request->send(304);
@@ -97,7 +97,8 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
       if(cont) {
         AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
         response->addHeader(F("Content-Encoding"), F("gzip"));
-        response->addHeader(F("Last-Modified"), htmlBuildTime);
+        response->addHeader(F("Cache-Control"), F("public, max-age=3600"));
+        response->addHeader(F("ETag"), ETag);
         request->send(response);
       }
     }

@@ -53,7 +53,7 @@ class ProgmemGenerator {
 
           const writeVariables = () => {
             writeStream.write('\n')
-            writeStream.write('const char *htmlBuildTime = __DATE__ " " __TIME__;\n')
+            writeStream.write('const char *ETag = __DATE__ "-" __TIME__;\n')
             writeStream.write('\n')
           }
 
