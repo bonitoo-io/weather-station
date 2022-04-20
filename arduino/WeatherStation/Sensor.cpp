@@ -8,7 +8,7 @@
 
 Sensor* pSensor = nullptr;
 
-bool setupSensor( bool ignoreSensorOffsets) {
+bool setupSensor() {
   if (SensorSHT::driverDetect()) {
     Serial.println( F("Detected sensor SHTC3"));
     pSensor = new SensorSHT(); 
@@ -17,7 +17,7 @@ bool setupSensor( bool ignoreSensorOffsets) {
     pSensor = new SensorDHT();
   }
   if (pSensor) {
-    if (pSensor->setup(ignoreSensorOffsets))  //initialize sensor 
+    if (pSensor->setup())  //initialize sensor 
       return true;
     else  
       Serial.println( F("Sensor setup error!"));
@@ -25,7 +25,7 @@ bool setupSensor( bool ignoreSensorOffsets) {
   return false;
 }
 
-bool Sensor::setup( bool ignoreSensorOffsets) {
+bool Sensor::setup() {
   driverSetup(); //initialize sensor
   float t = driverGetTemp();
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
@@ -37,19 +37,11 @@ bool Sensor::setup( bool ignoreSensorOffsets) {
     station.getAdvancedSettings()->humOffset = 0;
     Serial.println( F("DHT humidity overflow, zeroing offset"));
   }
-  //autocalibrate sensors with faulty humidity
-  if (!isnan(h) && (h > 0) && ( h < 36) && (station.getAdvancedSettings()->humOffset == 0)) { //if humidity is less than 36% (faulty offset)
-    station.getAdvancedSettings()->humOffset = 55 - h;  //set humidity to 55%
-    Serial.print( F("DHT humidity autocalibration offset: "));
-    Serial.println( station.getAdvancedSettings()->humOffset);
-  }
-  if (ignoreSensorOffsets) {
-    Serial.println( F("Clearing temp and hum offsets"));
-    station.getAdvancedSettings()->tempOffset = 0;
-    station.getAdvancedSettings()->humOffset = 0;
-  }
-  _tempFilt.init( t + (station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset)); //prepare median filter data
-  _humFilt.init( float2Int(h + station.getAdvancedSettings()->humOffset)); //prepare median filter data
+  t += station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset;
+  h += station.getAdvancedSettings()->humOffset;
+
+  _tempFilt.init( t); //prepare median filter data for temperature
+  _humFilt.init( float2Int( h)); //prepare median filter data for humidity
   //clean data
   for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
     _tempHistory[i] = NO_VALUE_INT;
@@ -84,7 +76,7 @@ void Sensor::internalLoadHum( bool secondRead) {
     return;
   }
   h += station.getAdvancedSettings()->humOffset; //Add offset
-  if (h > 100) {
+  if (h > 100) { //fix boundaries
     h = 100;
   } else if (h < 0) {
     h = 0;

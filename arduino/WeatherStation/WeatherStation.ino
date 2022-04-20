@@ -165,7 +165,7 @@ void setup() {
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
-  setupSensor(getKnownWiFiNetworksCount(station.getPersistence()) == 0);
+  setupSensor();
   WS_DEBUG_RAM("Setup 2");
 
   setLanguage( pRegionalSettings->language.c_str());  
