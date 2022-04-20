@@ -38,6 +38,8 @@ void WeatherStation::begin() {
     Serial.println(m->getError());
   }
   delete m;
+
+  _advancedSettings.begin();
   
   _persistence.readFromFS(&_influxDBSettings);
   _persistence.readFromFS(&_regionalSettings);

@@ -1,4 +1,10 @@
 # Changelog
+## 1.10
+## Features
+ - Display Night Mode
+## Fixes
+ - Faster initial WiFi reconnection 
+
 ## 1.01
 ## Fixes
   - Fixed limit on list of scanned WiFi networks 

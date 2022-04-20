@@ -4,8 +4,8 @@
 #define ADVANCED_DEFAUT_UPDATE_INTERVAL 60
 #define ADVANCED_DEFAUT_OPENWEATHER_API_KEY ""
 #define ADVANCED_DEFAUT_NTP_SERVERS "pool.ntp.org,time.nis.gov,time.google.com"
-#define ADVANCED_DEFAUT_TEMPERATURE_OFFSET 0
-#define ADVANCED_DEFAUT_HUMIDITY_OFFSET 0
+#define ADVANCED_DEFAUT_TEMPERATURE_OFFSET 0.0
+#define ADVANCED_DEFAUT_HUMIDITY_OFFSET 0.0
 #define ADVANCED_DEFAULT_OWNER F("bonitoo-io")
 #define ADVANCED_DEFAULT_REPO F("weather-station")
 #define ADVANCED_DEFAULT_BIN_FILE F("ws-firmware-%version%.bin")
@@ -28,8 +28,6 @@ AdvancedSettings::AdvancedSettings():
   updateDataInterval(ADVANCED_DEFAUT_UPDATE_INTERVAL),
   openWeatherAPIKey(F(ADVANCED_DEFAUT_OPENWEATHER_API_KEY)),
   ntpServers(F(ADVANCED_DEFAUT_NTP_SERVERS)),
-  tempOffset(ADVANCED_DEFAUT_TEMPERATURE_OFFSET),
-  humOffset(ADVANCED_DEFAUT_HUMIDITY_OFFSET),
   owner(ADVANCED_DEFAULT_OWNER),
   repo(ADVANCED_DEFAULT_REPO),
   binFile(ADVANCED_DEFAULT_BIN_FILE),
@@ -37,6 +35,16 @@ AdvancedSettings::AdvancedSettings():
   checkBeta(ADVANCED_DEFAULT_CHECKBETA),
   verifyCert(ADVANCED_DEFAULT_VERIFY_CERT)  {
   setUpdateTime(getDefaultUpdateTime());
+}
+
+void AdvancedSettings::begin() {
+  _eepromData.begin();
+  if(_eepromData.read()) {
+    _eepromData.setTempOffset(ADVANCED_DEFAUT_TEMPERATURE_OFFSET);
+    _eepromData.setHumOffset(ADVANCED_DEFAUT_HUMIDITY_OFFSET);
+  }
+  tempOffset = _eepromData.getTempOffset();
+  humOffset = _eepromData.getHumOffset(); 
 }
 
 void AdvancedSettings::setUpdateTime(uint16_t time) {
@@ -89,8 +97,6 @@ int AdvancedSettings::load(JsonObject& root) {
   updateDataInterval = root[F("updateDataInterval")];
   openWeatherAPIKey = root[FPSTR(OpenweatherApiKeyStr)].as<const char *>();
   ntpServers = root[F("ntpServers")].as<const char *>();
-  tempOffset = root[F("tempOffset")];
-  humOffset = root[F("humOffset")];
   owner = root[F("owner")] | String(ADVANCED_DEFAULT_OWNER);
   repo = root[F("repo")] | String(ADVANCED_DEFAULT_REPO);
   binFile = root[F("binFile")] | String(ADVANCED_DEFAULT_BIN_FILE);
@@ -101,6 +107,12 @@ int AdvancedSettings::load(JsonObject& root) {
 
   print(F("Load Advanced settings"));
   return 0;
+}
+
+void AdvancedSettings::updateEEPROMData() {
+  _eepromData.setTempOffset(tempOffset);
+  _eepromData.setHumOffset(humOffset);
+  _eepromData.write();
 }
 
 
@@ -114,10 +126,14 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPer
       jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *key = jsonObject[FPSTR(OpenweatherApiKeyStr)].as<const char *>();
+      AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
       if(strstr(key, ReplaceMark)) {
-        AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
         jsonObject[FPSTR(OpenweatherApiKeyStr)] = advSettings->openWeatherAPIKey;
       }
+      advSettings->tempOffset = jsonObject[F("tempOffset")];
+      advSettings->humOffset = jsonObject[F("humOffset")];
+      advSettings->updateEEPROMData();
+
     }), _pRegionalSettings(pRegionalSettings) {
     
 }

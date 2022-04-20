@@ -3,6 +3,7 @@
 
 #include "Settings.h"
 #include "RegionalSettings.h"
+#include "EEPROMData.h"
 
 #define ADVANCED_SETTINGS_ENDPOINT_PATH "/api/advancedSettings"
 #define ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH "/api/validateAdvancedSettings"
@@ -35,13 +36,18 @@ class AdvancedSettings : public Settings {
     bool verifyCert;
   protected:
     void setUpdateTime(uint16_t time);
+  private:
+    EEPROMData _eepromData;
   public:
     AdvancedSettings();
     virtual ~AdvancedSettings() {};
+
+    void begin();
     virtual int save(JsonObject& root) override;
     virtual int load(JsonObject& root) override;
     virtual void print(const __FlashStringHelper *title) override;
     virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/advancedSettings.json"); }
+    void updateEEPROMData();
 };
 
 class AdvancedSettingsEndpoint : public SettingsEndpoint {

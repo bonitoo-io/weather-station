@@ -13,7 +13,6 @@ bool FSPersistence::readFromFS(Settings *s) {
         DynamicJsonDocument jsonDocument = DynamicJsonDocument(DEFAULT_BUFFER_SIZE);
         DeserializationError error = deserializeJson(jsonDocument, settingsFile);
         if (error == DeserializationError::Ok && jsonDocument.is<JsonObject>()) {
-            Serial.println();
             JsonObject jsonObject = jsonDocument.as<JsonObject>();
             s->load(jsonObject);
             settingsFile.close();
