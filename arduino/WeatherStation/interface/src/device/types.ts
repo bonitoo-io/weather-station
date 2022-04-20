@@ -11,6 +11,7 @@ export interface AboutInfo {
   useMetric: boolean
   temp: number;
   hum: number;
+  sensorName: string;
   uptime: number;
   appState: AppState;
   error?: string;

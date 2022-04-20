@@ -22,6 +22,7 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   root[F("useMetric")] = _pRegionalSettings->useMetricUnits;
   root[F("temp")] = _pRegionalSettings->useMetricUnits ? Sensor::tempF2C(pSensor->getTemp(true)) : pSensor->getTemp(true);
   root[F("hum")] = pSensor->getHum(true);
+  root[F("sensorName")] = pSensor->getSensorName();
   root[F("uptime")] = millis();
   AppState state = AppState::Ok;
   if(!_wifiSettings->ssid.length() || !WiFi.isConnected()) {

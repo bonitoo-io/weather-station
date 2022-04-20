@@ -140,7 +140,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
               <ThermostatIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="Sensor values" secondary={sensors} />
+          <ListItemText primary="Sensor Values" secondary={sensors} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >

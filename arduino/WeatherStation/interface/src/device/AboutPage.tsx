@@ -7,6 +7,7 @@ import MemoryIcon from '@material-ui/icons/Memory';
 import DevicesIcon from '@material-ui/icons/Devices';
 import FilterIcon from '@material-ui/icons/Filter';
 import NoteIcon from '@material-ui/icons/Note';
+import ThermostatIcon from './ThermostatIcon';
 
 import { RestFormProps } from '../components';
 import { AboutInfo } from './types';
@@ -30,6 +31,15 @@ class AboutPage extends Component<AboutPageProps> {
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Version" secondary={data.version} />
+        </ListItem>
+        <Divider variant="inset" component="li" />
+        <ListItem >
+          <ListItemAvatar>
+            <Avatar>
+              <ThermostatIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Sensor Type" secondary={data.sensorName} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >
