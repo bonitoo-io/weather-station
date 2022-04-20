@@ -4,23 +4,8 @@
 #include "Settings.h"
 #include "RegionalSettings.h"
 
-
-#define ADVANCED_DEFAUT_UPDATE_INTERVAL 60
-#define ADVANCED_DEFAUT_OPENWEATHER_API_KEY ""
-#define ADVANCED_DEFAUT_NTP_SERVERS "pool.ntp.org,time.nis.gov,time.google.com"
-#define ADVANCED_DEFAUT_TEMPERATURE_OFFSET 0
-#define ADVANCED_DEFAUT_HUMIDITY_OFFSET 0
-#define ADVANCED_DEFAULT_OWNER F("bonitoo-io")
-#define ADVANCED_DEFAULT_REPO F("weather-station")
-#define ADVANCED_DEFAULT_BIN_FILE F("ws-firmware-%version%.bin")
-#define ADVANCED_DEFAULT_MD5_FILE F("ws-firmware-%version%.md5")
-#define ADVANCED_DEFAULT_UPDATETIME 300 //HHMM
-#define ADVANCED_DEFAULT_CHECKBETA  false
-#define ADVANCED_DEFAULT_VERIFY_CERT  false
 #define ADVANCED_SETTINGS_ENDPOINT_PATH "/api/advancedSettings"
 #define ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH "/api/validateAdvancedSettings"
-
-#include "custom_dev.h"
 
 class AdvancedSettings : public Settings {
   public:

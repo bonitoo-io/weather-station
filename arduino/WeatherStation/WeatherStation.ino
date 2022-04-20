@@ -137,6 +137,7 @@ void setup() {
   pinMode(PIN_BUTTON, INPUT);
   pinMode(PIN_LED, OUTPUT);
   digitalWrite( PIN_LED, HIGH);
+  setupSensor();
   
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
@@ -165,12 +166,10 @@ void setup() {
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
-  setupSensor();
   WS_DEBUG_RAM("Setup 2");
 
   setLanguage( pRegionalSettings->language.c_str());  
   WS_DEBUG_RAM("Setup 3");
-  
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
@@ -193,6 +192,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     Serial.println( influxdbHelper.getWriteSuccess());
     influxdbHelper.clearWriteSuccess(); //reset OK counter
   }
+  
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (station.getRegionalSettings()->detectAutomatically) {
     WS_DEBUG_RAM("Before IPloc");
