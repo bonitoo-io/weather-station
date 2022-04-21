@@ -17,7 +17,6 @@ void EEPROMData::begin() {
 }
 
 void EEPROMData::setTempOffset(float tempOffset) { 
-  Serial.printf_P(PSTR("EEPROMData: set temp %.1f\n"), tempOffset);
   if(_data.tempOffset != tempOffset) {
     _data.tempOffset = tempOffset;   
     _dirty = true;
@@ -25,7 +24,6 @@ void EEPROMData::setTempOffset(float tempOffset) {
 }
 
 void EEPROMData::setHumOffset(float humOffset) { 
-  Serial.printf_P(PSTR("EEPROMData: set hum %.1f\n"), humOffset);
   if(_data.humOffset != humOffset) {
     _data.humOffset = humOffset;   
     _dirty = true;
