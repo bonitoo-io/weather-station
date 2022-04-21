@@ -1,5 +1,6 @@
 #include "AdvancedSettings.h"
 #include "ScreenCommon.h"
+#include "Sensor.h"
 
 #define ADVANCED_DEFAUT_UPDATE_INTERVAL 60
 #define ADVANCED_DEFAUT_OPENWEATHER_API_KEY ""
@@ -124,6 +125,9 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPer
         jsonObject[FPSTR(OpenweatherApiKeyStr)] = obfuscateToken(advSettings->openWeatherAPIKey);
       }
       jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
+      jsonObject[F("useMetric")] = _pRegionalSettings->useMetricUnits;
+      jsonObject[F("actualTemp")] = _pRegionalSettings->useMetricUnits ? Sensor::tempF2C(pSensor->getTemp(true)) : pSensor->getTemp(true);
+      jsonObject[F("actualHum")] = pSensor->getHum(true);
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *key = jsonObject[FPSTR(OpenweatherApiKeyStr)].as<const char *>();
       AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;

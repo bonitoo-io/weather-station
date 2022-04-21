@@ -49,6 +49,11 @@ export interface AdvancedSettings {
   checkBeta: boolean;
   verifyCert: boolean;
   use24Hours: boolean;
+  actualTemp: number;
+  actualHum: number;
+  useMetric: boolean;
+  realTemp: string;
+  realHum: string;
 }
 
 

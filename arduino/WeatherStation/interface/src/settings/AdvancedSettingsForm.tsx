@@ -1,16 +1,18 @@
-import React, { Component, RefObject } from 'react';
+import React, { Component, Fragment, RefObject } from 'react';
 import { TextValidator, ValidatorForm } from 'react-material-ui-form-validator';
 
 import SaveIcon from '@material-ui/icons/Save';
+import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
 
-import { RestFormProps, FormActions, FormButton, BlockFormControlLabel } from '../components';
+import { RestFormProps, FormActions, FormButton, BlockFormControlLabel, ErrorButton } from '../components';
 import { MaterialUiPickersDate  } from '@material-ui/pickers/typings/date'
 import { TimePicker, MuiPickersUtilsProvider  } from '@material-ui/pickers'
 import DateFnsUtils from '@date-io/date-fns'
 
+
 import { AdvancedSettings, ValidationStatus, ValidationStatusResponse } from './types';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
-import { Checkbox, LinearProgress, Link, Typography } from '@material-ui/core';
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, Link, TextField, Typography } from '@material-ui/core';
 import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT, numberToTime, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
 
 
@@ -25,6 +27,10 @@ const styles = (theme: Theme) => createStyles({
   connectingProgress: {
     margin: theme.spacing(4),
     textAlign: "center"
+  },
+  error: {
+    margin: theme.spacing(0.5),
+    color: "red"
   }
 });
 
@@ -33,6 +39,7 @@ type AdvancedSettingsFormProps = RestFormProps<AdvancedSettings> & WithStyles<ty
 interface AdvancedSettingsFormState {
   validatingParams: boolean;
   errorMessage?: string;
+  calibrateSensor: boolean;
 }
 
 
@@ -48,6 +55,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
 
   state: AdvancedSettingsFormState = {
     validatingParams: false,
+    calibrateSensor: false
   };
 
   constructor(props: AdvancedSettingsFormProps) {
@@ -98,6 +106,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     const { validatingParams } = this.state
 
     return (
+      <Fragment>
         <ValidatorForm onSubmit={this.validateAndSaveParams} ref={this.form}>
           {validatingParams &&
             <div className={classes.connectingSettings}>
@@ -204,8 +213,13 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
             <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">
               Save
             </FormButton>
+            <FormButton startIcon={<SettingsBackupRestoreIcon />} variant="contained" color="secondary" onClick={this.onCalibrationOpen}>
+              Calibrate
+            </FormButton>
           </FormActions>
         </ValidatorForm>
+        {this.renderCalibrationDialog()}
+      </Fragment>
       )
   }
 
@@ -314,6 +328,111 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
         }
       });
   }
+
+  renderCalibrationDialog = () => {
+    const { data, handleValueChange, classes } = this.props
+    var sensors = ''
+    if(data.actualTemp) {
+      sensors = data.actualTemp.toFixed(1) + '°' + (data.useMetric?'C':'F')
+    }
+    if(data.actualHum) {
+      if(sensors.length) {
+        sensors += ' '
+      }
+      sensors += data.actualHum.toFixed(0) + '%'
+    }
+    if(sensors.length === 0) {
+      sensors = 'n/a'
+    }
+    return (
+      <Dialog
+        open={this.state.calibrateSensor}
+        onClose={this.onCalibrationClose}
+      >
+        <DialogTitle>Calibrate Sensor</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="subtitle1" className={classes.connectingSettings}>
+            Temperature and humidity offset must be zero before calibration<br/>
+            Sensor values: {sensors}
+          </Typography>
+          {this.state.errorMessage &&
+            <Typography variant="subtitle1" className={classes.error}>
+              {this.state.errorMessage}
+            </Typography>
+          }
+          <TextField
+              name="realTemp"
+              label="Temperature"
+              fullWidth
+              variant="outlined"
+              value={data.realTemp}
+              onChange={handleValueChange('realTemp')}
+              margin="normal"
+              helperText="A floating point number for temperature calibration"
+              focused
+            />
+            <TextField
+              name="realHum"
+              label="Humidity"
+              fullWidth
+              variant="outlined"
+              value={data.realHum}
+              onChange={handleValueChange('realHum')}
+              margin="normal"
+              helperText="A floating point number for humidity calibration"
+            />
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={this.onCalibrationClose} color="secondary">
+            Cancel
+          </Button>
+          <ErrorButton  variant="contained" onClick={this.onCalibrationSet}  autoFocus>
+            Calibrate
+          </ErrorButton>
+        </DialogActions>
+      </Dialog>
+    )
+  }
+
+  onCalibrationClose = () => {
+    this.setState({ calibrateSensor: false, errorMessage: "" });
+  }
+  onCalibrationOpen = () => {
+    this.setState({ calibrateSensor: true });
+  }
+
+  onCalibrationSet = () => {
+    const {data, setData } = this.props
+    if(data.realTemp && data.realTemp.length > 0 ) {
+      const i = data.realTemp.indexOf(',')
+      if(i > 0) {
+          data.realHum = data.realTemp.substring(i+1)
+          data.realTemp = data.realTemp.substring(0,i)
+      } 
+    } else {
+      this.setState({ errorMessage: "Temperature is required" }); 
+      return
+    }
+    const temp = parseFloat(data.realTemp)
+    if(isNaN(temp)) {
+      this.setState({ errorMessage: "Temperature is not a number" }); 
+      return
+    }
+    if(!data.realHum || !data.realHum.length) {
+      this.setState({ errorMessage: "Humidity is required" }); 
+      return
+    }
+    const hum = parseFloat(data.realHum)
+    if(isNaN(hum)) {
+      this.setState({ errorMessage: "Humidity is not a number" }); 
+      return
+    }
+    data.tempOffset = temp-data.actualTemp
+    data.humOffset = hum-data.actualHum
+    this.setState({ calibrateSensor: false, errorMessage: "" });
+    setData(data)
+  }
+
 }
 
 export default withStyles(styles)(AdvancedSettingsForm);
