@@ -413,7 +413,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
       this.setState({ errorMessage: "Temperature is required" }); 
       return
     }
-    const temp = parseFloat(data.realTemp)
+    let temp = parseFloat(data.realTemp)
     if(isNaN(temp)) {
       this.setState({ errorMessage: "Temperature is not a number" }); 
       return
@@ -427,8 +427,8 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
       this.setState({ errorMessage: "Humidity is not a number" }); 
       return
     }
-    data.tempOffset = temp-data.actualTemp
-    data.humOffset = hum-data.actualHum
+    data.tempOffset = Math.round((temp-data.actualTemp)*100)/100;
+    data.humOffset = Math.round((hum-data.actualHum)*100)/100;
     this.setState({ calibrateSensor: false, errorMessage: "" });
     setData(data)
   }
