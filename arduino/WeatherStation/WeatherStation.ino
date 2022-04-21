@@ -393,20 +393,26 @@ void loop() {
         digitalWrite( PIN_LED, HIGH);
       }
 
-      if(influxdbHelper.wasReleased()) {
-        influxdbHelper.begin(station.getInfluxDBSettings());
-        influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
-      }
 
       //Update data?
       if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || bForceUpdate) {
         if (!isNightMode(station.getDisplaySettings())) {
           digitalWrite( PIN_LED, LOW);
         }
+        if(bForceUpdate) {
+          // Delay update to let server connection settle
+          delay(1000);
+        }
         updateData(&display,false);
         digitalWrite( PIN_LED, HIGH);
         bForceUpdate = false;
       }
+
+      if(influxdbHelper.wasReleased()) {
+        influxdbHelper.begin(station.getInfluxDBSettings());
+        influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
+      }
+
 
       //Write into InfluxDB
       if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
