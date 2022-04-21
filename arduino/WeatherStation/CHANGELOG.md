@@ -1,9 +1,10 @@
 # Changelog
-## 1.10
+## 1.05
 ## Features
  - Display Night Mode
 ## Fixes
  - Faster initial WiFi reconnection 
+ - Improved web server response caching
 
 ## 1.01
 ## Fixes
