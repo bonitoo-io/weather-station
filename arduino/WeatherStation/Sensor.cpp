@@ -6,6 +6,8 @@
 #include "SensorDHT.h"
 #include "SensorSHT.h"
 
+#define DEC_PLACES 0
+
 Sensor* pSensor = nullptr;
 
 bool setupSensor() {
@@ -106,14 +108,14 @@ String Sensor::strTempUnit() {
   return String(station.getRegionalSettings()->useMetricUnits ? F("°C") : F("°F"));
 }
 
-String Sensor::strTempValue( float t) {
+String Sensor::strTempValue( float t, uint8_t decimalPlaces) {
   if (station.getRegionalSettings()->useMetricUnits)  //convert to C, if needed
     t = tempF2C(t);
-  return (isnan(t) ? String(F("??")) : String(t,0));
+  return (isnan(t) ? String(F("??")) : String(t,decimalPlaces));
 }
 
-String Sensor::strHum( float h) {
-  return (isnan(h) ? String(F("??")) : String(h,0)) + String(F("%"));  
+String Sensor::strHum( float h, uint8_t decimalPlaces) {
+  return (isnan(h) ? String(F("??")) : String(h,decimalPlaces)) + String(F("%"));  
 }
 
 //Compute Heat Index
@@ -175,8 +177,8 @@ void drawSensor(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   
-  display->drawString(8 + x, 15 + y, Sensor::strTemp(pSensor->getTemp()));
-  display->drawString(80 + x, 15 + y, Sensor::strHum(pSensor->getHum()));
+  display->drawString(8 + x, 15 + y, Sensor::strTemp(pSensor->getTemp(), DEC_PLACES));
+  display->drawString(80 + x, 15 + y, Sensor::strHum(pSensor->getHum(), DEC_PLACES));
 
   display->setFont(Meteocons_Plain_21);
   display->drawString(-7 + x, 19 + y, F("'")); //show thermometer symbol

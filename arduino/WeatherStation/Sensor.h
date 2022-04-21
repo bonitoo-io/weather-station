@@ -68,12 +68,12 @@ public:
   static float tempC2F(float c) { return isnan(c) ? NAN : (c * 9.0 / 5.0) + 32.0; };
   static float getHeatIndex(float temp, float hum);
   static String strTempUnit();
-  static        String strTempValue( float t);
+  static        String strTempValue( float t, uint8_t decimalPlaces = 0);
   static inline String strTempValueInt( int16_t t) { return strTempValue(int2Temp( t, false));};
-  static inline String strTemp( float t) { return strTempValue(t) + strTempUnit();};
+  static inline String strTemp( float t, uint8_t decimalPlaces = 0) { return strTempValue(t, decimalPlaces) + strTempUnit();};
   static inline String strTempInt( int16_t t, bool metric) { return strTemp(int2Temp( t, metric));};
   static inline String strTempInt( int16_t t) { return strTemp(int2Temp( t, false));};
-  static String strHum( float h);
+  static String strHum( float h, uint8_t decimalPlaces = 0);
   static inline String strHumInt( int16_t h) { return strHum( int2Float( h));};
 protected:
 //virtual functions for temperature/humidity sensors
