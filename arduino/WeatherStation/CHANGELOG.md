@@ -1,4 +1,8 @@
 # Changelog
+## 1.10
+## Features
+ - Sensor Calibration Dialog
+
 ## 1.05
 ## Features
  - Display Night Mode
