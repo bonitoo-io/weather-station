@@ -83,10 +83,10 @@ public:
     void begin();
     void loop();
     void end();
-    void setAPEventHandler(APEventHandler handler) { 
+    void setAPEventHandler(APEventHandler handler) {
         _apEventHandler = handler;
     }
-     void setWiFiConnectionEventHandler(WiFiConnectionEventHandler handler) { 
+     void setWiFiConnectionEventHandler(WiFiConnectionEventHandler handler) {
         _wifiEventHandler = handler;
     }
     int getLastDisconnectReason() const { return _lastDisconnectReason; }

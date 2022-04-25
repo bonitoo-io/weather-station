@@ -17,7 +17,7 @@ String loadParameter( const String& response, const __FlashStringHelper* param_p
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude) {
   if ( iot_url.length() == 0) //if iot_center url is not defined, exit
     return false;
-  
+
   // Load config from IoT Center
   WiFiClient client;
   HTTPClient http_config;
@@ -28,7 +28,7 @@ bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID
   http_config.begin( client, url);
   http_config.addHeader(String(F("Accept")), String(F("text/plain")));
   int httpCode = http_config.GET();
-  
+
   if (httpCode == HTTP_CODE_OK) {
     payload = http_config.getString();
     Serial.println(F("--Received configuration"));
@@ -69,7 +69,7 @@ bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID
     iotRefreshMin = loadParameter( payload, F("configuration_refresh")).toInt();
     if (iotRefreshMin == 0)
       iotRefreshMin = 60;
-    
+
     latitude = loadParameter( payload, F("default_lat")).toDouble();
     longitude = loadParameter( payload, F("default_lon")).toDouble();
   } else {

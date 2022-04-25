@@ -39,11 +39,11 @@ Global variables use 37328 bytes (45%) of dynamic memory, leaving 44592 bytes fo
 #define PIN_SCL    D5   //GPIO14
 #define I2C_OLED_ADDRESS 0x3c
 
-#include "custom_dev.h" //Custom development configuration - remove or comment it out 
+#include "custom_dev.h" //Custom development configuration - remove or comment it out
 
 tConfig conf = {
 //TODO: move iot center config to web config
-  IOT_CENTER_URL, //iotCenterUrl 
+  IOT_CENTER_URL, //iotCenterUrl
   60             //iotRefreshMin
 };
 
@@ -83,7 +83,7 @@ void initData() {
   if(!initialized && WiFi.isConnected() && !pAPInfo) {
     WS_DEBUG_RAM("InitData");
     updater.init(station.getAdvancedSettings(), VERSION);
-    
+
     //Initialize OLED UI
     initOLEDUI(&ui, station.getDisplaySettings());
     if(resetReason.length()) {
@@ -94,7 +94,7 @@ void initData() {
 
     //Load all data
     updateData(&display, true);
-   
+
     initialized = true;
   }
 }
@@ -106,7 +106,7 @@ void setup() {
   Serial.println();
   Serial.println();
 
-  ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored) 
+  ESP.wdtEnable(WDTO_8S); //8 seconds watchdog timeout (still ignored)
   Serial.println(F("Starting Weather station v" VERSION " built " __DATE__ " " __TIME__));
   WS_DEBUG_RAM("Setup 1");
 
@@ -129,7 +129,7 @@ void setup() {
   if(ServicesTracker.getResetCount() > 3) {
     for(int i=0; i<100;i++) {
       drawUpdateProgress(&display, i, getStr(s_Reset_wait));
-      delay(1000);  
+      delay(1000);
     }
   }
 
@@ -138,14 +138,14 @@ void setup() {
   pinMode(PIN_LED, OUTPUT);
   digitalWrite( PIN_LED, HIGH);
   setupSensor();
-  
+
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
-  
+
   station.getInfluxDBSettings()->setHandler([](){
     shouldSetupInfluxDb =  true;
   });
-  
+
   station.getAdvancedSettings()->setHandler([](){
     updater.init(station.getAdvancedSettings(), VERSION);
     bForceUpdate = true;
@@ -154,28 +154,28 @@ void setup() {
   RegionalSettings *pRegionalSettings = station.getRegionalSettings();
   pRegionalSettings->setHandler([pRegionalSettings](){
     if(!pRegionalSettings->detectAutomatically) {
-      setLanguage( pRegionalSettings->language.c_str());  
+      setLanguage( pRegionalSettings->language.c_str());
     }
-    bForceUpdate = true; 
+    bForceUpdate = true;
   });
 
   station.getDisplaySettings()->setHandler([](){
       configureUI(&ui, station.getDisplaySettings());
   });
-  
+
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
   WS_DEBUG_RAM("Setup 2");
 
-  setLanguage( pRegionalSettings->language.c_str());  
+  setLanguage( pRegionalSettings->language.c_str());
   WS_DEBUG_RAM("Setup 3");
 }
 
 void updateData(OLEDDisplay *display, bool firstStart) {
   WS_DEBUG_RAM("UpdateData");
   skipNightScreen = false; //restore night screen mode if skipped
-  
+
   if (!isNightMode(station.getDisplaySettings())) {
     digitalWrite( PIN_LED, LOW);
   }
@@ -192,7 +192,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     Serial.println( influxdbHelper.getWriteSuccess());
     influxdbHelper.clearWriteSuccess(); //reset OK counter
   }
-  
+
   drawUpdateProgress(display, 0, getStr(s_Detecting_location));
   if (station.getRegionalSettings()->detectAutomatically) {
     WS_DEBUG_RAM("Before IPloc");
@@ -216,8 +216,8 @@ void updateData(OLEDDisplay *display, bool firstStart) {
         station.saveRegionalSettings();
         setLanguage( station.getRegionalSettings()->language.c_str());
       }
-    } 
-    
+    }
+
     WS_DEBUG_RAM("After IPloc");
     if(!firstStart) {
       influxdbHelper.begin(station.getInfluxDBSettings());
@@ -274,7 +274,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   } else {
     ServicesTracker.updateServiceState(SyncServices::ServiceCurrentWeather, ServiceState::SyncFailed);
   }
-  
+
   ServicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncStarted);
   ServicesTracker.save();
   drawUpdateProgress(display, 60, getStr(s_Calculate_moon_phase));
@@ -283,7 +283,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   } else {
     ServicesTracker.updateServiceState(SyncServices::ServiceAstronomy, ServiceState::SyncFailed);
   }
-  
+
   drawUpdateProgress(display, 70, getStr(s_Updating_forecasts));
   ServicesTracker.updateServiceState(SyncServices::ServiceForecast, ServiceState::SyncStarted);
   ServicesTracker.save();
@@ -294,7 +294,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
 
   ServicesTracker.save(true);
-  
+
   drawUpdateProgress(display, 80, getStr(s_Connecting_InfluxDB));
 
   influxdbHelper.update( firstStart, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
@@ -304,7 +304,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     pSensor->saveTempHist();
   }
   drawUpdateProgress(display, 90, getStr(s_Saving_Status));
-  
+
   WS_DEBUG_RAM("After updates");
 
   ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteStatus, ServiceState::SyncStarted);
@@ -425,7 +425,7 @@ void loop() {
         ServicesTracker.save();
         //always save in celsius
         unsigned long start = millis();
-        if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTemp()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) { 
+        if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTemp()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
         } else {
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
@@ -441,7 +441,7 @@ void loop() {
        station.startServer();
     }
   }
-      
+
   //Handle BOOT button
   unsigned int loops = 0;
   while (digitalRead(PIN_BUTTON) == LOW) {  //Pushed boot button?
@@ -504,7 +504,7 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
         wifiSSID = ssid;
       }
       break;
-    case WifiConnectionEvent::ConnectingUpdate: 
+    case WifiConnectionEvent::ConnectingUpdate:
       wifiSSID = ssid;
       break;
     case WifiConnectionEvent::ConnectingSuccess:
@@ -539,7 +539,7 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
       if(info) {
         drawAPInfo(&display, info);
       }
-      break;  
+      break;
   }
 }
 

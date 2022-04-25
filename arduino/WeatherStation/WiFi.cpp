@@ -21,7 +21,7 @@ WiFiManager::WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings):
   // Disable WiFi config persistance and auto reconnect
   WiFi.persistent(false);
   WiFi.setAutoReconnect(false);
-  
+
   _onStationModeDisconnectedHandler =   WiFi.onStationModeDisconnected(std::bind(&WiFiManager::onStationModeDisconnected, this, std::placeholders::_1));
   _onStationModeConnectedHandler = WiFi.onStationModeConnected(std::bind(&WiFiManager::onStationModeConnected, this, std::placeholders::_1));
   _onStationModeGotIPHandler = WiFi.onStationModeGotIP(std::bind(&WiFiManager::onStationModeGotIP, this, std::placeholders::_1));
@@ -88,7 +88,7 @@ void WiFiManager::loop() {
       manageSTA();
       _lastConnectionAttempt = currentMillis;
     }
-    // try AP after only first conn attempt 
+    // try AP after only first conn attempt
     if (manageElapsed >= WIFI_RECONNECTION_DELAY) {
         manageAP(false);
     }
@@ -126,7 +126,7 @@ void WiFiManager::manageSTA() {
             startSTA(_pSettings);
             return;
           }
-          
+
           int c = getKnownWiFiNetworksCount(_pFsp);
           Serial.printf_P(PSTR("[WIFIM] Found %d save networks\n"),c);
           _firstStart = c == 0;
@@ -179,14 +179,14 @@ void WiFiManager::manageSTA() {
         }
         break;
       case WiFiConnectingState::ConnectingToHidden:
-again:        
+again:
         if(_wifiNetworkIndex < _savedNetworks.size()) {
           for(WiFiNetwork &wn : _foundNetworks) {
             if(wn.ssid == _savedNetworks[_wifiNetworkIndex]) {
               _wifiNetworkIndex++;
               goto again;
             }
-          } 
+          }
           loadSettings(_savedNetworks[_wifiNetworkIndex]);
           startSTA(_pSettings);
           _wifiNetworkIndex++;
@@ -201,7 +201,7 @@ again:
           }
           enterState(WiFiConnectingState::NotConnected);
         }
-        break;  
+        break;
       case WiFiConnectingState::ConnectingSuccess:
         _manageDelay = MANAGE_NETWORK_DELAY;
         _connectAttempts = 0;
@@ -226,7 +226,7 @@ again:
         Serial.println(F("[WIFIM] Testing config"));
         _lastDisconnectReason = 0;
         if(!startSTA(_pSettings)) {
-          enterState(WiFiConnectingState::TestingConfigFailed);  
+          enterState(WiFiConnectingState::TestingConfigFailed);
         }
         break;
       case WiFiConnectingState::SaveConfig:
@@ -277,7 +277,7 @@ bool WiFiManager::startSTA(WiFiSettings *pConfig, WiFiNetwork *pNetwork) {
     // attempt to connect to the network
   if(pNetwork) {
     Serial.printf_P(PSTR("[WIFIM] Connecting to %s, chan %d\n"), pNetwork->ssid.c_str(), pNetwork->channel);
-    WiFi.begin(pNetwork->ssid.c_str(), pConfig->password.c_str(), pNetwork->channel, pNetwork->bssid);  
+    WiFi.begin(pNetwork->ssid.c_str(), pConfig->password.c_str(), pNetwork->channel, pNetwork->bssid);
   } else {
     Serial.printf_P(PSTR("[WIFIM] Connecting to %s\n"), pConfig->ssid.c_str());
     WiFi.begin(pConfig->ssid.c_str(), pConfig->password.c_str());
@@ -372,7 +372,7 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
       case WiFiConnectingState::ConnectingToKnown:
         if(_wifiNetworkIndex < _foundNetworks.size()) {
           _foundNetworks[_wifiNetworkIndex].connectSkip = true;
-        } 
+        }
         break;
       case WiFiConnectingState::TestingConfig:
         enterState(WiFiConnectingState::TestingConfigFailed, true);
@@ -402,7 +402,7 @@ void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& ev
     _connectTestSuccess = true;
   }
   if(_state == WiFiConnectingState::TestingConfig) {
-    enterState(WiFiConnectingState::SaveConfig);  
+    enterState(WiFiConnectingState::SaveConfig);
   } else {
     enterState(WiFiConnectingState::ConnectingSuccess);
   }
@@ -457,7 +457,7 @@ void WiFiManager::connectToSavedNetwork(int index) {
 
 WiFiConnectionHelperEndpoint::WiFiConnectionHelperEndpoint(AsyncWebServer* pServer, WiFiManager *pWiFiManager)
 :_pWiFiManager(pWiFiManager) {
-  AsyncCallbackJsonWebHandler *pConnectHandler = new AsyncCallbackJsonWebHandler(F(CONNECT_TO_SAVED_ENDPOINT_PATH), 
+  AsyncCallbackJsonWebHandler *pConnectHandler = new AsyncCallbackJsonWebHandler(F(CONNECT_TO_SAVED_ENDPOINT_PATH),
                 std::bind(&WiFiConnectionHelperEndpoint::connectToSaved, this, std::placeholders::_1, std::placeholders::_2),
                 DEFAULT_BUFFER_SIZE);
     pConnectHandler->setMethod(HTTP_POST);
@@ -471,10 +471,10 @@ void WiFiConnectionHelperEndpoint::connectToSaved(AsyncWebServerRequest* request
         return;
     }
     JsonObject jsonObject = json.as<JsonObject>();
-    int id = jsonObject[FPSTR(StringId)].as<int>(); 
+    int id = jsonObject[FPSTR(StringId)].as<int>();
     if(id < 1) {
       String err = F("Invalid id ");
-      err += String(id);      
+      err += String(id);
       sendError(request, err);
       return;
     }
@@ -532,7 +532,7 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
       //Keep in mind that you can not delay or yield waiting for more data!
       if(netIndex >= numNetworks) {
         return (size_t)0;
-      } 
+      }
       size_t len = strlen_P(NetworkTemplate) + WiFi.SSID(netIndex).length() + WiFi.BSSIDstr(netIndex).length() + 3;
       //Serial.printf_P(PSTR("[WIFISE] Chunked resp: buff %d, len %d, index: %d\n"), maxLen, len, netIndex);
       size_t w = 0;
@@ -657,12 +657,12 @@ void WiFiListSavedEndpoint::deleteNetwork(AsyncWebServerRequest* request) {
       if(WiFi.SSID() == _savedNetworks[id-1]) {
         request->onDisconnect([](){
           WiFi.disconnect();
-        });  
+        });
       }
       listNetworks(request);
     } else {
       String err = F("Invalid id ");
-      err += idp->value();      
+      err += idp->value();
       sendError(request, err);
     }
   } else {
@@ -704,7 +704,7 @@ int8_t checkScanResult() {
   return WiFi.scanComplete();
 }
 
- 
+
 std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved)
 {
     int8_t scanResult;
@@ -760,7 +760,7 @@ std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved)
         found.push_back(wn);
     }
     return found;
-} 
+}
 
 void removeNetwork(FSPersistence *pFsp, const String &ssid) {
   pFsp->removeConfig(F(WIFI_CONFIG_DIRECTORY "/") + ssid);

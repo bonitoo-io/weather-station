@@ -7,7 +7,7 @@ static void writeResponseData(JsonObject &root,  ValidationStatus code, const ch
 
 ValidateParamsEndpoint::ValidateParamsEndpoint(AsyncWebServer* server, const  String &uri):
   _status(ValidationStatus::Idle) {
-  AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(uri, 
+  AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(uri,
                     std::bind(&ValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2),
                     DEFAULT_BUFFER_SIZE);
   updateHandler->setMethod(HTTP_POST);
@@ -36,10 +36,10 @@ void ValidateParamsEndpoint::validateParams(AsyncWebServerRequest* request, Json
       responseState = ValidationStatus::StartRequest;
     }
     AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
-    JsonObject responseJson = response->getRoot().to<JsonObject>();    
+    JsonObject responseJson = response->getRoot().to<JsonObject>();
     writeResponseData(responseJson, responseState);
     response->setLength();
-    response->setCode(200); 
+    response->setCode(200);
     request->send(response);
 }
 

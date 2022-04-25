@@ -9,7 +9,7 @@
 #define DEFAULT_WIFI_SSID ""
 #define DEFAULT_WIFI_PASSWORD ""
 
-#define WIFI_CONFIG_DIRECTORY FS_CONFIG_DIRECTORY "/wifi" 
+#define WIFI_CONFIG_DIRECTORY FS_CONFIG_DIRECTORY "/wifi"
 #define WIFI_HOSTNAME_PREFIX "weather-station-"
 #define WIFI_SETTINGS_ENDPOINT_PATH "/api/wifiSettings"
 #define WIFI_SETTINGS_OLD_FILE_NAME "wifiSettings.json"

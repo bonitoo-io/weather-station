@@ -31,7 +31,7 @@ typedef std::function<void(Settings *pSettings, JsonObject JsonObject)> DataMani
 
 class SettingsEndpoint {
 public:
-    SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, 
+    SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence,
         Settings *pSettings, DataManipulator fetchManipulator = nullptr, DataManipulator updateManipulator = nullptr, bool persist = true);
     virtual ~SettingsEndpoint() {};
 protected:

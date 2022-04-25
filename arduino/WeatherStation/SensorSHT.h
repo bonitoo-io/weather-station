@@ -6,7 +6,7 @@
 #include "Sensor.h"
 
 class SensorSHT : public Sensor {
-public:  
+public:
   ~SensorSHT();
   static bool driverDetect();
 protected:

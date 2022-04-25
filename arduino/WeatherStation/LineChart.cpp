@@ -25,9 +25,9 @@ void drawLineChart(OLEDDisplay *display, int16_t x, int16_t y) {
   max10 *= 10;
 
   float scale = 27.0 / (float)(max10-min10);
-  //Serial.println("-----");  
+  //Serial.println("-----");
   //Serial.println( "Min-Max-Scale: " + String(min10) + "-" + String(max10) + "-" + String(scale));
-  
+
   // Plot temperature graph
   int16_t x1 = 23;
   int16_t y1 = 36;
@@ -43,7 +43,7 @@ void drawLineChart(OLEDDisplay *display, int16_t x, int16_t y) {
     display->drawLine( mark + x, y1 + y, mark + x, y1+2 + y);
     display->drawString( mark + x, y1+1 + y, i == 90 ? getStr(s_now) : String(-90+i) + "m");
   }
-    
+
   // Vertical axis
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawLine( x1 + x, y1 + y, x1 + x, y1-30+y);

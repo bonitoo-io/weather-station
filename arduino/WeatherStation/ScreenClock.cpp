@@ -25,7 +25,7 @@ bool updateClock( bool firstStart, int utc_offset, const String &ntp) {
       i++;
     }
     Serial.println();
-  
+
     // Show time
     time_t now = time(nullptr);
     Serial.print(F("Synchronized time: "));

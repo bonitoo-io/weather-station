@@ -81,7 +81,7 @@ private:
     InfluxDBValidateParamsEndpoint *_influxdbValidateEndpoint = nullptr;
     SettingsEndpoint *_pRegionalSettingsEndpoint = nullptr;
     RegionalSettingsValidateEndpoint *_pRegionalSettingsValidateEndpoint = nullptr;
-    UploadFirmwareEndpoint *_pUploadFirmwareEndpoint = nullptr; 
+    UploadFirmwareEndpoint *_pUploadFirmwareEndpoint = nullptr;
     FWUploadFinishedCallback _fwUploadFinishedCallback = nullptr;
     AdvancedSettingsEndpoint *_pAdvancedSettingsEndpoint = nullptr;
     AdvancedSettingsValidateEndpoint *_pAdvancedSettingsValidateEndpoint = nullptr;

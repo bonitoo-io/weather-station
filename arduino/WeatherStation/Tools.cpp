@@ -6,7 +6,7 @@
 static const char DAYS_ENG[] PROGMEM = "Sun\0" "Mon\0" "Tue\0" "Wed\0" "Thu\0" "Fri\0" "Sat\0";
 static const char MONTHS_ENG[] PROGMEM = "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0" "Jul\0" "Aug\0" "Sep\0" "Oct\0" "Nov\0" "Dec\0";
 static const char MOON_ENG[] PROGMEM = "new moon\0" "waxing crescent\0" "first quarter\0" "waxing gibbous\0" "full moon\0" "waning gibbous\0" "third quarter\0" "waning crescent\0";
-static const char STR_ENG[] PROGMEM = 
+static const char STR_ENG[] PROGMEM =
 "Connecting WiFi\0" "Searching...\0" "or wait for setup\0" "Connecting IoT Center\0" "Delaying reset\0" "Detecting location\0" "Checking update\0" "Updating time\0" "Updating weather\0" "Calculate moon phase\0" "Updating forecasts\0" "Connecting InfluxDB\0" "Sending status\0" "Done\0"
 "Found update \0" "Starting update\0" "Update successful\0" "Restarting...\0" "Update failed \0" "Updating \0" "Restarting\0" "connect the following WiFi\nvia your phone or laptop\0" "follow the WiFi config steps\nor open browser with\0" "DEVICE CONFIGURATION:\0"
 "Weather Station\0" "Configure via:\0" "Forecast error\0"
@@ -52,7 +52,7 @@ String getPgmStr( const char* s, uint8_t index) {
   while ( index > 0) {
     if ( pgm_read_byte( ps) == 0)
       index--;
-    ps++;  
+    ps++;
   }
   return utf8ascii( String( FPSTR(ps)));
 }
@@ -64,7 +64,7 @@ void setLanguage( const char* lang) {
   } else {
     pLang = &languages[0];
   }
-  
+
   //Add other languages
   //....
 }
@@ -90,36 +90,36 @@ String strTime(time_t timestamp, bool shortTime) {
   char buf[9];
   if (shortTime)
     sprintf_P(buf, PSTR("%2d:%02d"), station.getRegionalSettings()->use24Hours ? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min);
-  else  
+  else
     sprintf_P(buf, PSTR("%02d:%02d:%02d"), station.getRegionalSettings()->use24Hours? timeInfo->tm_hour : (timeInfo->tm_hour+11)%12+1, timeInfo->tm_min, timeInfo->tm_sec);
   return String(buf);
 }
 
 String strTimeSuffix(time_t timestamp) {
-  struct tm *timeInfo = localtime(&timestamp);  
+  struct tm *timeInfo = localtime(&timestamp);
   return station.getRegionalSettings()->use24Hours ? "" : String(timeInfo->tm_hour>=12?F("pm"):F("am"));
 }
 
 String strDate(time_t timestamp, bool shortDate) {
   struct tm* timeInfo = localtime(&timestamp);
   char buff[25];
- 
+
   if (station.getRegionalSettings()->useYMDFormat) {
     if (shortDate)
       sprintf_P(buff, PSTR("%s %04d/%2d/%2d"), getDayName( timeInfo->tm_wday), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
-    else  
+    else
       sprintf_P(buff, PSTR("%s, %s\n%04d/%02d/%02d"), getDayName( timeInfo->tm_wday), getMonthName( timeInfo->tm_mon), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
   } else {
     if (shortDate)
       sprintf_P(buff, PSTR("%s %2d.%2d.%04d"), getDayName( timeInfo->tm_wday), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
-    else  
+    else
       sprintf_P(buff, PSTR("%s, %s\n%02d.%02d.%04d"), getDayName( timeInfo->tm_wday), getMonthName( timeInfo->tm_mon), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
   }
   return String(buff);
 }
 
 String strWind( unsigned int w) {
-  return String(w) + String(station.getRegionalSettings()->useMetricUnits? F("m/s") : F("mph"));  
+  return String(w) + String(station.getRegionalSettings()->useMetricUnits? F("m/s") : F("mph"));
 }
 
 // Convert UTF8-string to extended ASCII

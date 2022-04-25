@@ -1,7 +1,7 @@
 #include "FSPersistance.h"
 
-FSPersistence::FSPersistence(FS *fs):_fs(fs) { 
-    
+FSPersistence::FSPersistence(FS *fs):_fs(fs) {
+
 }
 
 bool FSPersistence::readFromFS(Settings *s) {
@@ -61,7 +61,7 @@ bool FSPersistence::begin() {
 void FSPersistence::removeConfigs() {
   traverseConfigs([this](const String &path, const String &fileName){
     removeConfig(path + "/" + fileName);
-  }, FS_CONFIG_DIRECTORY);  
+  }, FS_CONFIG_DIRECTORY);
 }
 
 bool FSPersistence::removeConfig(const String &getFilePath) {
@@ -69,10 +69,10 @@ bool FSPersistence::removeConfig(const String &getFilePath) {
 }
 
 std::vector<String> FSPersistence::listConfigs(const String &root, bool fileNameOnly) {
-  std::vector<String> list;  
+  std::vector<String> list;
   traverseConfigs([&](const String &path, const String &fileName){
     list.push_back(fileNameOnly?fileName:path + "/" + fileName);
-  }, root);  
+  }, root);
   return list;
 }
 

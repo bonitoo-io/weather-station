@@ -18,7 +18,7 @@ void RegionalSettings::print(const __FlashStringHelper *title) {
 }
 
 
-RegionalSettings::RegionalSettings(): 
+RegionalSettings::RegionalSettings():
   detectAutomatically(REGIONAL_SETTINGS_DEFAULT_DETECT),
   location(REGIONAL_SETTINGS_DEFAULT_CITY),
   language(REGIONAL_SETTINGS_DEFAULT_LANGUAGE),
@@ -29,7 +29,7 @@ RegionalSettings::RegionalSettings():
   use24Hours(REGIONAL_SETTINGS_DEFAULT_USE_24HOURS),
   useYMDFormat(REGIONAL_SETTINGS_DEFAULT_USE_YMD),
   forceEngMessages(false)
-  { 
+  {
 }
 
 int RegionalSettings::save(JsonObject& root) {

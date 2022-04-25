@@ -21,7 +21,7 @@ class InfluxDBSettings : public Settings {
   virtual int save(JsonObject& root) override;
   virtual int load(JsonObject& root) override;
   virtual void print(const __FlashStringHelper *title) override;
-  virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/influxDbSettings.json"); }  
+  virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/influxDbSettings.json"); }
 };
 
 class InfluxDBHelper {
@@ -30,7 +30,7 @@ class InfluxDBHelper {
   bool isError() {
     return _client && (!_client->getServerUrl().length() || _client->getLastErrorMessage().length());
   }
-  String errorMsg() { 
+  String errorMsg() {
     return _client?_client->getLastErrorMessage():"";
   }
   void begin( InfluxDBSettings *settings);

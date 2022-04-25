@@ -4,7 +4,7 @@
 bool SensorSHT::driverDetect() {
   Wire.begin();
   Wire.beginTransmission(0x70);
-  return Wire.endTransmission() == 0;  
+  return Wire.endTransmission() == 0;
 }
 
 bool SensorSHT::driverSetup() {
@@ -13,7 +13,7 @@ bool SensorSHT::driverSetup() {
     return false;
   if (!_pSht->init())
     return false;
-  _pSht->setAccuracy(SHTSensor::SHT_ACCURACY_HIGH); // only supported by SHT3x    
+  _pSht->setAccuracy(SHTSensor::SHT_ACCURACY_HIGH); // only supported by SHT3x
   return true;
 }
 
@@ -31,8 +31,8 @@ float SensorSHT::driverGetHum( bool secondRead) {
     return NAN;
 }
 
-SensorSHT::~SensorSHT() { 
-  if (_pSht) 
+SensorSHT::~SensorSHT() {
+  if (_pSht)
     delete _pSht;
-  _pSht = nullptr;  
+  _pSht = nullptr;
 }

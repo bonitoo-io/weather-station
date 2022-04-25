@@ -6,9 +6,9 @@
 #include "InfluxDBHelper.h"
 #include "DisplaySettings.h"
 
-class ScreenConstants { 
+class ScreenConstants {
  public:
-  static const char About; 
+  static const char About;
   static const char DateTimeAnalog;
   static const char DateTimeDigital;
   static const char SensorValues;
@@ -22,7 +22,7 @@ class ScreenConstants {
 
   static constexpr const char* getDefaultList() { return defaultList;};
 private:
-  static const char defaultList[];  
+  static const char defaultList[];
 };
 
 

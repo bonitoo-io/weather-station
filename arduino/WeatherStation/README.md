@@ -19,7 +19,7 @@ Weather station with OLED and WiFi (using ESP8266, SSD1306, and DHT11) with Infl
 
 ## Required Libraries
 
-Libraries are accessible via Library manager or must installed manually, if source URL is provided. 
+Libraries are accessible via Library manager or must installed manually, if source URL is provided.
 Indentation means transitive dependency, but such a library must be installed as well.
 
 * ESP8266 and ESP32 OLED driver for SSD1306 displays (by ThingPulse, Fabrice Weinberg)

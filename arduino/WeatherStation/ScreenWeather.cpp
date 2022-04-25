@@ -37,7 +37,7 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   }
   if (isnan(_currentWeather.temp)) {
     currentWeather.temp =  NO_VALUE_INT;
-    return false;  
+    return false;
   }
 
   currentWeather.temp =  Sensor::float2Int( _currentWeather.temp);
@@ -97,11 +97,11 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
     forecastError( display, x ,y);
     return;
   }
-  
+
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->drawString(display->getWidth() + x, 7 + y, utf8ascii(station.getRegionalSettings()->location));
-  
+
   display->drawString(display->getWidth() + x, 36 + y, String(F("(")) + Sensor::strTempValueInt(currentWeather.tempMin) + String(F("-")) + Sensor::strTempInt(currentWeather.tempMax) + String(F(")")));
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawString(0 + x, 36 + y, utf8ascii(currentWeather.description));
@@ -114,7 +114,7 @@ void drawCurrentWeather(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t
 
   display->setFont(Meteocons_Plain_36);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->drawString(0 + x, 3 + y, String(currentWeather.iconMeteoCon));  
+  display->drawString(0 + x, 3 + y, String(currentWeather.iconMeteoCon));
 }
 
 
@@ -122,12 +122,12 @@ void drawForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   time_t observationTimestamp = forecasts[dayIndex].observationTime;
   struct tm* timeInfo;
   timeInfo = localtime(&observationTimestamp);
-  
+
   display->setFont(ArialMT_Plain_10);
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
   display->drawString(x + 20, y + 38, Sensor::strTempInt(forecasts[dayIndex].temp));
-  
+
   display->setFont(Meteocons_Plain_21);
   display->drawString(x + 20, y + 17, String(forecasts[dayIndex].iconMeteoCon));
 }
@@ -161,22 +161,22 @@ void arrow(OLEDDisplay *display, int x1, int y1, int x2, int y2, int alength, in
   display->drawLine(x3, y3, x4, y4);
   display->drawLine(x3, y3, x2, y2);
   display->drawLine(x2, y2, x4, y4);
-} 
+}
 
 void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   time_t observationTimestamp = forecasts[dayIndex].observationTime;
   struct tm* timeInfo;
   timeInfo = localtime(&observationTimestamp);
-  
+
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
   display->drawString(x + 20, y + 5, getDayName(timeInfo->tm_wday));
-  
+
   const int clockSize=10;
   int clockCenterX=21+x;
   int clockCenterY=28+y;
   float f;
-  
+
   // Draw marks for hours
   for (unsigned int i=0; i<8; i++) {
     f = ((i * 45) + 270) * 0.0175;  //angle to radians

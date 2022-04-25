@@ -8,7 +8,7 @@
 WeatherStation::WeatherStation(InfluxDBHelper *influxDBHelper):
   _influxDBHelper(influxDBHelper),
   _persistence(&LittleFS),
-  _wifiManager(&_persistence,&_wifiSettings) 
+  _wifiManager(&_persistence,&_wifiSettings)
   {
 // Enable CORS for UI development
 #if 1
@@ -40,12 +40,12 @@ void WeatherStation::begin() {
   delete m;
 
   _advancedSettings.begin();
-  
+
   _persistence.readFromFS(&_influxDBSettings);
   _persistence.readFromFS(&_regionalSettings);
   _persistence.readFromFS(&_advancedSettings);
   _persistence.readFromFS(&_displaySettings);
-  
+
   _wifiManager.begin();
 }
 
@@ -79,7 +79,7 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
       Serial.print(F(" in "));
       Serial.print(millis()-s);
       Serial.println(F("ms "));
-    });  
+    });
     if (request->header("If-None-Match").equals(ETag)) {
       // send not modified
       Serial.println(F(" Not modified"));
@@ -105,7 +105,7 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
       }
     }
   };
-  
+
   _server->on(uri.c_str(), HTTP_GET, requestHandler);
   // Serving non matching get requests with "/index.html"
   // OPTIONS get a straight up 200 response
@@ -162,16 +162,16 @@ void WeatherStation::startServer() {
       _server = nullptr;
       return;
     }
-    _server->setFilter(std::bind(&WeatherStation::globalFilterHandler, 
-      this, 
+    _server->setFilter(std::bind(&WeatherStation::globalFilterHandler,
+      this,
       std::placeholders::_1));
-    _server->onDisconnect(std::bind(&WeatherStation::globalDisconnectHandler, 
-      this, 
+    _server->onDisconnect(std::bind(&WeatherStation::globalDisconnectHandler,
+      this,
       std::placeholders::_1));
-    
+
     // Serve static resources from PROGMEM
-    WWWData::registerIndex(std::bind(&WeatherStation::registerHandler, 
-      this, 
+    WWWData::registerIndex(std::bind(&WeatherStation::registerHandler,
+      this,
       std::placeholders::_1,
       std::placeholders::_2,
       std::placeholders::_3,
@@ -200,8 +200,8 @@ void WeatherStation::registerEndpoints() {
     _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(_server, &_regionalSettings);
     _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(_server, &_persistence, &_displaySettings, &_regionalSettings);
     // Serve static resources from PROGMEM
-    WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler, 
-      this, 
+    WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler,
+      this,
       std::placeholders::_1,
       std::placeholders::_2,
       std::placeholders::_3,

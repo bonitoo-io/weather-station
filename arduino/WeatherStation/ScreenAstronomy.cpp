@@ -16,7 +16,7 @@ bool updateAstronomy(bool firstStart, const float lat, const float lon) {
   // 'now' has to be UTC, lat/lng in degrees not raadians
   SunMoonCalc smCalc = SunMoonCalc(time(nullptr), lat, lon);
   SunMoonCalc::Result sunMoonData = smCalc.calculateSunAndMoonData();
-  
+
   moonRise = sunMoonData.moon.rise;
   moonSet = sunMoonData.moon.set;
   moonPhase = sunMoonData.moon.phase.index;

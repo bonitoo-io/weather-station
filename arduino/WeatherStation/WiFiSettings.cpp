@@ -29,10 +29,10 @@ char *createDefaultHostname() {
 
 char *WiFiSettings::DefaultHostname = nullptr;
 
-WiFiSettings::WiFiSettings(): 
+WiFiSettings::WiFiSettings():
   ssid(DEFAULT_WIFI_SSID),
   password(DEFAULT_WIFI_PASSWORD),
-  staticIPConfig(false) { 
+  staticIPConfig(false) {
   if(!DefaultHostname) {
     DefaultHostname = createDefaultHostname();
   }
@@ -83,7 +83,7 @@ int WiFiSettings::load(JsonObject& root) {
 
 
 WiFiSettingsEndpoint::WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, Settings *pSettings):
-    SettingsEndpoint(pServer, F(WIFI_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
+    SettingsEndpoint(pServer, F(WIFI_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
       jsonObject[FPSTR(StringPassword)] = obfuscateToken(wifiSettings->password, 0);

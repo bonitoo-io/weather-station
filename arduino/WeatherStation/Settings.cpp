@@ -2,15 +2,15 @@
 #include "IPUtils.h"
 #include "FSPersistance.h"
 
-SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, Settings *pSettings, 
+SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, Settings *pSettings,
     DataManipulator fetchManipulator, DataManipulator updateManipulator, bool persist):
-    _pSettings(pSettings), 
+    _pSettings(pSettings),
     _pPersistence(pPersistence),
     _fetchManipulator(fetchManipulator),
     _updateManipulator(updateManipulator),
     _persist(persist)
      {
-    AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(endpointPath, 
+    AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(endpointPath,
                 std::bind(&SettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
                 DEFAULT_BUFFER_SIZE);
     updateHandler->setMethod(HTTP_POST);

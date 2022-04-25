@@ -21,7 +21,7 @@ enum class AppState {
 
 class AboutInfoEndpoint {
  public:
-  AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
+  AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings,
     WiFiSettings *wifiSettings, RegionalSettings *pRegionalSettings, FS* fs);
 
  private:

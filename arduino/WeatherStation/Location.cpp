@@ -57,7 +57,7 @@ bool findCountry( const char* country, const char* list) {
   while ( pgm_read_byte( pl) != 0) {  //end of list?
     if ( cw == pgm_read_word( pl))
       return true;
-    pl += 2;   
+    pl += 2;
   }
   return false;
 }
@@ -84,7 +84,7 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
       c = client.read(&payload, sizeof(payload));
       parser.parse(payload);
     }
-    
+
   } else {
     Serial.print(F(" error: "));
     Serial.println( httpCode);
@@ -105,7 +105,7 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
   utc_offset += ipListener.utc_offset.toInt() * 60 * 60;
   if (minus)
     utc_offset = -utc_offset;
-  
+
   bool changed = false;
   if (pRegionalSettings->utcOffset != utc_offset) { //if utc offset is changed during refresh
     Serial.print( F("UTC offset changed from "));
@@ -123,11 +123,11 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
     Serial.print(pRegionalSettings->location);
     Serial.print( F(" to "));
     Serial.println(location);
-   
+
     pRegionalSettings->location = location;
     pRegionalSettings->latitude = ipListener.latitude;
     pRegionalSettings->longitude = ipListener.longitude;
-    pRegionalSettings->utcOffset = utc_offset;  
+    pRegionalSettings->utcOffset = utc_offset;
     changed = true;
   }
 
@@ -139,7 +139,7 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
     changed = true;
   }
 
-  //24-hours vs 12-hours clock detection  
+  //24-hours vs 12-hours clock detection
   bool use24Hours = !findCountry(country.c_str(), Countries12h);
   if ( pRegionalSettings->use24Hours != use24Hours) {
     pRegionalSettings->use24Hours = use24Hours;
@@ -152,7 +152,7 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
     pRegionalSettings->useMetricUnits = useMetricUnits;
     changed = true;
   }
-    
+
   //Date format YMD vs DMY
   bool useYMDFormat = findCountry(country.c_str(), CountriesDateYMD);
   if ( pRegionalSettings->useYMDFormat != useYMDFormat) {

@@ -18,7 +18,7 @@ public:
     _samples[2] = sample;
     return getValue();
   }
-  
+
   T getValue() {
     T median;
     if (_samples[2] < _samples[1]) {
@@ -58,7 +58,7 @@ public:
   inline void setHist( uint8_t pos, int16_t data) { if (pos < TEMP_HIST_SIZE) _tempHistory[pos]=data;};
   inline int16_t getRawHist(uint8_t pos) { return _tempHistory[pos];}
   inline const __FlashStringHelper * getSensorName() { return driverName();}
-  
+
 //Basic temperature and humidity handling functions (static - can be used without class instance)
   static int16_t temp2Int( float temp, bool metric);
   static float int2Temp( int16_t temp, bool metric) {return metric ? tempF2C(int2Float(temp)) : int2Float(temp);};

@@ -18,7 +18,7 @@
 const char *Token PROGMEM = "token";
 
 #define LOCK() { uint16_t _lc=3000; while(_lock) { delay(1); if(!--_lc) {Serial.println(F("Lock timeout!"));break; } } _lock = 1; }
-#define UNLOCK()  { _lock = 0; } 
+#define UNLOCK()  { _lock = 0; }
 
 InfluxDBHelper::InfluxDBHelper():_sensor("environment") {
 
@@ -52,9 +52,9 @@ void InfluxDBHelper::update( bool firstStart, const String &deviceID,  const Str
   if(!_client || !_client->getServerUrl().length()) {
     return;
   }
-  
+
   LOCK();
-  
+
   WriteOptions wo;
   wo.batchSize(2).bufferSize(4).maxRetryAttempts(0);
   wo.addDefaultTag(F("clientId"), deviceID);
@@ -93,15 +93,15 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
    // Print what are we exactly writing
   Serial.print(F("Writing: "));
   Serial.println(_client->pointToLineProtocol(_sensor));
-  
+
   // Write point
   bool res = _client->writePoint(_sensor);
-  if (!res) {  
+  if (!res) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
   }
-  
-  if ( !_client->flushBuffer()) { 
+
+  if ( !_client->flushBuffer()) {
     Serial.print(F("InfluxDB flush failed: "));
     Serial.println(_client->getLastErrorMessage());
     res = false;
@@ -110,7 +110,7 @@ bool InfluxDBHelper::write( float temp, float hum, const float lat, const float 
   if (res || (_client->getLastStatusCode() > 0)) { //successful write or some http error code received (skip only IP connection issues)?
     writeSuccess++;
   }
- 
+
   UNLOCK();
   return res;
 }
@@ -134,16 +134,16 @@ bool InfluxDBHelper::writeStatus() {
   status.addField(F("heap_fragmentation"), ESP.getHeapFragmentation());
   status.addField(F("uptime"), millis()/1000.0);
   status.addField(F("wifi_disconnects"), station.getWifiManager()->getDisconnectsCount());
-  
+
   Serial.print(F("Writing device status: "));
   Serial.println(_client->pointToLineProtocol(status));
-  
+
   if (!_client->writePoint(status)) {
     Serial.print(F("InfluxDB write failed: "));
     Serial.println(_client->getLastErrorMessage());
     res = false;
   }
-  
+
   // Write all statuses except write
   for (uint8_t i = 0; i < SyncServices::ServiceDBWriteStatus; i++) {
     Point *point = ServicesTracker.serviceStatisticToPoint((SyncServices)i);
@@ -153,11 +153,11 @@ bool InfluxDBHelper::writeStatus() {
       Serial.print(F("InfluxDB write failed: "));
       Serial.println(_client->getLastErrorMessage());
       res = false;
-    }      
+    }
     delete point;
   }
 
-  
+
   if (!_client->flushBuffer()) {
     Serial.print(F("InfluxDB flush failed: "));
     Serial.println(_client->getLastErrorMessage());
@@ -215,7 +215,7 @@ bool InfluxDBHelper::loadTempHistory( const String &deviceID) {
   QueryParams params;
   params.add(F("bucket"), _settings->bucket);
   params.add(F("deviceID"), deviceID);
-  
+
   String query = F("from(bucket: params.bucket) |> range(start: -90m) |> filter(fn: (r) => r[\"clientId\"] == params.deviceID)"
   "|> filter(fn: (r) => r[\"_measurement\"] == \"environment\") |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")"
   "|> drop(columns: [\"_start\", \"_stop\", \"_time\", \"Device\", \"HumiditySensor\", \"Location\", \"TemperatureSensor\", \"_measurement\", \"clientId\", \"Version\", \"WiFi\", \"_field\"]) |> limit(n:90)");
@@ -269,7 +269,7 @@ void InfluxDBSettings::print(const __FlashStringHelper *title) {
     Serial.print(F(", writeInterval: "));Serial.print(writeInterval);
     Serial.println();
 }
- 
+
 InfluxDBSettings::InfluxDBSettings():
   serverURL(INFLUXDB_DEFAULT_SERVER_URL),
   authorizationToken(INFLUXDB_DEFAULT_TOKEN),
@@ -293,7 +293,7 @@ int InfluxDBSettings::load(JsonObject& root) {
   authorizationToken = root[FPSTR(Token)].as<const char *>();
   org = root[F("org")].as<const char *>();
   bucket = root[F("bucket")].as<const char *>() ;
-  writeInterval = root[F("writeInterval")]; 
+  writeInterval = root[F("writeInterval")];
   print(F("Load InfluxDB params"));
   return 1;
 }
@@ -302,7 +302,7 @@ int InfluxDBSettings::load(JsonObject& root) {
 // ****************** InfluxDBSettingsEndpoint ***************************
 
 InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings):
-    SettingsEndpoint(pServer, F(INFLUXDB_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
+    SettingsEndpoint(pServer, F(INFLUXDB_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
       if(idbSettings->authorizationToken.length()>4) {
@@ -315,7 +315,7 @@ InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPer
         jsonObject[FPSTR(Token)] = idbSettings->authorizationToken;
       }
     }) {
-    
+
 }
 
 // ****************** InfluxDBValidateParamsEndpoint ***************************

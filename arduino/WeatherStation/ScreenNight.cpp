@@ -17,7 +17,7 @@ void drawNight(OLEDDisplay *display) {
 uint8_t isNightMode( DisplaySettings *pDisplaySettings) {
   if (pDisplaySettings->nightModeBegin == pDisplaySettings->nightModeEnd)
     return 0; //no night mode
-  
+
   //get actual time
   time_t now = time(nullptr);
   struct tm *timeInfo = localtime(&now);

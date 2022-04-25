@@ -21,13 +21,13 @@ bool Updater::checkUpdate() {
     ghUpdater.setInsecure();
   }
 
-  Serial.printf_P(PSTR("Updater: checking  update for %s/%s, check for beta: %d\n"),_settings->owner.c_str(), _settings->repo.c_str(), _settings->checkBeta); 
+  Serial.printf_P(PSTR("Updater: checking  update for %s/%s, check for beta: %d\n"),_settings->owner.c_str(), _settings->repo.c_str(), _settings->checkBeta);
   String ver = ghUpdater.getLatestVersion(_settings->checkBeta);
   bool res = ver.length();
   if(res) {
     int c = strcmp(_currentVersion, ver.c_str());
     Serial.printf_P(PSTR("Updater: Curent version '%s', latest version: '%s'. Cmp result: %d\n"), _currentVersion, ver.c_str(), c);
-    // check if new version is higher or final 
+    // check if new version is higher or final
     // e.g. latest: 0.58, current 0.58-rc-8
     if( c < 0 || (c > 0 && strstr(_currentVersion, ver.c_str()) )) {
       Serial.println(F("Updater: Starting update"));
@@ -44,12 +44,12 @@ bool Updater::checkUpdate() {
         Serial.println(F("Update successful"));
       } else {
         err = ghUpdater.getLastError();
-      } 
+      }
       if(_endCb) {
         _endCb(res, err.c_str());
       }
     }
-  } 
+  }
   if(!res) {
     Serial.print(F("Updater: Error "));
     Serial.println(ghUpdater.getLastError());

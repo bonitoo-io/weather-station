@@ -9,7 +9,7 @@ int8_t getCovid19Dispersal() {
   float t = Sensor::tempF2C(pSensor->getTemp());
   float h = pSensor->getHum();
   if (isnan(t))
-    return -1;  
+    return -1;
 
   if ((t <= 3) || (t >= 20))
     t = 0; //low probability

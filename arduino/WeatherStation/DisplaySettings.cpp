@@ -6,7 +6,6 @@ DisplaySettings::DisplaySettings():
   screens(ScreenConstants::getDefaultList()),
   nightModeBegin(DISPLAY_DEFAUT_NIGHT_MODE_BEGIN),
   nightModeEnd(DISPLAY_DEFAUT_NIGHT_MODE_END) {
-    
 }
 
 void DisplaySettings::print(const __FlashStringHelper *title) {
@@ -42,5 +41,4 @@ DisplaySettingsEndpoint::DisplaySettingsEndpoint(AsyncWebServer* pServer, FSPers
     SettingsEndpoint(pServer, F(DISPLAY_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, [this](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
     }),  _pRegionalSettings(pRegionalSettings) {
-    
 }

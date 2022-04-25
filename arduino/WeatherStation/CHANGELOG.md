@@ -7,12 +7,12 @@
 ## Features
  - Display Night Mode
 ## Fixes
- - Faster initial WiFi reconnection 
+ - Faster initial WiFi reconnection
  - Improved web server response caching
 
 ## 1.01
 ## Fixes
-  - Fixed limit on list of scanned WiFi networks 
+  - Fixed limit on list of scanned WiFi networks
   - Updated Github certificate for firmware download
   - Firmware update does not verify certificate by default
   - Reliable web server start after regional settings update
@@ -33,7 +33,7 @@
 
 ## 0.58
  - Fixed update version comparing
- 
+
 ## 0.58-rc9
 ## Fixes
 - Fixed update version comparing
@@ -44,7 +44,7 @@
  - Improved DB write error handling
  - Fixed occasionally missing tags
  - Fixed update version comparing
- 
+
 ## 0.58 rc7
 ## Features
  - Sensirion SHTC3 temperature and humidity sensor support
@@ -91,19 +91,19 @@
  - Detecting UTC offset change always
  - Improved stability
 
-## 0.58 rc1 
+## 0.58 rc1
 ## Fixes
  - Improved initial web page loading
  - Using memory optimized InfluxDB Client
- 
+
 ## 0.57 [2021-10-12]
 ## Features
- - Split Status page to About and Status 
+ - Split Status page to About and Status
    - Added automatic refresh to Status page
  - Added monitoring of synchronization services
  - Added Advanced Settings
    - Including ability to configure display screens
- 
+
 ## Fixes
  - Fixed setting configure language after reset
  - Improved web server response stability
@@ -127,7 +127,7 @@
  - Added validation of WiFi params during initial configuration
  - Simplified on screen setup instructions
  - Removed passwords from debug output
- - Using [custom memory optimized esp8266-weather-station library fork](https://github.com/bonitoo-io/esp8266-weather-station) 
+ - Using [custom memory optimized esp8266-weather-station library fork](https://github.com/bonitoo-io/esp8266-weather-station)
  - Web server is shut down during updating data to save RAM
 
 ## 0.54
@@ -138,7 +138,7 @@
 ## 0.53
  - Display improvements
  - About temperature unit fix
- - Added writing of device status 
+ - Added writing of device status
 
 ## 0.52
  - Fixing on time update issue (#13)
@@ -149,9 +149,9 @@
 
 ## 0.50
  - InfluxDB server settings web UI
- 
+
 ## 0.49
  - Updating from github using template file name and MD5 checksum - version 1.0.0 of ESP-GitHub-Updater is required
- 
-## 0.48 
+
+## 0.48
  - OTA updates from github

@@ -4,7 +4,7 @@
 #include "Sensor.h"
 #include "Version.h"
 
-AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings, 
+AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings,
   WiFiSettings *wifiSettings, RegionalSettings *pRegionalSettings, FS* fs):
   _influxDBHelper(influxDBHelper),
   _influxDBSettings(influxDBSettings),
