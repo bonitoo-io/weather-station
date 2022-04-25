@@ -403,6 +403,7 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
 
   onCalibrationSet = () => {
     const {data, setData } = this.props
+    let tempInMetric = data.useMetric
     if(data.realTemp && data.realTemp.length > 0 ) {
       const i = data.realTemp.indexOf(',')
       if(i > 0) {
@@ -412,6 +413,10 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     } else {
       this.setState({ errorMessage: "Temperature is required" }); 
       return
+    }
+    if(data.realTemp.toUpperCase().charAt(data.realTemp.length-1) === 'C') {
+      tempInMetric = true
+      data.realTemp = data.realTemp.substring(0, data.realTemp.length-1)
     }
     let temp = parseFloat(data.realTemp)
     if(isNaN(temp)) {
@@ -427,7 +432,11 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
       this.setState({ errorMessage: "Humidity is not a number" }); 
       return
     }
-    data.tempOffset = Math.round((temp-data.actualTemp)*100)/100;
+    data.tempOffset = temp-data.actualTemp
+    if(!data.useMetric && tempInMetric) {
+      data.tempOffset = data.tempOffset * 9.0/5.0
+    }
+    data.tempOffset = Math.round(data.tempOffset*100)/100;
     data.humOffset = Math.round((hum-data.actualHum)*100)/100;
     this.setState({ calibrateSensor: false, errorMessage: "" });
     setData(data)
