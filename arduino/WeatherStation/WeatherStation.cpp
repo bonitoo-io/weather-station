@@ -99,7 +99,7 @@ void WeatherStation::registerHandler(const String& uri, const String& contentTyp
       if(cont) {
         AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
         response->addHeader(F("Content-Encoding"), F("gzip"));
-        response->addHeader(F("Cache-Control"), F("public, max-age=3600"));
+        response->addHeader(F("Cache-Control"), F("public, max-age=3600, must-revalidate"));
         response->addHeader(F("ETag"), ETag);
         request->send(response);
       }
