@@ -13,15 +13,15 @@ Sensor* pSensor = nullptr;
 bool setupSensor() {
   if (SensorSHT::driverDetect()) {
     Serial.println( F("Detected sensor SHTC3"));
-    pSensor = new SensorSHT(); 
+    pSensor = new SensorSHT();
   } else {
     Serial.println( F("Using sensor DHT11"));
     pSensor = new SensorDHT();
   }
   if (pSensor) {
-    if (pSensor->setup())  //initialize sensor 
+    if (pSensor->setup())  //initialize sensor
       return true;
-    else  
+    else
       Serial.println( F("Sensor setup error!"));
   }
   return false;
@@ -31,29 +31,29 @@ bool Sensor::setup() {
   driverSetup(); //initialize sensor
   float t = driverGetTemp();
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
-  Serial.println( String(F("Temp raw = ")) + String(t));
+  Serial.println( String(F("Temp raw = ")) + String(t) + F(" ") + String(tempF2C(t)));
   float h = driverGetHum(true);
   Serial.println( String(F("Hum raw = ")) + String(h));
   //fix humidity offset overflow
-  if ((station.getAdvancedSettings()->humOffset != 0) && (station.getAdvancedSettings()->humOffset + h > 100)) { 
-    station.getAdvancedSettings()->humOffset = 0;
-    Serial.println( F("DHT humidity overflow, zeroing offset"));
+  if ((station.getAdvancedSettings()->getHumOffset() != 0) && (station.getAdvancedSettings()->getHumOffset() + h > 100)) {
+    station.getAdvancedSettings()->setHumOffset(0);
+    Serial.println( F("Sensor humidity overflow, zeroing offset"));
   }
-  t += station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset;
-  h += station.getAdvancedSettings()->humOffset;
+  t += station.getAdvancedSettings()->getTempOffsetF();
+  h += station.getAdvancedSettings()->getHumOffset();
 
   _tempFilt.init( t); //prepare median filter data for temperature
   _humFilt.init( float2Int( h)); //prepare median filter data for humidity
   //clean data
   for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
     _tempHistory[i] = NO_VALUE_INT;
-  return true;  
+  return true;
 }
 
-float Sensor::getTemp( bool forceCached) {
+float Sensor::getTempF( bool forceCached) {
   if (forceCached || (_timeNextUpdate >= millis()))
     return _tempFilt.getValue();
-  
+
   float t = driverGetTemp(); //read temperature from the sensor
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();    //next time to read metrics
   //Serial.println( "Temperature = " + String(t) + "->" + String(tempF2C(t)));
@@ -62,9 +62,8 @@ float Sensor::getTemp( bool forceCached) {
     return _tempFilt.getValue();  //restore old value
   }
   internalLoadHum( true); //also process humidity
-  
-  if (station.getAdvancedSettings()->tempOffset != 0) //Add offset
-    t += station.getRegionalSettings()->useMetricUnits ? station.getAdvancedSettings()->tempOffset * 9.0 / 5.0 : station.getAdvancedSettings()->tempOffset; 
+
+  t += station.getAdvancedSettings()->getTempOffsetF(); //Add offset in fahrenheit
 
   return _tempFilt.medianFilter(t);
 }
@@ -77,13 +76,13 @@ void Sensor::internalLoadHum( bool secondRead) {
     Serial.println( F("Received NAN humidity!"));
     return;
   }
-  h += station.getAdvancedSettings()->humOffset; //Add offset
+  h += station.getAdvancedSettings()->getHumOffset(); //Add offset
   if (h > 100) { //fix boundaries
     h = 100;
   } else if (h < 0) {
     h = 0;
   }
-  _humFilt.medianFilter(float2Int(h)); 
+  _humFilt.medianFilter(float2Int(h));
 }
 
 float Sensor::getHum( bool forceCached) {
@@ -92,7 +91,7 @@ float Sensor::getHum( bool forceCached) {
   return int2Float( _humFilt.getValue());
 }
 
-int16_t Sensor::getHist( uint8_t pos) { 
+int16_t Sensor::getHist( uint8_t pos) {
   if ( pos < TEMP_HIST_SIZE)
     return station.getRegionalSettings()->useMetricUnits ? float2Int(tempF2C(int2Float(_tempHistory[pos]))) : _tempHistory[pos];
   return NO_VALUE_INT;
@@ -101,7 +100,7 @@ int16_t Sensor::getHist( uint8_t pos) {
 int16_t Sensor::temp2Int( float temp, bool metric) {
   if (isnan(temp))
     return NO_VALUE_INT;
-  return float2Int( metric ? tempC2F( temp) : temp);  
+  return float2Int( metric ? tempC2F( temp) : temp);
 }
 
 String Sensor::strTempUnit() {
@@ -115,7 +114,7 @@ String Sensor::strTempValue( float t, uint8_t decimalPlaces) {
 }
 
 String Sensor::strHum( float h, uint8_t decimalPlaces) {
-  return (isnan(h) ? String(F("??")) : String(h,decimalPlaces)) + String(F("%"));  
+  return (isnan(h) ? String(F("??")) : String(h,decimalPlaces)) + String(F("%"));
 }
 
 //Compute Heat Index
@@ -130,7 +129,7 @@ float Sensor::getHeatIndex(float temp, float hum) {
          -0.22475541 * temp * hum + -0.00683783 * pow(temp, 2) +
          -0.05481717 * pow(hum, 2) + 0.00122874 * pow(temp, 2) * hum +
          0.00085282 * temp * pow(hum, 2) + -0.00000199 * pow(temp, 2) * pow(hum, 2);
-    
+
     if ((hum < 13) && (temp >= 80.0) && (temp <= 112.0))
       hi -= ((13.0 - hum) * 0.25) * sqrt((17.0 - abs(temp - 95.0)) * 0.05882);
     else if ((hum > 85.0) && (temp >= 80.0) && (temp <= 87.0))
@@ -141,7 +140,7 @@ float Sensor::getHeatIndex(float temp, float hum) {
 }
 
 void Sensor::saveTempHist() {
-  float t = pSensor->getTemp();
+  float t = pSensor->getTempF();
   if (isnan(t))
     return;
   Serial.print( F("Saving temp to history: "));
@@ -160,7 +159,7 @@ void drawSensorError( OLEDDisplay *display, int16_t x, int16_t y) {
 }
 
 void drawSensor(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (isnan(pSensor->getTemp())) {
+  if (isnan(pSensor->getTempF())) {
     drawSensorError( display, x ,y);
     return;
   }
@@ -176,8 +175,8 @@ void drawSensor(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 
   display->setFont(ArialMT_Plain_24);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  
-  display->drawString(8 + x, 15 + y, Sensor::strTemp(pSensor->getTemp(), DEC_PLACES));
+
+  display->drawString(8 + x, 15 + y, Sensor::strTemp(pSensor->getTempF(), DEC_PLACES));
   display->drawString(80 + x, 15 + y, Sensor::strHum(pSensor->getHum(), DEC_PLACES));
 
   display->setFont(Meteocons_Plain_21);

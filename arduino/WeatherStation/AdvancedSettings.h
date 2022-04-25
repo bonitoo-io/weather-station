@@ -10,16 +10,14 @@
 
 class AdvancedSettings : public Settings {
   public:
-    // Update data (etc weather forecast) intreval in minutes
+    // Update data (etc weather forecast) interval in minutes
     uint16_t updateDataInterval;
     // OpenWeather API key, https://openweathermap.org/price
     String openWeatherAPIKey;
     // Comma separated list of 1-3 NTP servers
     String ntpServers;
-    // Temperature compenstation coefficient
-    float tempOffset;
-    // humidity compenstation coefficient
-    float humOffset;
+    //tempOffset - handled via get/setTempOffset
+    //humOffset - handled via get/setHumOffset
     // Update repo owner
     String owner;
     // Update repo name
@@ -37,7 +35,7 @@ class AdvancedSettings : public Settings {
   protected:
     void setUpdateTime(uint16_t time);
   private:
-    EEPROMData _eepromData;
+    EEPROMData _eepromData; //temperature and humidity offsets
   public:
     AdvancedSettings();
     virtual ~AdvancedSettings() {};
@@ -47,7 +45,12 @@ class AdvancedSettings : public Settings {
     virtual int load(JsonObject& root) override;
     virtual void print(const __FlashStringHelper *title) override;
     virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/advancedSettings.json"); }
-    void updateEEPROMData();
+    void updateEEPROMData( float tempOffset, float humOffset);
+    float getTempOffset();
+    float getTempOffsetF();
+    float getHumOffset();
+    void setTempOffset( float tempOffset);  //does not store offset persistently - use _eepromData.write
+    void setHumOffset( float humOffset);  //does not store offset persistently - use _eepromData.write
 };
 
 class AdvancedSettingsEndpoint : public SettingsEndpoint {

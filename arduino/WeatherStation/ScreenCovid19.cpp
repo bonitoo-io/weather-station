@@ -6,7 +6,7 @@
 
 int8_t getCovid19Dispersal() {
   //Inputs based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7229913/
-  float t = Sensor::tempF2C(pSensor->getTemp());
+  float t = Sensor::tempF2C(pSensor->getTempF());
   float h = pSensor->getHum();
   if (isnan(t))
     return -1;

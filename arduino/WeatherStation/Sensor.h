@@ -49,10 +49,10 @@ private:
 class Sensor {
 public:
   bool setup();
-  float getTemp( bool forceCached = false);
+  float getTempF( bool forceCached = false);
   float getHum( bool forceCached = false);
-  float inline getTempForceC( bool forceCached = false) {return tempF2C(getTemp( forceCached));};
-  float getHeatIndex( bool forceCached = false) { return getHeatIndex( getTemp(forceCached), getHum(forceCached));} ;
+  float inline getTempForceC( bool forceCached = false) {return tempF2C(getTempF( forceCached));};
+  float getHeatIndex( bool forceCached = false) { return getHeatIndex( getTempF(forceCached), getHum(forceCached));} ;
   void saveTempHist();
   int16_t getHist( uint8_t pos);
   inline void setHist( uint8_t pos, int16_t data) { if (pos < TEMP_HIST_SIZE) _tempHistory[pos]=data;};

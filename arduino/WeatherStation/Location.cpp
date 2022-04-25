@@ -77,7 +77,6 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
   http.addHeader(F("Accept"), F("application/json"));
   int httpCode = http.GET();
   if (httpCode == HTTP_CODE_OK) {
-    Serial.println();
     int c = 1;
     while (http.connected() && c) {
       uint8_t payload;

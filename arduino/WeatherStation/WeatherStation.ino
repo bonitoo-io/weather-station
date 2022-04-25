@@ -38,6 +38,7 @@ Global variables use 37328 bytes (45%) of dynamic memory, leaving 44592 bytes fo
 #define PIN_SDA    D4   //GPIO2
 #define PIN_SCL    D5   //GPIO14
 #define I2C_OLED_ADDRESS 0x3c
+#define DEFAULT_DELAY 50  //50ms max CPU delay in loop
 
 #include "custom_dev.h" //Custom development configuration - remove or comment it out
 
@@ -123,21 +124,23 @@ void setup() {
   display.clear();
   display.display();
 
-  Serial.print(F("WS crash reset count: "));
-  Serial.println(ServicesTracker.getResetCount()-1);
-  // repeated reset
-  if(ServicesTracker.getResetCount() > 3) {
-    for(int i=0; i<100;i++) {
-      drawUpdateProgress(&display, i, getStr(s_Reset_wait));
-      delay(1000);
-    }
-  }
-
   // Configure pins
   pinMode(PIN_BUTTON, INPUT);
   pinMode(PIN_LED, OUTPUT);
   digitalWrite( PIN_LED, HIGH);
-  setupSensor();
+
+  Serial.print(F("WS crash reset count: "));
+  Serial.println(ServicesTracker.getResetCount()-1);
+
+  // repeated reset - wait
+  if(ServicesTracker.getResetCount() > 3) {
+    for(int i=0; i<100;i++) {
+      drawUpdateProgress(&display, i, getStr(s_Reset_wait));
+      if (digitalRead(PIN_BUTTON) == LOW) //skip if BOOT button is pressed
+        break;
+      delay(1000);
+    }
+  }
 
   station.getWifiManager()->setWiFiConnectionEventHandler(wifiConnectionEventHandler);
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
@@ -166,6 +169,7 @@ void setup() {
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
+  setupSensor();  //wait for loading of tempOffset and humOffset first
   WS_DEBUG_RAM("Setup 2");
 
   setLanguage( pRegionalSettings->language.c_str());
@@ -425,7 +429,7 @@ void loop() {
         ServicesTracker.save();
         //always save in celsius
         unsigned long start = millis();
-        if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTemp()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
+        if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTempF()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
         } else {
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
@@ -476,8 +480,9 @@ void loop() {
 
   if (initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
     ESP.wdtFeed();
+    int remainingTimeBudget = DEFAULT_DELAY;
     if (skipNightScreen || !isNightMode(station.getDisplaySettings())) {
-      int remainingTimeBudget = ui.update();
+      remainingTimeBudget = ui.update();
       nextUIUpdate = millis() + remainingTimeBudget;
     } else {
       drawNight(&display);
@@ -486,7 +491,9 @@ void loop() {
     }
     // reached basic bussiness loop end
     ServicesTracker.clearResetCount();
-  }
+    delay(max(min(remainingTimeBudget, DEFAULT_DELAY),0));
+  } else
+    delay(DEFAULT_DELAY);
 }
 
 bool isInfluxDBError() {

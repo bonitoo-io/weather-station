@@ -6,19 +6,20 @@ class EEPROMData {
   private:
     struct  {
       uint8_t magic;
-      float tempOffset;
-      float humOffset;
+      int16_t tempOffset; // Temperature compenstation coefficient in fahrenheit (int * 10)
+      int16_t humOffset; // Humidity compenstation coefficient (int * 10)
     } _data;
     bool _dirty;
+    void _printData();
   public:
     EEPROMData();
 
     void begin();
     
-    float getTempOffset() { return  _data.tempOffset; }
-    void setTempOffset(float tempOffset);
-    float getHumOffset() { return  _data.humOffset; }
-    void setHumOffset(float humOffset);
+    float getTempOffsetRaw(); //Get temperature compenstation coefficient in fahrenheit
+    void setTempOffsetRaw(float tempOffset);  //Set temperature compenstation coefficient in fahrenheit
+    float getHumOffsetRaw(); //Get humidity compenstation coefficient
+    void setHumOffsetRaw(float humOffset); //Set humidity compenstation coefficient
 
     uint8_t write();
     uint8_t read();

@@ -51,9 +51,9 @@ FrameCallback getFrameCallback(char c) {
     case ScreenConstants::Config:
       return drawAbout;
     default:
-      return nullptr; 
+      return nullptr;
   }
-} 
+}
 
 static FrameCallback *pFrames = nullptr;
 
@@ -91,7 +91,7 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
     display->drawXbm( 0, 0, Logo_width, Logo_height, Logo_XBM);
     display->setFont(ArialMT_Plain_10);
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-    
+
     if (wifiProgressCounter < 3) {  //show splash screen
       display->drawString(88, 5, String(F("Weather Station\nby bonitoo.io\nv")) + version);
     } else {  //show Wifi connecting screen
@@ -107,10 +107,10 @@ void drawWifiProgress(OLEDDisplay *display, const char* version, const char *ssi
       display->drawString(88, 47, String(F("v")) + version);
     }
 
-    if ( isnan( pSensor->getTemp()) || isnan( pSensor->getHum()) || (pSensor->getTemp() == 0) || (pSensor->getHum() == 0))
+    if ( isnan( pSensor->getTempF()) || isnan( pSensor->getHum()) || (pSensor->getTempF() == 0) || (pSensor->getHum() == 0))
       display->drawXbm( 0, 0, 8, 8, warning_8x8);
 
-    display->display();    
+    display->display();
     wifiProgressCounter++;
     wifiProgressLastDrown = millis();
   }
@@ -137,14 +137,14 @@ void drawAPInfo(OLEDDisplay *display, APInfo *info) {
     display->setFont(ArialMT_Plain_16);
     display->drawString(0, 45, String(F("http://")) + info->ipAddress.toString());
   }
-  if ( isnan( pSensor->getTemp()) || isnan( pSensor->getHum()) || (pSensor->getTemp() == 0) || (pSensor->getHum() == 0))
+  if ( isnan( pSensor->getTempF()) || isnan( pSensor->getHum()) || (pSensor->getTempF() == 0) || (pSensor->getHum() == 0))
     display->drawXbm( 0, 0, 8, 8, warning_8x8);
   display->display();
 }
 
 void drawUpdateProgress(OLEDDisplay *display, int percentage, const String& label) {
   Serial.println( label);
-  ESP.wdtFeed();  
+  ESP.wdtFeed();
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_10);
@@ -159,7 +159,7 @@ void drawFWUpdateInfo(OLEDDisplay *display, const String &firstLine, const Strin
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(64, 10, firstLine);
   display->drawString(64, 25, secondLine);
-  display->display();  
+  display->display();
 }
 
 void drawFWUpdateProgress(OLEDDisplay *display, const char* version, int percent) {
@@ -206,7 +206,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->drawString(display->getStringWidth(F("00:00")), 51, strTimeSuffix(now));
 
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
-  display->drawString(display->getWidth(), 53, getStr(s_In) + Sensor::strTemp(pSensor->getTemp()) + getStr(s_Out) + Sensor::strTemp( Sensor::int2Float( getCurrentWeatherTemperature())));    
+  display->drawString(display->getWidth(), 53, getStr(s_In) + Sensor::strTemp(pSensor->getTempF()) + getStr(s_Out) + Sensor::strTemp( Sensor::int2Float( getCurrentWeatherTemperature())));
 }
 
 const __FlashStringHelper * wifiStatusStr(wl_status_t status) {
@@ -235,13 +235,13 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     else
       display->drawString(0,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
     display->drawString(0,  9, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(0, 18, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F("s ")) + (isnan( pSensor->getTemp()) ? String( F("None")) : String(pSensor->getSensorName())));
+    display->drawString(0, 18, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F("s ")) + (isnan( pSensor->getTempF()) ? String( F("None")) : String(pSensor->getSensorName())));
     display->drawString(0, 29, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
-    display->drawString(0, 38, String("v") + version + " " + station.getRegionalSettings()->language + " " + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + String(station.getAdvancedSettings()->tempOffset,2) + "/" + String(station.getAdvancedSettings()->humOffset,2));
+    display->drawString(0, 38, String("v") + version + " " + station.getRegionalSettings()->language + " " + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + String(station.getAdvancedSettings()->getTempOffset(),2) + "/" + String(station.getAdvancedSettings()->getHumOffset(),2));
     if ( WiFi.localIP().isSet())
       display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());
     else
-      display->drawString(0, 50, String( Sensor::tempF2C(pSensor->getTemp()), 2) + String(F("°C ") + String(pSensor->getHum(), 2)) + "%");
+      display->drawString(0, 50, String( Sensor::tempF2C(pSensor->getTempF()), 2) + String(F("°C ") + String(pSensor->getHum(), 2)) + "%");
   } else
     display->drawString(0, 30, String(F("FACTORY RESET IN ")) + String(secToReset) + String(F("s !")));
 

@@ -1,6 +1,7 @@
 #include "AdvancedSettings.h"
 #include "ScreenCommon.h"
 #include "Sensor.h"
+#include "WeatherStation.h"
 
 #define ADVANCED_DEFAUT_UPDATE_INTERVAL 60
 #define ADVANCED_DEFAUT_OPENWEATHER_API_KEY ""
@@ -22,7 +23,7 @@ const char *OpenweatherApiKeyStr PROGMEM = "openWeatherAPIKey";
 static uint16_t getDefaultUpdateTime() {
   uint8_t mac[6];
   wifi_get_macaddr(STATION_IF, mac);
-  return ADVANCED_DEFAULT_UPDATETIME + mac[5]; 
+  return ADVANCED_DEFAULT_UPDATETIME + mac[5];
 }
 
 AdvancedSettings::AdvancedSettings():
@@ -40,12 +41,10 @@ AdvancedSettings::AdvancedSettings():
 
 void AdvancedSettings::begin() {
   _eepromData.begin();
-  if(_eepromData.read()) {
-    _eepromData.setTempOffset(ADVANCED_DEFAUT_TEMPERATURE_OFFSET);
-    _eepromData.setHumOffset(ADVANCED_DEFAUT_HUMIDITY_OFFSET);
+  if(_eepromData.read() != 0) {  //read error? load default values
+    _eepromData.setTempOffsetRaw(ADVANCED_DEFAUT_TEMPERATURE_OFFSET);
+    _eepromData.setHumOffsetRaw(ADVANCED_DEFAUT_HUMIDITY_OFFSET);
   }
-  tempOffset = _eepromData.getTempOffset();
-  humOffset = _eepromData.getHumOffset(); 
 }
 
 void AdvancedSettings::setUpdateTime(uint16_t time) {
@@ -54,7 +53,7 @@ void AdvancedSettings::setUpdateTime(uint16_t time) {
   if(m >= 60) {
     ++h;
     m = m - 60;
-    time = h*100+m; 
+    time = h*100+m;
   }
   updateTime = time;
 }
@@ -64,15 +63,15 @@ void AdvancedSettings::print(const __FlashStringHelper *title) {
     Serial.print(F(" updateDataInterval: "));Serial.print(updateDataInterval);
     Serial.print(F(", openWeatherAPIKey: "));Serial.print(obfuscateToken(openWeatherAPIKey));
     Serial.print(F(", ntpServers: "));Serial.print(ntpServers);
-    Serial.print(F(", tempOffset: "));Serial.print(tempOffset);
-    Serial.print(F(", humOffset: "));Serial.print(humOffset);
+    Serial.print(F(", tempOffset: "));Serial.print(_eepromData.getTempOffsetRaw());
+    Serial.print(F(", humOffset: "));Serial.print(_eepromData.getHumOffsetRaw());
     Serial.print(F(", owner: "));Serial.print(owner);
     Serial.print(F(", repo: "));Serial.print(repo);
     Serial.print(F(", binFile: "));Serial.print(binFile);
     Serial.print(F(", md5File: "));Serial.print(md5File);
     Serial.print(F(", updateTime: "));Serial.print(updateTime);
     Serial.print(F(", checkBeta: "));Serial.print(checkBeta);
-    Serial.print(F(", verifyCert: "));Serial.print(verifyCert);    
+    Serial.print(F(", verifyCert: "));Serial.print(verifyCert);
     Serial.println();
 }
 
@@ -80,8 +79,8 @@ int AdvancedSettings::save(JsonObject& root) {
     root[F("updateDataInterval")] = updateDataInterval;
     root[FPSTR(OpenweatherApiKeyStr)] = openWeatherAPIKey;
     root[F("ntpServers")] = ntpServers;
-    root[F("tempOffset")] = tempOffset;
-    root[F("humOffset")] = humOffset;
+    root[F("tempOffset")] = getTempOffset();
+    root[F("humOffset")] = getHumOffset();
     root[F("owner")] = owner;
     root[F("repo")] = repo;
     root[F("binFile")] = binFile;
@@ -101,7 +100,7 @@ int AdvancedSettings::load(JsonObject& root) {
   owner = root[F("owner")] | String(ADVANCED_DEFAULT_OWNER);
   repo = root[F("repo")] | String(ADVANCED_DEFAULT_REPO);
   binFile = root[F("binFile")] | String(ADVANCED_DEFAULT_BIN_FILE);
-  md5File = root[F("md5File")] | String(ADVANCED_DEFAULT_MD5_FILE); 
+  md5File = root[F("md5File")] | String(ADVANCED_DEFAULT_MD5_FILE);
   setUpdateTime(root[F("updateTime")] | getDefaultUpdateTime());
   checkBeta = root[F("checkBeta")];
   verifyCert = root[F("verifyCert")] | ADVANCED_DEFAULT_VERIFY_CERT;
@@ -110,15 +109,34 @@ int AdvancedSettings::load(JsonObject& root) {
   return 0;
 }
 
-void AdvancedSettings::updateEEPROMData() {
-  _eepromData.setTempOffset(tempOffset);
-  _eepromData.setHumOffset(humOffset);
+void AdvancedSettings::updateEEPROMData( float tempOffset, float humOffset) {
+  setTempOffset(tempOffset);
+  setHumOffset(humOffset);
   _eepromData.write();
 }
 
+float AdvancedSettings::getTempOffsetF() {
+  return _eepromData.getTempOffsetRaw();
+}
+
+float AdvancedSettings::getTempOffset() {
+  return station.getRegionalSettings()->useMetricUnits ? getTempOffsetF() / 9.0 * 5.0 : getTempOffsetF(); //convert from F to C if needed
+}
+
+float AdvancedSettings::getHumOffset() {
+  return _eepromData.getHumOffsetRaw();
+}
+
+void AdvancedSettings::setTempOffset( float tempOffset) {
+  _eepromData.setTempOffsetRaw( station.getRegionalSettings()->useMetricUnits ? tempOffset * 9.0 / 5.0 : tempOffset); //convert from F to C if needed
+}
+
+void AdvancedSettings::setHumOffset( float humOffset) {
+  _eepromData.setHumOffsetRaw(humOffset);
+}
 
 AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings):
-    SettingsEndpoint(pServer, F(ADVANCED_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, 
+    SettingsEndpoint(pServer, F(ADVANCED_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
     [this](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
       if(advSettings->openWeatherAPIKey.length()>4) {
@@ -126,7 +144,7 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPer
       }
       jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
       jsonObject[F("useMetric")] = _pRegionalSettings->useMetricUnits;
-      jsonObject[F("actualTemp")] = _pRegionalSettings->useMetricUnits ? Sensor::tempF2C(pSensor->getTemp(true)) : pSensor->getTemp(true);
+      jsonObject[F("actualTemp")] = _pRegionalSettings->useMetricUnits ? Sensor::tempF2C(pSensor->getTempF(true)) : pSensor->getTempF(true);
       jsonObject[F("actualHum")] = pSensor->getHum(true);
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *key = jsonObject[FPSTR(OpenweatherApiKeyStr)].as<const char *>();
@@ -134,11 +152,6 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPer
       if(strstr(key, ReplaceMark)) {
         jsonObject[FPSTR(OpenweatherApiKeyStr)] = advSettings->openWeatherAPIKey;
       }
-      advSettings->tempOffset = jsonObject[F("tempOffset")];
-      advSettings->humOffset = jsonObject[F("humOffset")];
-      advSettings->updateEEPROMData();
-
+      advSettings->updateEEPROMData( jsonObject[F("tempOffset")], jsonObject[F("humOffset")]);
     }), _pRegionalSettings(pRegionalSettings) {
-    
 }
-
