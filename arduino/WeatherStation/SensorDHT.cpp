@@ -6,7 +6,7 @@
 #define DHT_TYPE DHT11  // Sensor DHT 11
 #define PIN_DHT D1      // Digital pin connected to the DHT 11 sensor - GPIO5
 
-float SensorDHT::driverGetTemp() {
+float SensorDHT::driverGetTempF() {
   if (_dht.read(DHT_TYPE, PIN_DHT))
     return Sensor::tempC2F((float)_dht.celsius / 10.0);
   else

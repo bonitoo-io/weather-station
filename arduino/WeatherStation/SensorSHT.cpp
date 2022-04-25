@@ -17,7 +17,7 @@ bool SensorSHT::driverSetup() {
   return true;
 }
 
-float SensorSHT::driverGetTemp() {
+float SensorSHT::driverGetTempF() {
   if (_pSht && _pSht->readSample())
     return Sensor::tempC2F(_pSht->getTemperature());
   else

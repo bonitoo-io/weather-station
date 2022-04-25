@@ -79,7 +79,7 @@ protected:
 //virtual functions for temperature/humidity sensors
   virtual bool driverSetup() = 0;  //setup the sensor, allocate sensor class
   virtual const __FlashStringHelper * driverName() = 0; //get sensor name
-  virtual float driverGetTemp() = 0; //temperatures always in fahrenheit
+  virtual float driverGetTempF() = 0; //temperatures always in fahrenheit
   virtual float driverGetHum( bool secondRead) = 0;  //humidity always in percent
   virtual inline uint16_t driverGetMaxRefreshRateMs() { return 1000;};  //default refresh is 1s (may be overwritten)
 private:

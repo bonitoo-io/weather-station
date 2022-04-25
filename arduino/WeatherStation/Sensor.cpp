@@ -29,7 +29,7 @@ bool setupSensor() {
 
 bool Sensor::setup() {
   driverSetup(); //initialize sensor
-  float t = driverGetTemp();
+  float t = driverGetTempF();
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
   Serial.println( String(F("Temp raw = ")) + String(t) + F(" ") + String(tempF2C(t)));
   float h = driverGetHum(true);
@@ -54,7 +54,7 @@ float Sensor::getTempF( bool forceCached) {
   if (forceCached || (_timeNextUpdate >= millis()))
     return _tempFilt.getValue();
 
-  float t = driverGetTemp(); //read temperature from the sensor
+  float t = driverGetTempF(); //read temperature from the sensor
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();    //next time to read metrics
   //Serial.println( "Temperature = " + String(t) + "->" + String(tempF2C(t)));
   if (isnan(t)) {
