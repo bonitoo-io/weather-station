@@ -167,7 +167,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
               <DataUsageIcon />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText primary="Sketch (Size / Free)" secondary={formatNumber(data.sketchSize) + ' / ' + formatNumber(data.freeSketchSpace) + ' bytes'} />
+          <ListItemText primary="Sketch (Size / Max)" secondary={formatNumber(data.sketchSize) + ' / ' + formatNumber(data.freeSketchSpace) + ' bytes'} />
         </ListItem>
         <Divider variant="inset" component="li" />
         <ListItem >
