@@ -2,8 +2,10 @@
 #include "ScreenCommon.h"
 #include "Sensor.h"
 #include "WeatherStation.h"
+#include "Tools.h"
 
 #define ADVANCED_DEFAUT_UPDATE_INTERVAL 60
+//See https://docs.thingpulse.com/how-tos/openweathermap-key/
 #define ADVANCED_DEFAUT_OPENWEATHER_API_KEY ""
 #define ADVANCED_DEFAUT_NTP_SERVERS "pool.ntp.org,time.nis.gov,time.google.com"
 #define ADVANCED_DEFAUT_TEMPERATURE_OFFSET 0.0
@@ -28,7 +30,6 @@ static uint16_t getDefaultUpdateTime() {
 
 AdvancedSettings::AdvancedSettings():
   updateDataInterval(ADVANCED_DEFAUT_UPDATE_INTERVAL),
-  openWeatherAPIKey(F(ADVANCED_DEFAUT_OPENWEATHER_API_KEY)),
   ntpServers(F(ADVANCED_DEFAUT_NTP_SERVERS)),
   owner(ADVANCED_DEFAULT_OWNER),
   repo(ADVANCED_DEFAULT_REPO),
@@ -37,6 +38,8 @@ AdvancedSettings::AdvancedSettings():
   checkBeta(ADVANCED_DEFAULT_CHECKBETA),
   verifyCert(ADVANCED_DEFAULT_VERIFY_CERT)  {
   setUpdateTime(getDefaultUpdateTime());
+  DECLARE_ENCRYPT_STR( owKeyStr, ADVANCED_DEFAUT_OPENWEATHER_API_KEY);
+  openWeatherAPIKey = GET_ENCRYPT_STR(owKeyStr);
 }
 
 void AdvancedSettings::begin() {

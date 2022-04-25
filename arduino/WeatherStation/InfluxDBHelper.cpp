@@ -272,10 +272,12 @@ void InfluxDBSettings::print(const __FlashStringHelper *title) {
 
 InfluxDBSettings::InfluxDBSettings():
   serverURL(INFLUXDB_DEFAULT_SERVER_URL),
-  authorizationToken(INFLUXDB_DEFAULT_TOKEN),
   org(INFLUXDB_DEFAULT_ORG),
   bucket(INFLUXDB_DEFAULT_BUCKET),
   writeInterval(INFLUXDB_DEFAULT_WRITE_INTERVAL) {
+  
+  DECLARE_ENCRYPT_STR( tokenStr, INFLUXDB_DEFAULT_TOKEN);
+  authorizationToken = GET_ENCRYPT_STR( tokenStr);
 }
 
 int InfluxDBSettings::save(JsonObject& root) {

@@ -56,3 +56,6 @@ enum tStrings {
 };
 
 String getStr( uint8_t index);
+
+#define DECLARE_ENCRYPT_STR(NAME, STR) static const char NAME[] PROGMEM = STR;
+#define GET_ENCRYPT_STR(NAME) String(NAME)

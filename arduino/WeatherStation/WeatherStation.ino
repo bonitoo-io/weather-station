@@ -26,8 +26,6 @@ Global variables use 37328 bytes (45%) of dynamic memory, leaving 44592 bytes fo
 #include "ScreenCommon.h"
 #include "WiFi.h"
 
-//See https://docs.thingpulse.com/how-tos/openweathermap-key/
-#define OPEN_WEATHER_MAP_API_KEY ""
 // IoT Center url, e.g. http://192.168.1.20:5000  (can be empty, if not configured)
 #define IOT_CENTER_URL ""
 
