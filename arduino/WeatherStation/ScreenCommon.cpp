@@ -233,11 +233,15 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     if ( WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
       display->drawString(0,  0, String(F("AP ")) + WiFi.softAPIP().toString() + String(F(" Clients: ")) + String(WiFi.softAPgetStationNum()));
     else
-      display->drawString(0,  0, String(F("Wifi ")) + WiFi.SSID() + String(F(" ")) + String((WiFi.status() == WL_CONNECTED) ? String(getWifiSignal()) + String(F("%")) : String(wifiStatusStr(WiFi.status()))));
-    display->drawString(0,  9, String(F("Up: ")) + String(millis()/1000/3600) + String(F("h ")) + String((millis()/1000)%3600) + String(F("s RAM: ")) + String( ESP.getFreeHeap()));
-    display->drawString(0, 18, String(F("Update in ")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000) + String(F("s ")) + (isnan( pSensor->getTempF()) ? String( F("None")) : String(pSensor->getSensorName())));
-    display->drawString(0, 29, String(F("DB ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
-    display->drawString(0, 38, String("v") + version + " " + station.getRegionalSettings()->language + " " + String(station.getRegionalSettings()->utcOffset) + String(F(" ")) + String(station.getAdvancedSettings()->getTempOffset(),2) + "/" + String(station.getAdvancedSettings()->getHumOffset(),2));
+      display->drawString(0,  0, String(F("w:")) + WiFi.SSID() + String(F(" ")) + String(getWifiSignal()) + String(F("% ")) + String(wifiStatusStr(WiFi.status())));
+    display->drawString(0,  9, String(F("v")) + version + String(F(" ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
+    display->drawString(0, 18, String(F("up:")) + String(millis()/1000/3600) + String(F("h")) + String((millis()/1000)%3600) + String(F("s m:")) + String( ESP.getFreeHeap()) + String(F("/")) + String(ESP.getMaxFreeBlockSize()));
+    display->drawString(0, 29, String(F("rl:")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000/60) + String(F("m ")) + 
+        (isnan( pSensor->getTempF()) ? String( F("---")) : String(pSensor->getSensorName())) + String(F(" ")) + String( Sensor::tempF2C(pSensor->getTempF()), 2) + String(F("/")) + 
+        String(pSensor->getHum(), 2));
+
+    display->drawString(0, 38, station.getRegionalSettings()->language + String(F(" ")) + String(station.getRegionalSettings()->utcOffset) + 
+        String(F(" off:")) + String(station.getAdvancedSettings()->getTempOffset(),2) + "/" + String(station.getAdvancedSettings()->getHumOffset(),2));
     if ( WiFi.localIP().isSet())
       display->drawString(0, 50, String(F("http://")) + WiFi.localIP().toString());
     else
