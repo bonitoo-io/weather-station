@@ -3,8 +3,8 @@
 #include "WeatherStation.h"
 
 // Internal sensor settings
-#define DHT_TYPE DHT11  // Sensor DHT 11
-#define PIN_DHT D1      // Digital pin connected to the DHT 11 sensor - GPIO5
+#define DHT_TYPE DHT11  // Sensor DHT11
+#define PIN_DHT D1      // Digital pin connected to the DHT11 sensor - GPIO5
 
 float SensorDHT::driverGetTempF() {
   if (_dht.read(DHT_TYPE, PIN_DHT))

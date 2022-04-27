@@ -175,7 +175,7 @@ void setup() {
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
   station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
   station.begin();
-  setupSensor();  //wait for loading of tempOffset and humOffset first
+  Sensor::setupSensor();  //wait for loading of tempOffset and humOffset first
   WS_DEBUG_RAM("Setup 2");
 
   setLanguage( pRegionalSettings->language.c_str());

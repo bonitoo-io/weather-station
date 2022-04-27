@@ -1,38 +1,40 @@
 #include "SensorSHT.h"
-#define TEMP_SENSOR SHTSensor::SHTC3
-
-bool SensorSHT::driverDetect() {
-  Wire.begin();
-  Wire.beginTransmission(0x70);
-  return Wire.endTransmission() == 0;
-}
 
 bool SensorSHT::driverSetup() {
-  _pSht = new SHTSensor(TEMP_SENSOR);
-  if (!_pSht)
+  Wire.begin();
+
+  if (!_sht.init()) {
+    Serial.println( F("Sensor SHTxx init failed"));
     return false;
-  if (!_pSht->init())
-    return false;
-  _pSht->setAccuracy(SHTSensor::SHT_ACCURACY_HIGH); // only supported by SHT3x
+  }
+  _sht.setAccuracy(SHTSensor::SHT_ACCURACY_HIGH); // only supported by SHT3x
   return true;
 }
 
+const __FlashStringHelper * SensorSHT::driverName() {
+  switch ( _sht.mSensorType) {
+    case SHTSensor::SHT3X:
+    case SHTSensor::SHT3X_ALT:
+      return F("SHT3x");
+    case SHTSensor::SHTC1:
+      return F("SHTCx");
+    case SHTSensor::SHT4X:
+      return F("SHT4x");
+    default:
+      return F("SHTxx");    
+  }
+}
+
 float SensorSHT::driverGetTempF() {
-  if (_pSht && _pSht->readSample())
-    return Sensor::tempC2F(_pSht->getTemperature());
+  if (_sht.readSample())
+    return Sensor::tempC2F(_sht.getTemperature());
   else
     return NAN;
 }
 
 float SensorSHT::driverGetHum( bool secondRead) {
-  if (_pSht && _pSht->readSample())
-    return _pSht->getHumidity();
+  if (_sht.readSample())
+    return _sht.getHumidity();
   else
     return NAN;
-}
-
-SensorSHT::~SensorSHT() {
-  if (_pSht)
-    delete _pSht;
-  _pSht = nullptr;
 }

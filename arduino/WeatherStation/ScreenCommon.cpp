@@ -237,7 +237,7 @@ void showConfiguration(OLEDDisplay *display, int secToReset, const char* version
     display->drawString(0,  9, String(F("v")) + version + String(F(" ")) + (!influxDBHelper->isError() ? deviceID : influxDBHelper->errorMsg()));
     display->drawString(0, 18, String(F("up:")) + String(millis()/1000/3600) + String(F("h")) + String((millis()/1000)%3600) + String(F("s m:")) + String( ESP.getFreeHeap()) + String(F("/")) + String(ESP.getMaxFreeBlockSize()));
     display->drawString(0, 29, String(F("rl:")) + String((station.getAdvancedSettings()->updateDataInterval*60*1000 - (millis() - lastUpdate))/1000/60) + String(F("m ")) + 
-        (isnan( pSensor->getTempF()) ? String( F("---")) : String(pSensor->getSensorName())) + String(F(" ")) + String( Sensor::tempF2C(pSensor->getTempF()), 2) + String(F("/")) + 
+        (isnan( pSensor->getTempF()) ? String( F("???")) : String(pSensor->getSensorName())) + String(F(" ")) + String( Sensor::tempF2C(pSensor->getTempF()), 2) + String(F("/")) + 
         String(pSensor->getHum(), 2));
 
     display->drawString(0, 38, station.getRegionalSettings()->language + String(F(" ")) + String(station.getRegionalSettings()->utcOffset) + 

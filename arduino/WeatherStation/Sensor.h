@@ -48,6 +48,7 @@ private:
 
 class Sensor {
 public:
+  static bool setupSensor();
   bool setup();
   float getTempF( bool forceCached = false);
   float getHum( bool forceCached = false);
@@ -90,7 +91,7 @@ private:
   unsigned long _timeNextUpdate;
 };
 
-bool setupSensor();
+
 extern Sensor* pSensor;
 
 class OLEDDisplay;

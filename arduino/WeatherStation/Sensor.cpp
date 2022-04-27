@@ -10,13 +10,19 @@
 
 Sensor* pSensor = nullptr;
 
-bool setupSensor() {
-  if (SensorSHT::driverDetect()) {
-    Serial.println( F("Detected sensor SHTC3"));
-    pSensor = new SensorSHT();
+bool Sensor::setupSensor() {
+  pSensor = new SensorSHT();
+  if (pSensor->driverSetup()) {
+    Serial.println( F("Detected sensor SHTxx"));
   } else {
-    Serial.println( F("Using sensor DHT11"));
+    delete pSensor; //Delete SensorSHT instance
     pSensor = new SensorDHT();
+    if (pSensor->driverSetup()) {
+      Serial.println( F("Using sensor DHT11"));
+    } else {
+      delete pSensor;
+      pSensor == nullptr;
+    }
   }
   if (pSensor) {
     if (pSensor->setup())  //initialize sensor
@@ -28,7 +34,6 @@ bool setupSensor() {
 }
 
 bool Sensor::setup() {
-  driverSetup(); //initialize sensor
   float t = driverGetTempF();
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
   Serial.println( String(F("Temp raw = ")) + String(t) + F(" ") + String(tempF2C(t)));

@@ -7,15 +7,14 @@
 
 class SensorSHT : public Sensor {
 public:
-  ~SensorSHT();
-  static bool driverDetect();
+  SensorSHT() : _sht(SHTSensor::AUTO_DETECT){};
 protected:
   virtual bool driverSetup() override;
-  virtual const __FlashStringHelper * driverName() override { return F("SHTC3");} ; //get sensor name
+  virtual const __FlashStringHelper * driverName() override; //get sensor name
   virtual float driverGetTempF() override; //temperatures always in fahrenheit
   virtual float driverGetHum( bool secondRead) override;  //humidity always in percent
 private:
-  SHTSensor* _pSht = nullptr;
+  SHTSensor _sht; //sensor autodetection
 };
 
 #endif //STHC3_SENSOR_H
