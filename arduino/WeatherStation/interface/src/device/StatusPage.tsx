@@ -274,7 +274,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
     fetch(FACTORY_RESET_ENDPOINT, { method: 'POST' })
       .then(response => {
         if (response.status === 200) {
-          this.props.enqueueSnackbar("Factory reset in progress.", { variant: 'error' });
+          this.props.enqueueSnackbar("Factory reset in progress.", { variant: 'info' });
           this.setState({ processing: false, confirmFactoryReset: false });
         } else {
           throw Error("Invalid status code: " + response.status);
