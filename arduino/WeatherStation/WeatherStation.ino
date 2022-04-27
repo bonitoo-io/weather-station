@@ -2,13 +2,13 @@
 Board: Lolin D1 mini (clone) (ESP-12E Module)
 Executable segment sizes:
 ICACHE : 32768           - flash instruction cache
-IROM   : 946548          - code in flash         (default or ICACHE_FLASH_ATTR)
+IROM   : 950096          - code in flash         (default or ICACHE_FLASH_ATTR)
 IRAM   : 29521   / 32768 - code in IRAM          (IRAM_ATTR, ISRs...)
 DATA   : 1712  )         - initialized variables (global, static) in RAM/HEAP
-RODATA : 7632  ) / 81920 - constants             (global, static) in RAM/HEAP
-BSS    : 27984 )         - zeroed variables      (global, static) in RAM/HEAP
-Sketch uses 985413 bytes (94%) of program storage space. Maximum is 1044464 bytes.
-Global variables use 37328 bytes (45%) of dynamic memory, leaving 44592 bytes for local variables. Maximum is 81920 bytes.
+RODATA : 7792  ) / 81920 - constants             (global, static) in RAM/HEAP
+BSS    : 27968 )         - zeroed variables      (global, static) in RAM/HEAP
+Sketch uses 989121 bytes (94%) of program storage space. Maximum is 1044464 bytes.
+Global variables use 37472 bytes (45%) of dynamic memory, leaving 44448 bytes for local variables. Maximum is 81920 bytes.
 */
 
 #include <Arduino.h>

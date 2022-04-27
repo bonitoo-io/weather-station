@@ -1,4 +1,15 @@
 # Changelog
+## 1.11
+## Features
+- Support for all Sensirion SHT* sensors
+  - Automatic detection
+- Improved OLED config screen
+## Fixes
+- WebUI
+  - More robust data requests to server
+  - Occasional WiFi scanning error
+  - Skip validations when device is in AP mode
+
 ## 1.10
 ## Features
  - Sensor Calibration Dialog
