@@ -194,9 +194,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     if (influxdbHelper.getWriteSuccess() == 0) { //without any successfull write?
       Serial.println(F("Failed all writes to InfluxDB, restarting!"));
       //TODO: store status to identify reason of restart
-      WiFi.disconnect(true);
-      delay(500);
-      ESP.restart();
+      
     }
     Serial.print(F("InfluxDB successful writes: "));
     Serial.println( influxdbHelper.getWriteSuccess());
@@ -220,9 +218,13 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     int res = detectLocationFromIP(station.getRegionalSettings());
     if(!res) {
       ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncFailed);
+      if(bForceUpdate) {
+        //If location detection failed in forced update (probable reason was that automatic detection was turned on)
+        safeRestart();
+      }
     } else {
       ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncOk);
-      if(res==2) {
+      if(res == 2) {
         station.saveRegionalSettings();
         setLanguage( station.getRegionalSettings()->language.c_str());
       }
@@ -473,9 +475,7 @@ void loop() {
     loops++;
     if (loops > 200) {  //factory reset after 20 seconds
       station.getPersistence()->removeConfigs();
-      WiFi.disconnect(true);
-      delay(500);
-      ESP.restart();
+      safeRestart();
     }
 
     delay(100);
@@ -581,6 +581,10 @@ void updateFinishedHandler(bool success, const char *err) {
 void fwUploadFinishedHandler() {
   drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
   Serial.println(F("restarting"));
+  safeRestart();
+}
+
+void safeRestart() {
   station.end();
   delay(500);
   ESP.restart();
