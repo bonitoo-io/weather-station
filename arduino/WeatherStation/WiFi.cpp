@@ -534,7 +534,6 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
         return (size_t)0;
       }
       size_t len = strlen_P(NetworkTemplate) + WiFi.SSID(netIndex).length() + WiFi.BSSIDstr(netIndex).length() + 3;
-      //Serial.printf_P(PSTR("[WIFISE] Chunked resp: buff %d, len %d, index: %d\n"), maxLen, len, netIndex);
       size_t w = 0;
       if(netIndex == 0 ) {
         w = sprintf_P((char*)buffer, PSTR("{\"networks\":["));
@@ -543,7 +542,6 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
         if(netIndex > 0) {
           w += sprintf_P((char*)(buffer+w), PSTR(","));
         }
-        Serial.printf_P(PSTR("[WIFISE] Scan adding %d.: %s, chan %d, rssi %d\n"), netIndex, WiFi.SSID(netIndex).c_str(), WiFi.channel(netIndex), WiFi.RSSI(netIndex));
         w += sprintf_P((char*)(buffer+w), NetworkTemplate, WiFi.RSSI(netIndex), WiFi.SSID(netIndex).c_str(), WiFi.BSSIDstr(netIndex).c_str(),WiFi.channel(netIndex), WiFiScannerEndpoint::convertEncryptionType(WiFi.encryptionType(netIndex)));
         ++netIndex;
         if(netIndex == numNetworks) {
@@ -554,7 +552,6 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
       if(netIndex == numNetworks) {
         w += sprintf_P((char*)(buffer+w), PSTR("]}"));
       }
-      ++netIndex;
       return w;
     });
 
