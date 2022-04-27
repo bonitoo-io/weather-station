@@ -17,14 +17,14 @@ class AppRouting extends Component {
       <AppStateContext.Consumer>
         {({wifiConfigured}) => (
           <div>
-             <Suspense fallback={<FullScreenLoading/>}>
+            <Suspense fallback={<FullScreenLoading/>}>
               <Switch>
                 <Route exact path="/device/*" component={Device} />
                 <Route exact path="/wifi/*" component={WiFiConnection} />
                 <Route exact path="/settings/*" component={Settings } />
                 <Redirect to={wifiConfigured?"/device/about":"/wifi/scan"} />
               </Switch>
-          </Suspense>
+            </Suspense>
           </div>
           )
         }

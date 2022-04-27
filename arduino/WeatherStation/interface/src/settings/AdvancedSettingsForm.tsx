@@ -14,6 +14,7 @@ import { AdvancedSettings, ValidationStatus, ValidationStatusResponse } from './
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, Link, TextField, Typography } from '@material-ui/core';
 import { ADVANCED_SETTINGS_VALIDATE_ENDPOINT, numberToTime, NUM_POLLS, POLLING_FREQUENCY, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
+import { AppStateContext } from '../AppStateContext';
 
 
 const styles = (theme: Theme) => createStyles({ 
@@ -106,121 +107,125 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     const { validatingParams } = this.state
 
     return (
-      <Fragment>
-        <ValidatorForm onSubmit={this.validateAndSaveParams} ref={this.form}>
-          {validatingParams &&
-            <div className={classes.connectingSettings}>
-              <LinearProgress className={classes.connectingSettingsDetails} />
-              <Typography variant="h6" className={classes.connectingProgress}>
-                Validating&hellip;
-              </Typography>
-          </div>}
-          <TextValidator
-              validators={['required', 'isFloat']}
-              errorMessages={['Temperature Offset is required', 'Must be a real number']}
-              name="tempOffset"
-              label="Temperature Offset"
-              fullWidth
-              variant="outlined"
-              value={data.tempOffset}
-              onChange={handleValueChange('tempOffset')}
-              margin="normal"
-              helperText="A floating point number for temperature value compensation"
-            />
+      <AppStateContext.Consumer>
+        {({wifiConfigured}) => (
+        <Fragment>
+          <ValidatorForm onSubmit={wifiConfigured?this.validateAndSaveParams:this.saveData} ref={this.form}>
+            {validatingParams &&
+              <div className={classes.connectingSettings}>
+                <LinearProgress className={classes.connectingSettingsDetails} />
+                <Typography variant="h6" className={classes.connectingProgress}>
+                  Validating&hellip;
+                </Typography>
+            </div>}
             <TextValidator
-              validators={['required', 'isFloat']}
-              errorMessages={['Humidity Offset is required', 'Must be a real number']}
-              name="humOffset"
-              label="Humidity Offset"
-              fullWidth
-              variant="outlined"
-              value={data.humOffset}
-              onChange={handleValueChange('humOffset')}
-              margin="normal"
-              helperText="A floating point number for humidity value compensation"
-            />
-            <TextValidator
-              validators={['required']}
-              errorMessages={['At least 1 NTP Server is required']}
-              name="ntpServers"
-              label="NTP Servers"
-              fullWidth
-              variant="outlined"
-              value={data.ntpServers}
-              onChange={handleValueChange('ntpServers')}
-              margin="normal"
-              helperText={this.renderNTPServersHelperText()}
-            />
-             <TextValidator
-              validators={['required', 'isNumber', 'minNumber: 30', 'maxNumber:1440']}
-              errorMessages={['Update Data Interval is required', UpdateDataErrorText, UpdateDataErrorText, UpdateDataErrorText]}
-              name="updateDataInterval"
-              label="Update Data Interval (in minutes)"
-              fullWidth
-              variant="outlined"
-              value={data.updateDataInterval}
-              onChange={handleValueChange('updateDataInterval')}
-              margin="normal"
-              helperText="How often is updated weather info, forecasts, synchronized time, etc."
-            />
-            <TextValidator
-              validators={['required']}
-              errorMessages={['API key is required']}
-              name="openWeatherAPIKey"
-              label="OpenWeatherMap API Key"
-              fullWidth
-              variant="outlined"
-              value={data.openWeatherAPIKey}
-              onChange={handleValueChange('openWeatherAPIKey')}
-              margin="normal"
-              helperText={this.renderAPIKeyHelperText()}
-            />
-            <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <TimePicker
-                label="Firmware Auto Upgrade Time"
-                value={updateTime}
-                ampm={!data.use24Hours}
-                onChange={this.changeTime('updateTime', handleDirectValueChange)}
-                margin = "normal"
+                validators={['required', 'isFloat']}
+                errorMessages={['Temperature Offset is required', 'Must be a real number']}
+                name="tempOffset"
+                label="Temperature Offset"
                 fullWidth
+                variant="outlined"
+                value={data.tempOffset}
+                onChange={handleValueChange('tempOffset')}
+                margin="normal"
+                helperText="A floating point number for temperature value compensation"
               />
-            </MuiPickersUtilsProvider>
-            <BlockFormControlLabel
-              value="start"
-              control={
-                <Checkbox
-                value="checkBeta"
-                checked={data.checkBeta}
-                onChange={handleValueChange("checkBeta")}
+              <TextValidator
+                validators={['required', 'isFloat']}
+                errorMessages={['Humidity Offset is required', 'Must be a real number']}
+                name="humOffset"
+                label="Humidity Offset"
+                fullWidth
+                variant="outlined"
+                value={data.humOffset}
+                onChange={handleValueChange('humOffset')}
+                margin="normal"
+                helperText="A floating point number for humidity value compensation"
               />
-              }
-              label="Upgrade to beta releases"
-              labelPlacement="end"
-            />
-            <BlockFormControlLabel
-              value="start"
-              control={
-                <Checkbox
-                value="verifyCert"
-                checked={data.verifyCert}
-                onChange={handleValueChange("verifyCert")}
+              <TextValidator
+                validators={['required']}
+                errorMessages={['At least 1 NTP Server is required']}
+                name="ntpServers"
+                label="NTP Servers"
+                fullWidth
+                variant="outlined"
+                value={data.ntpServers}
+                onChange={handleValueChange('ntpServers')}
+                margin="normal"
+                helperText={this.renderNTPServersHelperText()}
               />
-              }
-              label="Verify Github certificate"
-              labelPlacement="end"
-            />
-          <FormActions>
-            <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">
-              Save
-            </FormButton>
-            <FormButton startIcon={<SettingsBackupRestoreIcon />} variant="contained" color="secondary" onClick={this.onCalibrationOpen}>
-              Calibrate
-            </FormButton>
-          </FormActions>
-        </ValidatorForm>
-        {this.renderCalibrationDialog()}
-      </Fragment>
-      )
+              <TextValidator
+                validators={['required', 'isNumber', 'minNumber: 30', 'maxNumber:1440']}
+                errorMessages={['Update Data Interval is required', UpdateDataErrorText, UpdateDataErrorText, UpdateDataErrorText]}
+                name="updateDataInterval"
+                label="Update Data Interval (in minutes)"
+                fullWidth
+                variant="outlined"
+                value={data.updateDataInterval}
+                onChange={handleValueChange('updateDataInterval')}
+                margin="normal"
+                helperText="How often is updated weather info, forecasts, synchronized time, etc."
+              />
+              <TextValidator
+                validators={['required']}
+                errorMessages={['API key is required']}
+                name="openWeatherAPIKey"
+                label="OpenWeatherMap API Key"
+                fullWidth
+                variant="outlined"
+                value={data.openWeatherAPIKey}
+                onChange={handleValueChange('openWeatherAPIKey')}
+                margin="normal"
+                helperText={this.renderAPIKeyHelperText()}
+              />
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <TimePicker
+                  label="Firmware Auto Upgrade Time"
+                  value={updateTime}
+                  ampm={!data.use24Hours}
+                  onChange={this.changeTime('updateTime', handleDirectValueChange)}
+                  margin = "normal"
+                  fullWidth
+                />
+              </MuiPickersUtilsProvider>
+              <BlockFormControlLabel
+                value="start"
+                control={
+                  <Checkbox
+                  value="checkBeta"
+                  checked={data.checkBeta}
+                  onChange={handleValueChange("checkBeta")}
+                />
+                }
+                label="Upgrade to beta releases"
+                labelPlacement="end"
+              />
+              <BlockFormControlLabel
+                value="start"
+                control={
+                  <Checkbox
+                  value="verifyCert"
+                  checked={data.verifyCert}
+                  onChange={handleValueChange("verifyCert")}
+                />
+                }
+                label="Verify Github certificate"
+                labelPlacement="end"
+              />
+            <FormActions>
+              <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">
+                Save
+              </FormButton>
+              <FormButton startIcon={<SettingsBackupRestoreIcon />} variant="contained" color="secondary" onClick={this.onCalibrationOpen}>
+                Calibrate
+              </FormButton>
+            </FormActions>
+          </ValidatorForm>
+          {this.renderCalibrationDialog()}
+        </Fragment>
+      )}
+    </AppStateContext.Consumer>
+    )
   }
 
   validateAndSaveParams = () => {
@@ -333,13 +338,13 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
     const { data, handleValueChange, classes } = this.props
     var sensors = ''
     if(data.actualTemp) {
-      sensors = data.actualTemp.toFixed(1) + '°' + (data.useMetric?'C':'F')
+      sensors = data.actualTemp.toFixed(2) + '°' + (data.useMetric?'C':'F')
     }
     if(data.actualHum) {
       if(sensors.length) {
         sensors += ' '
       }
-      sensors += data.actualHum.toFixed(0) + '%'
+      sensors += data.actualHum.toFixed(2) + '%'
     }
     if(sensors.length === 0) {
       sensors = 'n/a'

@@ -11,6 +11,7 @@ import { RestFormProps, BlockFormControlLabel, FormActions, FormButton } from '.
 import { RegionalSettings, ValidationStatus, ValidationStatusResponse } from './types';
 import { NUM_POLLS, POLLING_FREQUENCY, REGIONAL_SETTINGS_VALIDATE_ENDPOINT, retryError503, retryErrorPolling, RETRY_EXCEPTION_TYPE } from '../api';
 import { Theme, createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
+import { AppStateContext } from '../AppStateContext';
 
 const styles = (theme: Theme) => createStyles({ 
    connectingSettings: {
@@ -65,137 +66,142 @@ class RegionalSettingsForm extends Component<RegionalSettingsFormProps, Regional
     const { validatingParams } = this.state
 
     return (
-        <ValidatorForm onSubmit={this.validateAndSaveParams} ref={this.form}>
-          {validatingParams &&
-            <div className={classes.connectingSettings}>
-              <LinearProgress className={classes.connectingSettingsDetails} />
-              <Typography variant="h6" className={classes.connectingProgress}>
-                Validating&hellip;
-              </Typography>
-          </div>}
-          <BlockFormControlLabel
-            control={
-              <Checkbox
-                value="detectAutomatically"
-                checked={data.detectAutomatically}
-                onChange={handleValueChange("detectAutomatically")}
-              />
-            }
-            label="Detect Automatically"
-          />
-            <TextValidator
-              validators={['required']}
-              errorMessages={['City is required']}
-              name="location"
-              label="City"
-              fullWidth
-              variant="outlined"
-              value={data.location}
-              onChange={handleValueChange('location')}
-              margin="normal"
-              disabled = {data.detectAutomatically}
-              helperText="City name with optional country code"
-            />
-            <TextValidator
-              validators={['required']}
-              errorMessages={['Language is required']}
-              name="language"
-              label="Language"
-              fullWidth
-              variant="outlined"
-              value={data.language}
-              onChange={handleValueChange('language')}
-              margin="normal"
-              disabled = {data.detectAutomatically}
-              inputProps={{
-                maxLength: 2,
-                minLength: 2,
-                style: { textTransform: "lowercase" }
-              }}
-              helperText="Two letters language code"
-              >
-            </TextValidator>
-            <TextValidator
-              validators={['required', 'isNumber', 'minNumber:-50400', 'maxNumber:50400']}
-              errorMessages={['UTC Offset is required', UTCOffsetErrorText, UTCOffsetErrorText, UTCOffsetErrorText]}
-              name="utcOffset"
-              label="UTC Offset (in seconds)"
-              fullWidth
-              variant="outlined"
-              value={data.utcOffset}
-              onChange={handleValueChange('utcOffset')}
-              margin="normal"
-              disabled = {data.detectAutomatically}
-            />
-            <TextValidator
-              validators={['required', 'isFloat', 'minFloat:-90', 'maxFloat:90']}
-              errorMessages={['Latitude is required', LatitudeErrorText, LatitudeErrorText, LatitudeErrorText]}
-              name="latitude"
-              label="Latitude"
-              fullWidth
-              variant="outlined"
-              value={data.latitude}
-              onChange={handleValueChange('latitude')}
-              margin="normal"
-              disabled = {data.detectAutomatically}
-            />
-            <TextValidator
-              validators={['required', 'isFloat', 'minFloat:-180.0', 'maxFloat:180.0']}
-              errorMessages={['Longitude is required', LongitudeErrorText, LongitudeErrorText, LongitudeErrorText ]}
-              name="longitude"
-              label="Longitude"
-              fullWidth
-              variant="outlined"
-              value={data.longitude}
-              onChange={handleValueChange('longitude')}
-              margin="normal"
-              disabled = {data.detectAutomatically}
-            />
+      <AppStateContext.Consumer>
+        {({wifiConfigured}) => (
+          <ValidatorForm onSubmit={wifiConfigured?this.validateAndSaveParams:this.saveData} ref={this.form}>
+            {validatingParams &&
+              <div className={classes.connectingSettings}>
+                <LinearProgress className={classes.connectingSettingsDetails} />
+                <Typography variant="h6" className={classes.connectingProgress}>
+                  Validating&hellip;
+                </Typography>
+            </div>}
             <BlockFormControlLabel
-              value="useMetricUnits"
               control={
                 <Checkbox
+                  value="detectAutomatically"
+                  checked={data.detectAutomatically}
+                  onChange={handleValueChange("detectAutomatically")}
+                />
+              }
+              label="Detect Automatically"
+            />
+              <TextValidator
+                validators={['required']}
+                errorMessages={['City is required']}
+                name="location"
+                label="City"
+                fullWidth
+                variant="outlined"
+                value={data.location}
+                onChange={handleValueChange('location')}
+                margin="normal"
+                disabled = {data.detectAutomatically}
+                helperText="City name with optional country code"
+              />
+              <TextValidator
+                validators={['required']}
+                errorMessages={['Language is required']}
+                name="language"
+                label="Language"
+                fullWidth
+                variant="outlined"
+                value={data.language}
+                onChange={handleValueChange('language')}
+                margin="normal"
+                disabled = {data.detectAutomatically}
+                inputProps={{
+                  maxLength: 2,
+                  minLength: 2,
+                  style: { textTransform: "lowercase" }
+                }}
+                helperText="Two letters language code"
+                >
+              </TextValidator>
+              <TextValidator
+                validators={['required', 'isNumber', 'minNumber:-50400', 'maxNumber:50400']}
+                errorMessages={['UTC Offset is required', UTCOffsetErrorText, UTCOffsetErrorText, UTCOffsetErrorText]}
+                name="utcOffset"
+                label="UTC Offset (in seconds)"
+                fullWidth
+                variant="outlined"
+                value={data.utcOffset}
+                onChange={handleValueChange('utcOffset')}
+                margin="normal"
+                disabled = {data.detectAutomatically}
+              />
+              <TextValidator
+                validators={['required', 'isFloat', 'minFloat:-90', 'maxFloat:90']}
+                errorMessages={['Latitude is required', LatitudeErrorText, LatitudeErrorText, LatitudeErrorText]}
+                name="latitude"
+                label="Latitude"
+                fullWidth
+                variant="outlined"
+                value={data.latitude}
+                onChange={handleValueChange('latitude')}
+                margin="normal"
+                disabled = {data.detectAutomatically}
+              />
+              <TextValidator
+                validators={['required', 'isFloat', 'minFloat:-180.0', 'maxFloat:180.0']}
+                errorMessages={['Longitude is required', LongitudeErrorText, LongitudeErrorText, LongitudeErrorText ]}
+                name="longitude"
+                label="Longitude"
+                fullWidth
+                variant="outlined"
+                value={data.longitude}
+                onChange={handleValueChange('longitude')}
+                margin="normal"
+                disabled = {data.detectAutomatically}
+              />
+              <BlockFormControlLabel
                 value="useMetricUnits"
-                checked={data.useMetricUnits}
-                onChange={handleValueChange("useMetricUnits")}
-                disabled = {data.detectAutomatically}
+                control={
+                  <Checkbox
+                  value="useMetricUnits"
+                  checked={data.useMetricUnits}
+                  onChange={handleValueChange("useMetricUnits")}
+                  disabled = {data.detectAutomatically}
+                />
+                }
+                label="Use Metrics Units"
+                labelPlacement="end"
               />
-              }
-              label="Use Metrics Units"
-              labelPlacement="end"
-            />
-            <BlockFormControlLabel
-              value="use24Hours"
-              control={
-                <Checkbox
+              <BlockFormControlLabel
                 value="use24Hours"
-                checked={data.use24Hours}
-                onChange={handleValueChange("use24Hours")}
-                disabled = {data.detectAutomatically}
+                control={
+                  <Checkbox
+                  value="use24Hours"
+                  checked={data.use24Hours}
+                  onChange={handleValueChange("use24Hours")}
+                  disabled = {data.detectAutomatically}
+                />
+                }
+                label="Use 24 hours time"
+                labelPlacement="end"
               />
-              }
-              label="Use 24 hours time"
-              labelPlacement="end"
-            />
-            <BlockFormControlLabel
-              value="useYMDFormat"
-              control={
-                <Checkbox
+              <BlockFormControlLabel
                 value="useYMDFormat"
-                checked={data.useYMDFormat}
-                onChange={handleValueChange("useYMDFormat")}
-                disabled = {data.detectAutomatically}
+                control={
+                  <Checkbox
+                  value="useYMDFormat"
+                  checked={data.useYMDFormat}
+                  onChange={handleValueChange("useYMDFormat")}
+                  disabled = {data.detectAutomatically}
+                />
+                }
+                label="Use YMD (Year-Month-Day) date format"
+                labelPlacement="end"
               />
-              }
-              label="Use YMD (Year-Month-Day) date format"
-              labelPlacement="end"
-            />
-          <FormActions>
-            <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit" disabled={this.state.validatingParams}>
-              Save
-            </FormButton>
-          </FormActions>
-        </ValidatorForm>
+            <FormActions>
+              <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit" disabled={this.state.validatingParams}>
+                Save
+              </FormButton>
+            </FormActions>
+          </ValidatorForm>
+           )
+          }
+        </AppStateContext.Consumer>
       )
   }
 
