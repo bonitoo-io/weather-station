@@ -52,6 +52,8 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
         errorMessage: undefined
       };
 
+      attempts: number  = 0
+
       setData = (data: D, callback?: () => void) => {
         this.setState({
           data,
@@ -62,6 +64,12 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
 
      
       loadData = () => {
+        this.attempts = 0
+        this.doLoadData()
+      }
+
+      doLoadData = () => {
+        ++this.attempts
         this.setState({
           data: undefined,
           loading: true,
@@ -84,14 +92,24 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
           this.setState({ data: json, loading: false })
         }).catch(error => {
           if(error.name !== RETRY_EXCEPTION_TYPE) {
-            const errorMessage = error.message || "Unknown error";
-            this.props.enqueueSnackbar("Problem fetching: " + errorMessage, { variant: 'error' });
-            this.setState({ data: undefined, loading: false, errorMessage });
+            if(this.attempts < 3) {
+              setTimeout(this.doLoadData, 5*1000)
+            } else {
+              const errorMessage = error.message || "Unknown error";
+              this.props.enqueueSnackbar("Problem fetching: " + errorMessage, { variant: 'error' });
+              this.setState({ data: undefined, loading: false, errorMessage });
+            }
           }
         });
       }
 
       saveData = () => {
+        this.attempts = 0
+        this.doSaveData()
+      }
+
+      doSaveData = () => {
+        ++this.attempts
         this.setState({ loading: true });
         fetch(endpointUrl, {
           method: 'POST',
@@ -108,7 +126,7 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
             if (retryAfter) {
               timeout = parseInt(retryAfter, 10);
             }
-            setTimeout(this.loadData, timeout*1000)
+            setTimeout(this.saveData, timeout*1000)
             throw retryError503()
           }
           throw Error("Invalid status code: " + response.status);
@@ -117,9 +135,13 @@ export function restController<D, P extends RestControllerProps<D>>(endpointUrl:
           this.setState({ data: json, loading: false });
         }).catch(error => {
           if(error.name !== RETRY_EXCEPTION_TYPE) {
-            const errorMessage = error.message || "Unknown error";
-            this.props.enqueueSnackbar("Problem updating: " + errorMessage, { variant: 'error' });
-            this.setState({ data: undefined, loading: false, errorMessage });
+            if(this.attempts < 3) {
+              setTimeout(this.doSaveData, 5*1000)
+            } else {
+              const errorMessage = error.message || "Unknown error";
+              this.props.enqueueSnackbar("Problem updating: " + errorMessage, { variant: 'error' });
+              this.setState({ data: undefined, loading: false, errorMessage });
+            }
           }
         });
       }
