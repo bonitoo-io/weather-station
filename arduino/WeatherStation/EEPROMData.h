@@ -9,7 +9,6 @@ class EEPROMData {
       int16_t tempOffset; // Temperature compenstation coefficient in fahrenheit (int * 10)
       int16_t humOffset; // Humidity compenstation coefficient (int * 10)
     } _data;
-    bool _dirty;
     void _printData();
   public:
     EEPROMData();

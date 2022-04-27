@@ -9,7 +9,6 @@ EEPROMData::EEPROMData() {
   _data.magic = EEPROM_DATA_MAGIC;
   _data.tempOffset = 0;
   _data.humOffset = 0;
-  _dirty = false;
 }
 
 void EEPROMData::begin() {
@@ -21,10 +20,7 @@ float EEPROMData::getTempOffsetRaw() {
 }
 
 void EEPROMData::setTempOffsetRaw(float tempOffset) {
-  if(_data.tempOffset != Sensor::float2Int(tempOffset)) {
-    _data.tempOffset = Sensor::float2Int(tempOffset);
-    _dirty = true;
-  }
+  _data.tempOffset = Sensor::float2Int(tempOffset);
 }
 
 float EEPROMData::getHumOffsetRaw() {
@@ -32,10 +28,7 @@ float EEPROMData::getHumOffsetRaw() {
 }
 
 void EEPROMData::setHumOffsetRaw(float humOffset) {
-  if(_data.humOffset != Sensor::float2Int(humOffset)) {
-    _data.humOffset = Sensor::float2Int(humOffset);
-    _dirty = true;
-  }
+  _data.humOffset = Sensor::float2Int(humOffset);
 }
 
 void EEPROMData::_printData() {
@@ -45,12 +38,8 @@ void EEPROMData::_printData() {
 uint8_t EEPROMData::write() {
   Serial.print(F("EEPROMData:write"));
   _printData();
-  if(_dirty) {
-    EEPROM.put(0, _data);
-    EEPROM.commit();
-  } else {
-    Serial.println(F(" not changed"));
-  }
+  EEPROM.put(0, _data);
+  EEPROM.commit();
   return 0;
 }
 
