@@ -148,16 +148,24 @@ void setup() {
   });
 
   station.getAdvancedSettings()->setHandler([](){
-    updater.init(station.getAdvancedSettings(), VERSION);
-    bForceUpdate = true;
+    if(station.getAdvancedSettings()->updatedParts & AdvancedSettingsParts::UpdateSettings) {
+      updater.init(station.getAdvancedSettings(), VERSION);
+    }
+    if(station.getAdvancedSettings()->updatedParts & AdvancedSettingsParts::OpenWeatherAPIKey) {
+      bForceUpdate = true;
+    }
   });
 
   RegionalSettings *pRegionalSettings = station.getRegionalSettings();
   pRegionalSettings->setHandler([pRegionalSettings](){
-    if(!pRegionalSettings->detectAutomatically) {
+    if(((pRegionalSettings->updatedParts & RegionalSettingsParts::DetectAutomatically) && pRegionalSettings->detectAutomatically)
+      || (pRegionalSettings->updatedParts &  RegionalSettingsParts::UtcOffset)
+      || (pRegionalSettings->updatedParts &  RegionalSettingsParts::City)) {
+      bForceUpdate = true;  
+    }
+    if(pRegionalSettings->updatedParts &  RegionalSettingsParts::Language) {
       setLanguage( pRegionalSettings->language.c_str());
     }
-    bForceUpdate = true;
   });
 
   station.getDisplaySettings()->setHandler([](){

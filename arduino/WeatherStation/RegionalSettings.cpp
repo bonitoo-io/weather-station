@@ -28,7 +28,8 @@ RegionalSettings::RegionalSettings():
   useMetricUnits(REGIONAL_SETTINGS_DEFAULT_USE_METRICS),
   use24Hours(REGIONAL_SETTINGS_DEFAULT_USE_24HOURS),
   useYMDFormat(REGIONAL_SETTINGS_DEFAULT_USE_YMD),
-  forceEngMessages(false)
+  forceEngMessages(false),
+  updatedParts(0)
   {
 }
 
@@ -61,4 +62,43 @@ int RegionalSettings::load(JsonObject& root) {
 
   print(F("Load Regional settings"));
   return 0;
+}
+
+RegionalSettingsEndpoint::RegionalSettingsEndpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, RegionalSettings *pSettings):
+    SettingsEndpoint(pServer, F(REGIONAL_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
+    [this](Settings */*pSettings*/, JsonObject /*jsonObject*/) { //fetchManipulator
+    },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
+      RegionalSettings *regSettings = (RegionalSettings *)pSettings;
+      regSettings->updatedParts = 0;
+      
+      if(regSettings->detectAutomatically != jsonObject[F("detectAutomatically")]) {
+         regSettings->updatedParts |= RegionalSettingsParts::DetectAutomatically;
+      }
+
+      if(!jsonObject[F("detectAutomatically")] ) {
+        if(jsonObject[F("location")] != regSettings->location) {
+          regSettings->updatedParts |= RegionalSettingsParts::City;
+        }
+
+        if(jsonObject[F("language")] != regSettings->language) {
+          regSettings->updatedParts |= RegionalSettingsParts::Language;
+        }
+
+        if(jsonObject[F("utcOffset")] != regSettings->utcOffset) {
+          regSettings->updatedParts |= RegionalSettingsParts::UtcOffset;
+        }
+
+        if(jsonObject[F("latitude")] != regSettings->latitude 
+          || jsonObject[F("longitude")] != regSettings->longitude) {
+          regSettings->updatedParts |= RegionalSettingsParts::LocationCoords;
+        }
+
+        if(jsonObject[F("useMetricUnits")] != regSettings->useMetricUnits 
+          || jsonObject[F("use24Hours")] != regSettings->use24Hours
+          || jsonObject[F("useYMDFormat")] != regSettings->useYMDFormat) {
+            regSettings->updatedParts |= RegionalSettingsParts::RegionParams;
+          }
+      }
+      Serial.printf_P(PSTR("Updated parts: %u\n"),regSettings->updatedParts);
+    }) {
 }

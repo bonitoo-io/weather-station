@@ -36,7 +36,8 @@ AdvancedSettings::AdvancedSettings():
   binFile(ADVANCED_DEFAULT_BIN_FILE),
   md5File(ADVANCED_DEFAULT_MD5_FILE),
   checkBeta(ADVANCED_DEFAULT_CHECKBETA),
-  verifyCert(ADVANCED_DEFAULT_VERIFY_CERT)  {
+  verifyCert(ADVANCED_DEFAULT_VERIFY_CERT),
+  updatedParts(0)  {
   setUpdateTime(getDefaultUpdateTime());
   DECLARE_ENCRYPT_STR( owKeyStr, ADVANCED_DEFAUT_OPENWEATHER_API_KEY);
   openWeatherAPIKey = GET_ENCRYPT_STR(owKeyStr);
@@ -82,8 +83,6 @@ int AdvancedSettings::save(JsonObject& root) {
     root[F("updateDataInterval")] = updateDataInterval;
     root[FPSTR(OpenweatherApiKeyStr)] = openWeatherAPIKey;
     root[F("ntpServers")] = ntpServers;
-    root[F("tempOffset")] = getTempOffset();
-    root[F("humOffset")] = getHumOffset();
     root[F("owner")] = owner;
     root[F("repo")] = repo;
     root[F("binFile")] = binFile;
@@ -149,12 +148,39 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPer
       jsonObject[F("useMetric")] = _pRegionalSettings->useMetricUnits;
       jsonObject[F("actualTemp")] = _pRegionalSettings->useMetricUnits ? Sensor::tempF2C(pSensor->getTempF(true)) : pSensor->getTempF(true);
       jsonObject[F("actualHum")] = pSensor->getHum(true);
+      jsonObject[F("tempOffset")] = advSettings->getTempOffset();
+      jsonObject[F("humOffset")] = advSettings->getHumOffset();
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *key = jsonObject[FPSTR(OpenweatherApiKeyStr)].as<const char *>();
       AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
+      advSettings->updatedParts = 0;
+
       if(strstr(key, ReplaceMark)) {
         jsonObject[FPSTR(OpenweatherApiKeyStr)] = advSettings->openWeatherAPIKey;
+      } else if(jsonObject[FPSTR(OpenweatherApiKeyStr)] != advSettings->openWeatherAPIKey) {
+        advSettings->updatedParts |= AdvancedSettingsParts::OpenWeatherAPIKey;
       }
+
+      if(jsonObject[F("repo")] != advSettings->repo 
+        || jsonObject[F("owner")] != advSettings->repo
+        || jsonObject[F("binFile")] != advSettings->binFile
+        || jsonObject[F("md5File")] != advSettings->md5File
+        || jsonObject[F("updateTime")] != advSettings->updateTime
+        || jsonObject[F("checkBeta")] != advSettings->checkBeta
+        || jsonObject[F("verifyCert")] != advSettings->verifyCert) {
+          advSettings->updatedParts |= AdvancedSettingsParts::UpdateSettings;
+        }
+
+      if(jsonObject[F("ntpServers")] != advSettings->ntpServers) {
+        advSettings->updatedParts |= AdvancedSettingsParts::NTPServers;
+      }
+
+      if(jsonObject[F("updateDataInterval")] != advSettings->updateDataInterval) {
+        advSettings->updatedParts |= AdvancedSettingsParts::UpdateInterval;
+      }
+      Serial.printf_P(PSTR("Updated parts: %u\n"),advSettings->updatedParts);
       advSettings->updateEEPROMData( jsonObject[F("tempOffset")], jsonObject[F("humOffset")]);
-    }), _pRegionalSettings(pRegionalSettings) {
+
+    }), 
+    _pRegionalSettings(pRegionalSettings) {
 }

@@ -18,6 +18,16 @@
 #define REGIONAL_SETTINGS_ENDPOINT_PATH "/api/regionalSettings"
 #define REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH "/api/regionalSettingsCheckValidation"
 
+
+enum RegionalSettingsParts {
+  DetectAutomatically = 1,
+  City = 2,
+  Language = 4,
+  UtcOffset = 8,
+  LocationCoords = 16,
+  RegionParams = 32
+};
+
 class RegionalSettings : public Settings {
 public:
     bool detectAutomatically;
@@ -33,7 +43,9 @@ public:
     bool useMetricUnits;
     bool use24Hours;
     bool useYMDFormat;
-    bool forceEngMessages;  //calculated variable, do not store
+    //calculated variables, do not store
+    bool forceEngMessages;  
+    uint8_t updatedParts;
 public:
   RegionalSettings();
   virtual ~RegionalSettings() {}
@@ -42,5 +54,11 @@ public:
   virtual void print(const __FlashStringHelper *title) override;
   virtual String getFilePath() override { return F(FS_CONFIG_DIRECTORY "/regionalSettings.json"); }
 };
+
+class RegionalSettingsEndpoint : public SettingsEndpoint {
+  public:
+    RegionalSettingsEndpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, RegionalSettings *pSettings);
+};
+
 
 #endif //WS_REGIONAL_SETTINGS_H

@@ -8,6 +8,13 @@
 #define ADVANCED_SETTINGS_ENDPOINT_PATH "/api/advancedSettings"
 #define ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH "/api/validateAdvancedSettings"
 
+enum AdvancedSettingsParts {
+  UpdateInterval = 1,
+  OpenWeatherAPIKey = 2,
+  NTPServers = 4,
+  UpdateSettings = 8
+};
+
 class AdvancedSettings : public Settings {
   public:
     // Update data (etc weather forecast) interval in minutes
@@ -32,6 +39,8 @@ class AdvancedSettings : public Settings {
     bool checkBeta;
     // Verify github cert
     bool verifyCert;
+    // not saved field
+    uint8_t updatedParts;
   protected:
     void setUpdateTime(uint16_t time);
   private:
