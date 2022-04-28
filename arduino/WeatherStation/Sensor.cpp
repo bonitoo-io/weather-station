@@ -33,6 +33,18 @@ bool Sensor::setupSensor() {
   return false;
 }
 
+void Sensor::resetTempFilter( float t) {
+  if (isnan(t))
+    t = driverGetTempF() + station.getAdvancedSettings()->getTempOffsetF();
+  _tempFilt.init( t); //reset median filter data for temperature
+}
+
+void Sensor::resetHumFilter( float h) {
+  if (isnan(h))
+    h = driverGetHum(true) + station.getAdvancedSettings()->getHumOffset();
+  _humFilt.init( float2Int( h)); //reset median filter data for humidity
+}
+
 bool Sensor::setup() {
   float t = driverGetTempF();
   _timeNextUpdate = millis() + driverGetMaxRefreshRateMs();
@@ -47,8 +59,8 @@ bool Sensor::setup() {
   t += station.getAdvancedSettings()->getTempOffsetF();
   h += station.getAdvancedSettings()->getHumOffset();
 
-  _tempFilt.init( t); //prepare median filter data for temperature
-  _humFilt.init( float2Int( h)); //prepare median filter data for humidity
+  resetTempFilter( t); //prepare median filter data for temperature
+  resetHumFilter( h); //prepare median filter data for humidity
   //clean data
   for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
     _tempHistory[i] = NO_VALUE_INT;

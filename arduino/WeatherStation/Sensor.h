@@ -76,13 +76,15 @@ public:
   static inline String strTempInt( int16_t t) { return strTemp(int2Temp( t, false));};
   static String strHum( float h, uint8_t decimalPlaces = 0);
   static inline String strHumInt( int16_t h) { return strHum( int2Float( h));};
+  void resetTempFilter( float t = NAN);
+  void resetHumFilter( float h = NAN);
 protected:
 //virtual functions for temperature/humidity sensors
   virtual bool driverSetup() = 0;  //setup the sensor, allocate sensor class
   virtual const __FlashStringHelper * driverName() = 0; //get sensor name
   virtual float driverGetTempF() = 0; //temperatures always in fahrenheit
   virtual float driverGetHum( bool secondRead) = 0;  //humidity always in percent
-  virtual inline uint16_t driverGetMaxRefreshRateMs() { return 1000;};  //default refresh is 1s (may be overwritten)
+  virtual inline uint16_t driverGetMaxRefreshRateMs() { return 500;};  //default refresh is 0.5s (may be overwritten)
 private:
   void internalLoadHum( bool secondRead);
   Median3Filter<float> _tempFilt;

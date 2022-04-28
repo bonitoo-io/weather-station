@@ -131,10 +131,12 @@ float AdvancedSettings::getHumOffset() {
 
 void AdvancedSettings::setTempOffset( float tempOffset) {
   _eepromData.setTempOffsetRaw( station.getRegionalSettings()->useMetricUnits ? tempOffset * 9.0 / 5.0 : tempOffset); //convert from F to C if needed
+  pSensor->resetTempFilter();
 }
 
 void AdvancedSettings::setHumOffset( float humOffset) {
   _eepromData.setHumOffsetRaw(humOffset);
+  pSensor->resetHumFilter();
 }
 
 AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings):
