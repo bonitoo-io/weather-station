@@ -1,4 +1,8 @@
 # Changelog
+## 1.12
+## Fixes
+- Fixed temp offset calculation in calibration
+
 ## 1.11
 ## Features
 - Support for all Sensirion SHT* sensors
