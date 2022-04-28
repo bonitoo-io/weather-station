@@ -437,9 +437,10 @@ class AdvancedSettingsForm extends Component<AdvancedSettingsFormProps, Advanced
       this.setState({ errorMessage: "Humidity is not a number" }); 
       return
     }
-    data.tempOffset = temp-data.actualTemp
     if(!data.useMetric && tempInMetric) {
-      data.tempOffset = data.tempOffset * 9.0/5.0
+      data.tempOffset = ((temp*9.0/5.0) + 32)-data.actualTemp;
+    } else {
+      data.tempOffset = temp-data.actualTemp;
     }
     data.tempOffset = Math.round(data.tempOffset*100)/100;
     data.humOffset = Math.round((hum-data.actualHum)*100)/100;
