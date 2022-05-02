@@ -395,18 +395,6 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
 void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& event) {
   Serial.print(F("[WIFIM] WiFi Connected. SSID="));
   Serial.println(event.ssid);
-  _connectingToWifi = false;
-  _lastDisconnectReason = 0;
-  if(_state == WiFiConnectingState::TestingConfig || _state == WiFiConnectingState::ConnectingToSaved ) {
-    // Mark test success only when comming from testing states
-    _connectTestSuccess = true;
-  }
-  if(_state == WiFiConnectingState::TestingConfig) {
-    enterState(WiFiConnectingState::SaveConfig);
-  } else {
-    enterState(WiFiConnectingState::ConnectingSuccess);
-  }
-  notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
 }
 
 void WiFiManager::statusResponseSent() {
@@ -420,6 +408,18 @@ void WiFiManager::statusResponseSent() {
 
 void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
   Serial.printf_P(PSTR("[WIFIM] WiFi got localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
+  _connectingToWifi = false;
+  _lastDisconnectReason = 0;
+  if(_state == WiFiConnectingState::TestingConfig || _state == WiFiConnectingState::ConnectingToSaved ) {
+    // Mark test success only when comming from testing states
+    _connectTestSuccess = true;
+  }
+  if(_state == WiFiConnectingState::TestingConfig) {
+    enterState(WiFiConnectingState::SaveConfig);
+  } else {
+    enterState(WiFiConnectingState::ConnectingSuccess);
+  }
+  notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
 }
 
 void WiFiManager::onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
