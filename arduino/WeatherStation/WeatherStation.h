@@ -16,6 +16,13 @@
 #include "DisplaySettings.h"
 #include "Validation.h"
 
+struct route {
+  const char *uri;
+  const char *contentType;
+  const uint8_t* content;
+  size_t len;
+};
+
 class WeatherStation {
 public:
     WeatherStation(InfluxDBHelper *influxDBHelper);
@@ -55,10 +62,15 @@ public:
     bool isServerStarted() const { return _server != nullptr; }
     void registerEndpoints();
     void saveRegionalSettings();
-    void registerHandler(const String& uri, const String& contentType, const uint8_t* content, size_t len);
+    void registerHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len);
     void globalDisconnectHandler(AsyncWebServerRequest *request);
     bool globalFilterHandler(AsyncWebServerRequest *request);
     void setFWUploadFinishedCallback(FWUploadFinishedCallback callback) { _fwUploadFinishedCallback = callback; }
+private:
+    void requestHandler(AsyncWebServerRequest* request);
+    void respond(route *r, AsyncWebServerRequest* request);
+    void notFound (AsyncWebServerRequest* request);
+    void registerStatics() ;
 private:
     InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;

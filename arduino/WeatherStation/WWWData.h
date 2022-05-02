@@ -11731,7 +11731,7 @@ const uint8_t ESP_REACT_DATA_15[] PROGMEM = {
   0x6D,0xD7,0xA8,0xDB,0xE7,0x7E,0x00,0x4F,0xA1,0x71,0xE5,0xEC,0x01,0x00,0x00,
 };
 
-typedef std::function<void(const String& uri, const String& contentType, const uint8_t * content, size_t len)> RouteRegistrationHandler;          
+typedef std::function<void(const char *uri, const char *contentType, const uint8_t * content, size_t len)> RouteRegistrationHandler;          
 
 class WWWData {
   public:

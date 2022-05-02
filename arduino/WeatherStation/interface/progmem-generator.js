@@ -99,7 +99,7 @@ class ProgmemGenerator {
           }
 
           const generateWWWClass = () => {
-            return `typedef std::function<void(const String& uri, const String& contentType, const uint8_t * content, size_t len)> RouteRegistrationHandler;          
+            return `typedef std::function<void(const char *uri, const char *contentType, const uint8_t * content, size_t len)> RouteRegistrationHandler;          
 
 class WWWData {
 ${indent}public:

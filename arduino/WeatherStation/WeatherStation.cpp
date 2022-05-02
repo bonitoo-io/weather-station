@@ -4,6 +4,7 @@
 #include "Debug.h"
 #include "Migrator.h"
 #include "Tools.h"
+#include <map>
 
 WeatherStation::WeatherStation(InfluxDBHelper *influxDBHelper):
   _influxDBHelper(influxDBHelper),
@@ -69,66 +70,116 @@ void WeatherStation::end() {
   _wifiManager.end();
 }
 
-void WeatherStation::registerHandler(const String& uri, const String& contentType, const uint8_t* content, size_t len) {
-  ArRequestHandlerFunction requestHandler = [uri,contentType, content, len, this](AsyncWebServerRequest* request) {
-    if(!_endpointsRegistered) {
-      registerEndpoints();
-    }
-    uint32_t s = millis();
-    request->onDisconnect([s]() {
-      Serial.print(F(" in "));
-      Serial.print(millis()-s);
-      Serial.println(F("ms "));
-    });
-    if (request->header("If-None-Match").equals(ETag)) {
-      // send not modified
-      Serial.println(F(" Not modified"));
-      request->send(304);
-    } else {
-      bool cont = true;
-      if(ESP.getMaxFreeBlockSize() < 2048) {
-        Serial.println(F(" Low memory condition. Releasing influxdb client "));
-        if(!_influxDBHelper->release()) {
-            Serial.println(F(" Failed "));
-            AsyncWebServerResponse* response = request->beginResponse(429);
-            response->addHeader(F("Retry-After"), F("1"));
-            request->send(response);
-            cont = false;
-        }
-      }
-      if(cont) {
-        AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
-        response->addHeader(F("Content-Encoding"), F("gzip"));
-        response->addHeader(F("Cache-Control"), F("public, max-age=3600, must-revalidate"));
-        response->addHeader(F("ETag"), ETag);
-        request->send(response);
-      }
-    }
-  };
 
-  _server->on(uri.c_str(), HTTP_GET, requestHandler);
-  // Serving non matching get requests with "/index.html"
-  // OPTIONS get a straight up 200 response
-  if (uri.equals(F("/index.html"))) {
-    _server->onNotFound([this,requestHandler](AsyncWebServerRequest* request) {
-      Serial.println(F(" Not found"));
-      bool ewr = _endpointsRegistered;
-      if(!_endpointsRegistered) {
-        registerEndpoints();
-      }
-      if(!ewr && request->url().startsWith(F("/api/"))) {
-        AsyncWebServerResponse *response = request->beginResponse(503);
-        response->addHeader(F("Retry-After"),"1");
-        request->send(response);
-      } else if (request->method() == HTTP_GET) {
-        requestHandler(request);
-      } else if (request->method() == HTTP_OPTIONS) {
-        request->send(200);
-      } else {
-        requestHandler(request);
-      }
-    });
+auto cmpLambda = [](const char *a, const char *b){ return strcmp(a,b)<0; };
+static std::map<const char *, route *, decltype(cmpLambda)> routeMap(cmpLambda);
+static route *indexRoute = nullptr;
+
+void WeatherStation::registerHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len) {
+  route *r = new route;
+  r->uri = uri;
+  r->contentType = contentType;
+  r->content = content;
+  r->len = len;
+  routeMap[uri] = r;
+  if(!strcmp_P(uri,PSTR("/index.html"))) {
+    indexRoute = r;
   }
+}
+
+//todo: request handler that get url and is callable from onNot found
+void WeatherStation::requestHandler(AsyncWebServerRequest* request) {
+  if(!_endpointsRegistered) {
+    registerEndpoints();
+  }
+  
+  route *r = routeMap[request->url().c_str()];
+  if(!r) {
+    Serial.print(request->url());
+    Serial.println(F(" not found"));
+    if(indexRoute) {
+      respond(indexRoute, request);
+    } else {
+      request->send(404);
+    }
+    return;
+  }
+  respond(r, request);
+}
+
+void WeatherStation::respond(route *r, AsyncWebServerRequest* request) {  
+  if(r == indexRoute) {
+    Serial.println(F(" Responding with index"));
+  }
+  uint32_t s = millis();
+  request->onDisconnect([s]() {
+    Serial.print(F(" in "));
+    Serial.print(millis()-s);
+    Serial.println(F("ms "));
+  });
+  if (request->header("If-None-Match").equals(ETag)) {
+    // send not modified
+    Serial.println(F(" Not modified"));
+    request->send(304);
+  } else {
+    bool cont = true;
+    if(ESP.getMaxFreeBlockSize() < 2048) {
+      Serial.println(F(" Low memory condition. Releasing influxdb client "));
+      if(!_influxDBHelper->release()) {
+          Serial.println(F(" Failed "));
+          AsyncWebServerResponse* response = request->beginResponse(429);
+          response->addHeader(F("Retry-After"), F("1"));
+          request->send(response);
+          cont = false;
+      }
+    }
+    if(cont) {
+      AsyncWebServerResponse* response = request->beginResponse_P(200, r->contentType, r->content, r->len);
+      response->addHeader(F("Content-Encoding"), F("gzip"));
+      response->addHeader(F("Cache-Control"), F("public, max-age=3600, must-revalidate"));
+      response->addHeader(F("ETag"), ETag);
+      request->send(response);
+    }
+  }
+};
+
+void WeatherStation::notFound (AsyncWebServerRequest* request) {
+   Serial.println(F(" Not found"));
+  bool ewr = _endpointsRegistered;
+  if(!_endpointsRegistered) {
+    registerEndpoints();
+  }
+  if(!ewr && request->url().startsWith(F("/api/"))) {
+    AsyncWebServerResponse *response = request->beginResponse(503);
+    response->addHeader(F("Retry-After"),"1");
+    request->send(response);
+  } else if (request->method() == HTTP_GET) {
+    respond(indexRoute, request);
+  } else if (request->method() == HTTP_OPTIONS) {
+    request->send(200);
+  } else {
+    respond(indexRoute, request);
+  }
+}
+
+void WeatherStation::registerStatics() {
+  _server->on("/*", HTTP_GET, std::bind(&WeatherStation::requestHandler, this, std::placeholders::_1));
+
+  _server->onNotFound(std::bind(&WeatherStation::notFound, this, std::placeholders::_1));
+  // Serve static resources from PROGMEM
+
+    WWWData::registerIndex(std::bind(&WeatherStation::registerHandler,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2,
+      std::placeholders::_3,
+      std::placeholders::_4));
+    WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2,
+      std::placeholders::_3,
+      std::placeholders::_4));
 }
 
 bool WeatherStation::globalFilterHandler(AsyncWebServerRequest *request) {
@@ -168,20 +219,16 @@ void WeatherStation::startServer() {
     _server->onDisconnect(std::bind(&WeatherStation::globalDisconnectHandler,
       this,
       std::placeholders::_1));
-
-    // Serve static resources from PROGMEM
-    WWWData::registerIndex(std::bind(&WeatherStation::registerHandler,
-      this,
-      std::placeholders::_1,
-      std::placeholders::_2,
-      std::placeholders::_3,
-      std::placeholders::_4));
+    WS_DEBUG_RAM("Before register static endpoints");
+    registerStatics();
+    WS_DEBUG_RAM("After register static endpoints");
    }
  }
 
 void WeatherStation::registerEndpoints() {
   if(!_endpointsRegistered) {
-    Serial.println(F("Registering endpoints"));
+    Serial.println(F("Registering API endpoints"));
+    WS_DEBUG_RAM("Before register API endpoints");
     _endpointsRegistered = true;
     _wifiScannerEndpoint = new WiFiScannerEndpoint(_server);
     _wifiSettingsEndpoint = new WiFiSettingsEndpoint(_server, &_persistence, &_wifiSettings);
@@ -199,13 +246,8 @@ void WeatherStation::registerEndpoints() {
     _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(_server, &_persistence, &_advancedSettings, &_regionalSettings);
     _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(_server, &_regionalSettings);
     _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(_server, &_persistence, &_displaySettings, &_regionalSettings);
-    // Serve static resources from PROGMEM
-    WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler,
-      this,
-      std::placeholders::_1,
-      std::placeholders::_2,
-      std::placeholders::_3,
-      std::placeholders::_4));
+    WS_DEBUG_RAM("After register API endpoints");
+    
    }
  }
 
