@@ -161,7 +161,9 @@ void Sensor::saveTempHist() {
   if (isnan(t))
     return;
   Serial.print( F("Saving temp to history: "));
-  Serial.println( t);
+  Serial.print( t);
+  Serial.print( F(" "));
+  Serial.println( Sensor::tempF2C(t));
   for (uint8_t i = 0; i < TEMP_HIST_SIZE - 1; i++) { //move all values left
     _tempHistory[i] = _tempHistory[i+1];
     //Serial.println( "_tempHistory[" + String(i) + "] " + String(_tempHistory[i]) + "->" + String(tempF2C(int2Float(_tempHistory[i]))));

@@ -13,9 +13,6 @@
 * Json Streaming Parser
 (MIT)  https://github.com/squix78/json-streaming-parser/blob/master/LICENSE
 
-* SDHT
-(GPL) https://github.com/offcircuit/SDHT/blob/master/LICENSE
-
 * arduino-sht
 (BSD) https://github.com/Sensirion/arduino-sht/blob/master/LICENSE
 

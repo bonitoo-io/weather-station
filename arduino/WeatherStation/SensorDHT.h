@@ -2,7 +2,6 @@
 #define DHT_SENSOR_H
 
 #include <arduino.h>
-#include <SDHT.h>
 #include "Sensor.h"
 
 class SensorDHT : public Sensor {
@@ -13,7 +12,21 @@ protected:
   virtual float driverGetHum( bool secondRead) override;  //humidity always in percent
   virtual inline uint16_t driverGetMaxRefreshRateMs() override { return 2000;};  //DHT11 max 1Hz, set 2s
 private:
-  SDHT _dht;
+  int16_t _celsius10 = NO_VALUE_INT;  
+  uint16_t _humidity10 = NO_VALUE_INT;
+  uint16_t _expectPulse(int state);
+  bool _readSensor();
+};
+
+
+class InterruptLock {
+public:
+  InterruptLock() {
+    noInterrupts();
+  }
+  ~InterruptLock() {
+    interrupts();
+  }
 };
 
 #endif //DHT_SENSOR_H
