@@ -7,14 +7,14 @@
 
 float SensorDHT::driverGetTempF() {
   if (_readSensor())
-    return Sensor::tempC2F((float)_celsius10 / 10.0);
+    return Sensor::tempC2F(int2Float(_celsius10));
   else
     return NAN;
 }
 
 float SensorDHT::driverGetHum( bool secondRead) {
   if (secondRead || _readSensor())
-    return (float)_humidity10 / 10.0;
+    return int2Float(_humidity10);
   else
     return NAN;
 }
