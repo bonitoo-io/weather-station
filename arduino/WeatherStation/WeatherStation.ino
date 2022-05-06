@@ -431,6 +431,12 @@ void loop() {
         }
         pSensor->saveTempHist();  //Save temperature for the chart
         ESP.wdtFeed();
+        int i=3;
+        while(station.isRequestInProgress() &&  i > 0 ) { 
+          Serial.println(F(" HTTP req in progress, delaying write"));
+          delay(500); 
+          --i;
+        }
         ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
         ServicesTracker.save();
         //always save in celsius
@@ -521,7 +527,7 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
     case WifiConnectionEvent::ConnectingSuccess:
       shouldDrawWifiProgress = false;
       station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
-      station.startServer();
+      //station.startServer();
       break;
     case WifiConnectionEvent::ConnectingFailed:
       break;

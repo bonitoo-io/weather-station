@@ -51,6 +51,7 @@ public:
     WiFiManager *getWifiManager() {
         return &_wifiManager;
     }
+    bool isRequestInProgress() const { return _requestsInProgress > 0; }
     void startServer();
     void stopServer();
     bool isServerStarted() const { return _server != nullptr; }
@@ -73,6 +74,7 @@ private:
     void registerStatics() ;
     route *findRoute(routeMap &map, AsyncWebServerRequest* request);
 private:
+    volatile uint8_t _requestsInProgress;
     InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;
     InfluxDBSettings _influxDBSettings;
@@ -81,7 +83,6 @@ private:
     DisplaySettings _displaySettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
-    bool _endpointsRegistered = false;
     AsyncWebServer *_server = nullptr;
     WiFiScannerEndpoint *_wifiScannerEndpoint = nullptr;
     WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;

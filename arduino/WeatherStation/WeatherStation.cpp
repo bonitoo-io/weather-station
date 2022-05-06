@@ -77,10 +77,10 @@ static route *indexRoute = nullptr;
 
 
 void cleanMap(routeMap &map) {
-  for(auto [key, val] = map) {
+  for(const auto& [key, val] : map) {
     delete val;
   }
-  map.clean();
+  map.clear();
 }
 
 void cleanRoutes() {
@@ -91,7 +91,6 @@ void cleanRoutes() {
 
 void WeatherStation::registerStaticHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len) {
   get_route *r = new get_route;
-  r->uri = uri;
   r->params = new static_params;
   r->params->contentType = contentType;
   r->params->content = content;
@@ -105,21 +104,18 @@ void WeatherStation::registerStaticHandler(const char *uri, const char *contentT
 
 void WeatherStation::registerGetHandler(const char *uri, GetRequestHandler handler) {
   get_route *r = new get_route;
-  r->uri = uri;
   r->handler = handler;
   getRoutes[uri] = r;
 }
 
 void WeatherStation::registerDeleteHandler(const char *uri, GetRequestHandler handler) {
   get_route *r = new get_route;
-  r->uri = uri;
   r->handler = handler;
   deleteRoutes[uri] = r;
 }
 
 void WeatherStation::registerPostHandler(const char *uri, PostRequestHandler handler) {
   post_route *r = new post_route;
-  r->uri = uri;
   r->handler = handler;
   postRoutes[uri] = r;
 }
@@ -129,7 +125,7 @@ route *WeatherStation::findRoute(routeMap &map, AsyncWebServerRequest* request) 
   const char *uri = request->url().c_str();
   route *r =  map[uri];
   if(!r) {
-    Serial.printf_P(PSTR("%s on %s not found\n"), request->method(), uri);
+    Serial.printf_P(PSTR("%d on %s not found\n"), request->method(), uri);
     if(indexRoute) {
       respondStatic(request, indexRoute);
     } else {
@@ -231,15 +227,18 @@ void WeatherStation::registerStatics() {
 }
 
 bool WeatherStation::globalFilterHandler(AsyncWebServerRequest *request) {
-  Serial.printf_P(PSTR("Serving %d on %s\n"), request->method(), request->url().c_str());
+  ++_requestsInProgress;
+  Serial.printf_P(PSTR("Serving %d on %s. %d req. total\n"), request->method(), request->url().c_str(), _requestsInProgress);
   WS_DEBUG_RAM(" RAM Before request");
   if(_influxDBHelper->isWriting()) {
     Serial.println(F(" blocking, writing in progress"));
     AsyncWebServerResponse *response = request->beginResponse(429);
     response->addHeader("Retry-After","1");
     request->send(response);
+    --_requestsInProgress;
     return false;
   }
+  
   return true;
 }
 
@@ -247,11 +246,13 @@ void WeatherStation::globalDisconnectHandler(AsyncWebServerRequest *request) {
   WS_DEBUG_RAM(" RAM after request");
   Serial.print(F("Sent "));
   Serial.println(request->url());
+  --_requestsInProgress;
 }
 
 void WeatherStation::startServer() {
   if(!_server) {
     Serial.println(F("Starting HTTP server."));
+    _requestsInProgress = 0;
     _server = new AsyncWebServer(80);
     auto code = _server->begin();
     if(code) {
