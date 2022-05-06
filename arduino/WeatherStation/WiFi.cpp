@@ -380,7 +380,7 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
       case WiFiConnectingState::Idle:
       case WiFiConnectingState::ConnectingSuccess:
       case WiFiConnectingState::ConnectingToSaved:
-        _manageDelay = SCAN_NETWORK_DELAY;
+        _manageDelay = getKnownWiFiNetworksCount(_pFsp)>0?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
         break;
       default:
