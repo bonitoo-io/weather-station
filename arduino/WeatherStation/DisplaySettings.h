@@ -32,7 +32,7 @@ class DisplaySettings : public Settings {
 
 class DisplaySettingsEndpoint : public SettingsEndpoint {
 public:
-  DisplaySettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, DisplaySettings *pSettings, RegionalSettings *pRegionalSettings);
+  DisplaySettingsEndpoint(FSPersistence *pPersistence, DisplaySettings *pSettings, RegionalSettings *pRegionalSettings);
 private:
   RegionalSettings *_pRegionalSettings;
 };

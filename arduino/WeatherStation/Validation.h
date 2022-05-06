@@ -15,11 +15,12 @@ enum class ValidationStatus {
   Error
 };
 
-class ValidateParamsEndpoint {
+class ValidateParamsEndpoint : public Endpoint {
 public:
-  ValidateParamsEndpoint(AsyncWebServer* server, const  String &uri);
+  ValidateParamsEndpoint(const  char *uri);
   virtual ~ValidateParamsEndpoint() {};
   void loop();
+  virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
 protected:
   // Should read json data and save params for later validation
   virtual void saveParams(JsonVariant& json) = 0;
@@ -27,17 +28,18 @@ protected:
   virtual void runValidation() = 0;
 private:
   // HTTP handlers
-  void validateParams(AsyncWebServerRequest* request, JsonVariant& json);
-  void checkStatus(AsyncWebServerRequest* request);
+  void validateParams(AsyncWebServerRequest* request, JsonVariant& json, route *);
+  void checkStatus(AsyncWebServerRequest* request, route *);
 protected:
-    ValidationStatus _status;
-    String _error;
+  const char *_uri;
+  ValidationStatus _status;
+  String _error;
 };
 
 
 class RegionalSettingsValidateEndpoint : public ValidateParamsEndpoint {
 public:
-    RegionalSettingsValidateEndpoint(AsyncWebServer* server, AdvancedSettings *pAdvSetting);
+    RegionalSettingsValidateEndpoint(AdvancedSettings *pAdvSetting);
     virtual ~RegionalSettingsValidateEndpoint() { delete _pSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;
@@ -49,7 +51,7 @@ private:
 
 class AdvancedSettingsValidateEndpoint : public ValidateParamsEndpoint {
 public:
-    AdvancedSettingsValidateEndpoint(AsyncWebServer* server, RegionalSettings *pRegSetting);
+    AdvancedSettingsValidateEndpoint( RegionalSettings *pRegSetting);
     virtual ~AdvancedSettingsValidateEndpoint() { delete _pSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;

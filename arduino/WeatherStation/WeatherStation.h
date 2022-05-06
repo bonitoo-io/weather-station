@@ -15,8 +15,9 @@
 #include "AdvancedSettings.h"
 #include "DisplaySettings.h"
 #include "Validation.h"
+#include "Endpoint.h"
 
-class WeatherStation {
+class WeatherStation : public EndpointRegistrator {
 public:
     WeatherStation(InfluxDBHelper *influxDBHelper);
     void begin();
@@ -50,16 +51,30 @@ public:
     WiFiManager *getWifiManager() {
         return &_wifiManager;
     }
+    bool isRequestInProgress() const { return _requestsInProgress > 0; }
     void startServer();
     void stopServer();
     bool isServerStarted() const { return _server != nullptr; }
     void registerEndpoints();
     void saveRegionalSettings();
-    void registerHandler(const String& uri, const String& contentType, const uint8_t* content, size_t len);
+    void registerStaticHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len);
     void globalDisconnectHandler(AsyncWebServerRequest *request);
     bool globalFilterHandler(AsyncWebServerRequest *request);
     void setFWUploadFinishedCallback(FWUploadFinishedCallback callback) { _fwUploadFinishedCallback = callback; }
+public:
+    virtual void registerGetHandler(const char *uri, GetRequestHandler handler) override;
+    virtual void registerDeleteHandler(const char *uri, GetRequestHandler handler) override;
+    virtual void registerPostHandler(const char *uri, PostRequestHandler handler) override;   
 private:
+    void getRequestHandler(AsyncWebServerRequest* request);
+    void deleteRequestHandler(AsyncWebServerRequest* request);
+    void postRequestHandler(AsyncWebServerRequest* request, JsonVariant &json);
+    void respondStatic(AsyncWebServerRequest* request, route *r);
+    void notFound (AsyncWebServerRequest* request);
+    void registerStatics() ;
+    route *findRoute(routeMap &map, AsyncWebServerRequest* request);
+private:
+    volatile uint8_t _requestsInProgress;
     InfluxDBHelper *_influxDBHelper;
     WiFiSettings _wifiSettings;
     InfluxDBSettings _influxDBSettings;
@@ -68,7 +83,6 @@ private:
     DisplaySettings _displaySettings;
     FSPersistence _persistence;
     WiFiManager _wifiManager;
-    bool _endpointsRegistered = false;
     AsyncWebServer *_server = nullptr;
     WiFiScannerEndpoint *_wifiScannerEndpoint = nullptr;
     WiFiSettingsEndpoint *_wifiSettingsEndpoint = nullptr;

@@ -69,79 +69,176 @@ void WeatherStation::end() {
   _wifiManager.end();
 }
 
-void WeatherStation::registerHandler(const String& uri, const String& contentType, const uint8_t* content, size_t len) {
-  ArRequestHandlerFunction requestHandler = [uri,contentType, content, len, this](AsyncWebServerRequest* request) {
-    if(!_endpointsRegistered) {
-      registerEndpoints();
-    }
-    uint32_t s = millis();
-    request->onDisconnect([s]() {
-      Serial.print(F(" in "));
-      Serial.print(millis()-s);
-      Serial.println(F("ms "));
-    });
-    if (request->header("If-None-Match").equals(ETag)) {
-      // send not modified
-      Serial.println(F(" Not modified"));
-      request->send(304);
-    } else {
-      bool cont = true;
-      if(ESP.getMaxFreeBlockSize() < 2048) {
-        Serial.println(F(" Low memory condition. Releasing influxdb client "));
-        if(!_influxDBHelper->release()) {
-            Serial.println(F(" Failed "));
-            AsyncWebServerResponse* response = request->beginResponse(429);
-            response->addHeader(F("Retry-After"), F("1"));
-            request->send(response);
-            cont = false;
-        }
-      }
-      if(cont) {
-        AsyncWebServerResponse* response = request->beginResponse_P(200, contentType, content, len);
-        response->addHeader(F("Content-Encoding"), F("gzip"));
-        response->addHeader(F("Cache-Control"), F("public, max-age=3600, must-revalidate"));
-        response->addHeader(F("ETag"), ETag);
-        request->send(response);
-      }
-    }
-  };
 
-  _server->on(uri.c_str(), HTTP_GET, requestHandler);
-  // Serving non matching get requests with "/index.html"
-  // OPTIONS get a straight up 200 response
-  if (uri.equals(F("/index.html"))) {
-    _server->onNotFound([this,requestHandler](AsyncWebServerRequest* request) {
-      Serial.println(F(" Not found"));
-      bool ewr = _endpointsRegistered;
-      if(!_endpointsRegistered) {
-        registerEndpoints();
-      }
-      if(!ewr && request->url().startsWith(F("/api/"))) {
-        AsyncWebServerResponse *response = request->beginResponse(503);
-        response->addHeader(F("Retry-After"),"1");
-        request->send(response);
-      } else if (request->method() == HTTP_GET) {
-        requestHandler(request);
-      } else if (request->method() == HTTP_OPTIONS) {
-        request->send(200);
-      } else {
-        requestHandler(request);
-      }
-    });
+static routeMap getRoutes;
+static routeMap postRoutes;
+static routeMap deleteRoutes;
+static route *indexRoute = nullptr;
+
+
+void cleanMap(routeMap &map) {
+  for(const auto& [key, val] : map) {
+    delete val;
+  }
+  map.clear();
+}
+
+void cleanRoutes() {
+  cleanMap(getRoutes);
+  cleanMap(postRoutes);
+  cleanMap(deleteRoutes);
+}
+
+void WeatherStation::registerStaticHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len) {
+  get_route *r = new get_route;
+  r->params = new static_params;
+  r->params->contentType = contentType;
+  r->params->content = content;
+  r->params->len = len;
+  r->handler = (GetRequestHandler) std::bind(&WeatherStation::respondStatic, this, std::placeholders::_1, std::placeholders::_2);
+  getRoutes[uri] = r;
+  if(!strcmp_P(uri,PSTR("/index.html"))) {
+    indexRoute = r;
   }
 }
 
+void WeatherStation::registerGetHandler(const char *uri, GetRequestHandler handler) {
+  get_route *r = new get_route;
+  r->handler = handler;
+  getRoutes[uri] = r;
+}
+
+void WeatherStation::registerDeleteHandler(const char *uri, GetRequestHandler handler) {
+  get_route *r = new get_route;
+  r->handler = handler;
+  deleteRoutes[uri] = r;
+}
+
+void WeatherStation::registerPostHandler(const char *uri, PostRequestHandler handler) {
+  post_route *r = new post_route;
+  r->handler = handler;
+  postRoutes[uri] = r;
+}
+
+
+route *WeatherStation::findRoute(routeMap &map, AsyncWebServerRequest* request) {
+  const char *uri = request->url().c_str();
+  route *r =  map[uri];
+  if(!r) {
+    Serial.printf_P(PSTR("%d on %s not found\n"), request->method(), uri);
+    if(indexRoute) {
+      respondStatic(request, indexRoute);
+    } else {
+      request->send(404);
+    }
+  }
+  return r;
+}
+
+void WeatherStation::getRequestHandler(AsyncWebServerRequest* request) {
+  get_route *r = (get_route *) findRoute(getRoutes, request);
+  if(r) { 
+    r->handler(request, r);
+  }
+}
+
+void WeatherStation::deleteRequestHandler(AsyncWebServerRequest* request) {
+  get_route *r = (get_route *) findRoute(deleteRoutes, request);
+  if(r) { 
+    r->handler(request, r);
+  }
+}
+
+void WeatherStation::postRequestHandler(AsyncWebServerRequest* request, JsonVariant &json) {
+  post_route *r = (post_route *) findRoute(postRoutes, request);
+  if(r) { 
+    r->handler(request, json, r);
+  }
+}
+
+void WeatherStation::respondStatic(AsyncWebServerRequest* request, route *r) {  
+  if(r == indexRoute) {
+    Serial.println(F(" Responding with index"));
+  }
+  uint32_t s = millis();
+  request->onDisconnect([s]() {
+    Serial.print(F(" in "));
+    Serial.print(millis()-s);
+    Serial.println(F("ms "));
+  });
+  if (request->header("If-None-Match").equals(ETag)) {
+    // send not modified
+    Serial.println(F(" Not modified"));
+    request->send(304);
+  } else {
+    bool cont = true;
+    if(ESP.getMaxFreeBlockSize() < 2048) {
+      Serial.println(F(" Low memory condition. Releasing influxdb client "));
+      if(!_influxDBHelper->release()) {
+          Serial.println(F(" Failed "));
+          AsyncWebServerResponse* response = request->beginResponse(429);
+          response->addHeader(F("Retry-After"), F("1"));
+          request->send(response);
+          cont = false;
+      }
+    }
+    if(cont) {
+      AsyncWebServerResponse* response = request->beginResponse_P(200, r->params->contentType, r->params->content, r->params->len);
+      response->addHeader(F("Content-Encoding"), F("gzip"));
+      response->addHeader(F("Cache-Control"), F("public, max-age=3600, must-revalidate"));
+      response->addHeader(F("ETag"), ETag);
+      request->send(response);
+    }
+  }
+};
+
+void WeatherStation::notFound (AsyncWebServerRequest* request) {
+  Serial.println(F(" Not found"));
+  if (request->method() == HTTP_OPTIONS) {
+    request->send(200);
+  } else {
+    respondStatic(request, indexRoute);
+  }
+}
+
+void WeatherStation::registerStatics() {
+  _server->on("/*", HTTP_GET, std::bind(&WeatherStation::getRequestHandler, this, std::placeholders::_1));
+  _server->on("/*", HTTP_DELETE, std::bind(&WeatherStation::deleteRequestHandler, this, std::placeholders::_1));
+  AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/*", 
+    std::bind(&WeatherStation::postRequestHandler, this, std::placeholders::_1, std::placeholders::_2), DEFAULT_BUFFER_SIZE);
+  handler->setMethod(HTTP_POST);
+  _server->addHandler(handler);
+
+  _server->onNotFound(std::bind(&WeatherStation::notFound, this, std::placeholders::_1));
+  // Serve static resources from PROGMEM
+
+    WWWData::registerIndex(std::bind(&WeatherStation::registerStaticHandler,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2,
+      std::placeholders::_3,
+      std::placeholders::_4));
+    WWWData::registerRoutes(std::bind(&WeatherStation::registerStaticHandler,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2,
+      std::placeholders::_3,
+      std::placeholders::_4));
+}
+
 bool WeatherStation::globalFilterHandler(AsyncWebServerRequest *request) {
-  Serial.print(F("Serving "));
-  Serial.println(request->url());
+  ++_requestsInProgress;
+  Serial.printf_P(PSTR("Serving %d on %s. %d req. total\n"), request->method(), request->url().c_str(), _requestsInProgress);
   WS_DEBUG_RAM(" RAM Before request");
   if(_influxDBHelper->isWriting()) {
     Serial.println(F(" blocking, writing in progress"));
     AsyncWebServerResponse *response = request->beginResponse(429);
     response->addHeader("Retry-After","1");
     request->send(response);
+    --_requestsInProgress;
     return false;
   }
+  
   return true;
 }
 
@@ -149,17 +246,19 @@ void WeatherStation::globalDisconnectHandler(AsyncWebServerRequest *request) {
   WS_DEBUG_RAM(" RAM after request");
   Serial.print(F("Sent "));
   Serial.println(request->url());
+  --_requestsInProgress;
 }
 
 void WeatherStation::startServer() {
   if(!_server) {
     Serial.println(F("Starting HTTP server."));
+    _requestsInProgress = 0;
     _server = new AsyncWebServer(80);
     auto code = _server->begin();
     if(code) {
       Serial.printf_P(PSTR(" Server start error: %d\n"), code);
       delete _server;
-      _server = nullptr;
+       _server = nullptr;
       return;
     }
     _server->setFilter(std::bind(&WeatherStation::globalFilterHandler,
@@ -168,52 +267,59 @@ void WeatherStation::startServer() {
     _server->onDisconnect(std::bind(&WeatherStation::globalDisconnectHandler,
       this,
       std::placeholders::_1));
-
-    // Serve static resources from PROGMEM
-    WWWData::registerIndex(std::bind(&WeatherStation::registerHandler,
-      this,
-      std::placeholders::_1,
-      std::placeholders::_2,
-      std::placeholders::_3,
-      std::placeholders::_4));
+    WS_DEBUG_RAM("Before register endpoints");
+    _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
+    _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
+    WS_DEBUG_RAM("Before register static endpoints");
+    registerStatics();
+    WS_DEBUG_RAM("Before register API endpoints");
+    registerEndpoints();
+    WS_DEBUG_RAM("After register endpoints");
    }
  }
 
 void WeatherStation::registerEndpoints() {
-  if(!_endpointsRegistered) {
-    Serial.println(F("Registering endpoints"));
-    _endpointsRegistered = true;
-    _wifiScannerEndpoint = new WiFiScannerEndpoint(_server);
-    _wifiSettingsEndpoint = new WiFiSettingsEndpoint(_server, &_persistence, &_wifiSettings);
-    _influxDBSettingsEndpoint = new InfluxDBSettingsEndpoint(_server, &_persistence, &_influxDBSettings);
-    _wifiStatusEndpoint = new WiFiStatusEndpoint(_server);
-    _wifiConnectionHelperEndpoint = new WiFiConnectionHelperEndpoint(_server, &_wifiManager);
-    _aboutInfoEndpoint = new AboutInfoEndpoint(_server, _influxDBHelper, &_influxDBSettings, &_wifiSettings, &_regionalSettings, &LittleFS);
-    _aboutServiceEndpoint = new AboutServiceEndpoint(_server, &_persistence);
-    _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_server, _influxDBHelper);
-    _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_server, &_persistence);
-    _pRegionalSettingsEndpoint = new RegionalSettingsEndpoint(_server, &_persistence, &_regionalSettings);
-    _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(_server, &_advancedSettings);
-    _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
-    _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
-    _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(_server, &_persistence, &_advancedSettings, &_regionalSettings);
-    _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(_server, &_regionalSettings);
-    _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(_server, &_persistence, &_displaySettings, &_regionalSettings);
-    // Serve static resources from PROGMEM
-    WWWData::registerRoutes(std::bind(&WeatherStation::registerHandler,
-      this,
-      std::placeholders::_1,
-      std::placeholders::_2,
-      std::placeholders::_3,
-      std::placeholders::_4));
-   }
+  _wifiScannerEndpoint = new WiFiScannerEndpoint();
+  _wifiScannerEndpoint->registerEndpoints(this);
+  _wifiSettingsEndpoint = new WiFiSettingsEndpoint(&_persistence, &_wifiSettings);
+  _wifiSettingsEndpoint->registerEndpoints(this);
+  _wifiStatusEndpoint = new WiFiStatusEndpoint();
+  _wifiStatusEndpoint->registerEndpoints(this);
+  _wifiConnectionHelperEndpoint = new WiFiConnectionHelperEndpoint(&_wifiManager);
+  _wifiConnectionHelperEndpoint->registerEndpoints(this);
+  _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(&_persistence);
+  _wiFiListSavedEndpoint->registerEndpoints(this);
+
+  _influxDBSettingsEndpoint = new InfluxDBSettingsEndpoint(&_persistence, &_influxDBSettings);
+  _influxDBSettingsEndpoint->registerEndpoints(this);
+  _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_influxDBHelper);
+  _influxdbValidateEndpoint->registerEndpoints(this);
+
+
+  _aboutInfoEndpoint = new AboutInfoEndpoint(_influxDBHelper, &_influxDBSettings, &_wifiSettings, &_regionalSettings, &LittleFS);
+  _aboutInfoEndpoint->registerEndpoints(this);
+  _aboutServiceEndpoint = new AboutServiceEndpoint(&_persistence);
+  _aboutServiceEndpoint->registerEndpoints(this);
+
+  _pRegionalSettingsEndpoint = new RegionalSettingsEndpoint(&_persistence, &_regionalSettings);
+  _pRegionalSettingsEndpoint->registerEndpoints(this);
+  _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(&_advancedSettings);
+  _pRegionalSettingsValidateEndpoint->registerEndpoints(this);
+
+  _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(&_persistence, &_advancedSettings, &_regionalSettings);
+  _pAdvancedSettingsEndpoint->registerEndpoints(this);
+  _pAdvancedSettingsValidateEndpoint = new AdvancedSettingsValidateEndpoint(&_regionalSettings);
+  _pAdvancedSettingsValidateEndpoint->registerEndpoints(this);
+
+  _pDisplaySettingsEndpoint = new DisplaySettingsEndpoint(&_persistence, &_displaySettings, &_regionalSettings);
+  _pDisplaySettingsEndpoint->registerEndpoints(this);
  }
 
  void WeatherStation::stopServer() {
    if(_server) {
-     Serial.println(F("Stopping HTTP server."));
+    Serial.println(F("Stopping HTTP server."));
      // end() and reset() is called in the ~AsyncWebServer
-     delete _server;
+    delete _server;
     _server = nullptr;
     delete _wifiScannerEndpoint;
     _wifiScannerEndpoint = nullptr;
@@ -243,7 +349,7 @@ void WeatherStation::registerEndpoints() {
     _pAdvancedSettingsValidateEndpoint = nullptr;
     delete _pDisplaySettingsEndpoint;
     _pDisplaySettingsEndpoint = nullptr;
-    _endpointsRegistered = false;
+    cleanRoutes();
    }
  }
 

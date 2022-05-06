@@ -82,8 +82,8 @@ int WiFiSettings::load(JsonObject& root) {
 }
 
 
-WiFiSettingsEndpoint::WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, Settings *pSettings):
-    SettingsEndpoint(pServer, F(WIFI_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
+WiFiSettingsEndpoint::WiFiSettingsEndpoint(FSPersistence *pPersistence, Settings *pSettings):
+    SettingsEndpoint(WIFI_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
       jsonObject[FPSTR(StringPassword)] = obfuscateToken(wifiSettings->password, 0);

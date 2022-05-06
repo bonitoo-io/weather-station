@@ -380,7 +380,7 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
       case WiFiConnectingState::Idle:
       case WiFiConnectingState::ConnectingSuccess:
       case WiFiConnectingState::ConnectingToSaved:
-        _manageDelay = SCAN_NETWORK_DELAY;
+        _manageDelay = getKnownWiFiNetworksCount(_pFsp)>0?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
         break;
       default:
@@ -395,18 +395,6 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
 void WiFiManager::onStationModeConnected(const WiFiEventStationModeConnected& event) {
   Serial.print(F("[WIFIM] WiFi Connected. SSID="));
   Serial.println(event.ssid);
-  _connectingToWifi = false;
-  _lastDisconnectReason = 0;
-  if(_state == WiFiConnectingState::TestingConfig || _state == WiFiConnectingState::ConnectingToSaved ) {
-    // Mark test success only when comming from testing states
-    _connectTestSuccess = true;
-  }
-  if(_state == WiFiConnectingState::TestingConfig) {
-    enterState(WiFiConnectingState::SaveConfig);
-  } else {
-    enterState(WiFiConnectingState::ConnectingSuccess);
-  }
-  notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
 }
 
 void WiFiManager::statusResponseSent() {
@@ -420,6 +408,18 @@ void WiFiManager::statusResponseSent() {
 
 void WiFiManager::onStationModeGotIP(const WiFiEventStationModeGotIP& event) {
   Serial.printf_P(PSTR("[WIFIM] WiFi got localIP=%s, hostName=%s\n"), event.ip.toString().c_str(), WiFi.hostname().c_str());
+  _connectingToWifi = false;
+  _lastDisconnectReason = 0;
+  if(_state == WiFiConnectingState::TestingConfig || _state == WiFiConnectingState::ConnectingToSaved ) {
+    // Mark test success only when comming from testing states
+    _connectTestSuccess = true;
+  }
+  if(_state == WiFiConnectingState::TestingConfig) {
+    enterState(WiFiConnectingState::SaveConfig);
+  } else {
+    enterState(WiFiConnectingState::ConnectingSuccess);
+  }
+  notifyWifiEvent(WifiConnectionEvent::ConnectingSuccess);
 }
 
 void WiFiManager::onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& event) {
@@ -455,17 +455,16 @@ void WiFiManager::connectToSavedNetwork(int index) {
 
 // ****************** WiFiConnectionHelperEndpoint ***************************
 
-WiFiConnectionHelperEndpoint::WiFiConnectionHelperEndpoint(AsyncWebServer* pServer, WiFiManager *pWiFiManager)
+WiFiConnectionHelperEndpoint::WiFiConnectionHelperEndpoint(WiFiManager *pWiFiManager)
 :_pWiFiManager(pWiFiManager) {
-  AsyncCallbackJsonWebHandler *pConnectHandler = new AsyncCallbackJsonWebHandler(F(CONNECT_TO_SAVED_ENDPOINT_PATH),
-                std::bind(&WiFiConnectionHelperEndpoint::connectToSaved, this, std::placeholders::_1, std::placeholders::_2),
-                DEFAULT_BUFFER_SIZE);
-    pConnectHandler->setMethod(HTTP_POST);
-    pServer->addHandler(pConnectHandler);
-    pServer->on(CONNECT_STATUS_ENDPOINT_PATH, HTTP_GET, std::bind(&WiFiConnectionHelperEndpoint::connectingStatus, this, std::placeholders::_1));
 }
 
-void WiFiConnectionHelperEndpoint::connectToSaved(AsyncWebServerRequest* request, JsonVariant& json) {
+void WiFiConnectionHelperEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(CONNECT_STATUS_ENDPOINT_PATH, std::bind(&WiFiConnectionHelperEndpoint::connectingStatus, this, std::placeholders::_1, std::placeholders::_2));
+    pRegistrator->registerPostHandler(CONNECT_TO_SAVED_ENDPOINT_PATH, std::bind(&WiFiConnectionHelperEndpoint::connectToSaved, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
+void WiFiConnectionHelperEndpoint::connectToSaved(AsyncWebServerRequest* request, JsonVariant& json, route *) {
    if (!json.is<JsonObject>()) {
         request->send(400);
         return;
@@ -485,7 +484,7 @@ void WiFiConnectionHelperEndpoint::connectToSaved(AsyncWebServerRequest* request
     request->send(202);
 }
 
-void WiFiConnectionHelperEndpoint::connectingStatus(AsyncWebServerRequest* request) {
+void WiFiConnectionHelperEndpoint::connectingStatus(AsyncWebServerRequest* request, route *) {
   if(_pWiFiManager->isConnectingToWiFi()) {
     request->send(202);
   } else {
@@ -506,12 +505,15 @@ void WiFiConnectionHelperEndpoint::connectingStatus(AsyncWebServerRequest* reque
 
 // ****************** WiFiScannerEndpoint ***************************
 
-WiFiScannerEndpoint::WiFiScannerEndpoint(AsyncWebServer* server) {
-  server->on(F(SCAN_NETWORKS_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiScannerEndpoint::scanNetworks, this, std::placeholders::_1));
-  server->on(F(LIST_NETWORKS_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiScannerEndpoint::listNetworks, this, std::placeholders::_1));
+WiFiScannerEndpoint::WiFiScannerEndpoint() {
 };
 
-void WiFiScannerEndpoint::scanNetworks(AsyncWebServerRequest* request) {
+void WiFiScannerEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(SCAN_NETWORKS_ENDPOINT_PATH, std::bind(&WiFiScannerEndpoint::scanNetworks, this, std::placeholders::_1, std::placeholders::_2));
+    pRegistrator->registerGetHandler(LIST_NETWORKS_ENDPOINT_PATH, std::bind(&WiFiScannerEndpoint::listNetworks, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void WiFiScannerEndpoint::scanNetworks(AsyncWebServerRequest* request, route *) {
   if (checkScanResult() != -1) {
     startScan();
   }
@@ -520,7 +522,7 @@ void WiFiScannerEndpoint::scanNetworks(AsyncWebServerRequest* request) {
 
 const char *NetworkTemplate PROGMEM = "{\"rssi\":%d,\"ssid\":\"%s\",\"bssid\":\"%s\",\"channel\":%d,\"encryption_type\":%d}";
 
-void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
+void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request, route *r) {
   int numNetworks = WiFi.scanComplete();
   if (numNetworks > -1) {
     int netIndex = 0;
@@ -560,7 +562,7 @@ void WiFiScannerEndpoint::listNetworks(AsyncWebServerRequest* request) {
   } else if (numNetworks == -1) {
     request->send(202);
   } else {
-    scanNetworks(request);
+    scanNetworks(request, r);
   }
 }
 
@@ -586,11 +588,14 @@ uint8_t WiFiScannerEndpoint::convertEncryptionType(uint8_t encryptionType) {
 
 // **************************** WiFiStatusEndpoint *********************************
 
-WiFiStatusEndpoint::WiFiStatusEndpoint(AsyncWebServer* server) {
-  server->on(F(WIFI_STATUS_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiStatusEndpoint::wifiStatusHandler, this, std::placeholders::_1));
+WiFiStatusEndpoint::WiFiStatusEndpoint() {
 }
 
-void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
+void WiFiStatusEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(WIFI_STATUS_ENDPOINT_PATH, std::bind(&WiFiStatusEndpoint::wifiStatusHandler, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request, route *) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
   wl_status_t status = WiFi.status();
@@ -621,14 +626,16 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request) {
 
 // **************************** WiFiListSavedEndpoint *********************************
 
-WiFiListSavedEndpoint::WiFiListSavedEndpoint(AsyncWebServer* server, FSPersistence *pFsp):
+WiFiListSavedEndpoint::WiFiListSavedEndpoint(FSPersistence *pFsp):
 _pFsp(pFsp) {
-  server->on(F(WIFI_LIST_ENDPOINT_PATH), HTTP_GET, std::bind(&WiFiListSavedEndpoint::listNetworks, this, std::placeholders::_1));
-  server->on(F(WIFI_LIST_ENDPOINT_PATH), HTTP_DELETE, std::bind(&WiFiListSavedEndpoint::deleteNetwork, this, std::placeholders::_1));
 };
 
+void WiFiListSavedEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(WIFI_LIST_ENDPOINT_PATH, std::bind(&WiFiListSavedEndpoint::listNetworks, this, std::placeholders::_1, std::placeholders::_2));
+    pRegistrator->registerDeleteHandler(WIFI_LIST_ENDPOINT_PATH, std::bind(&WiFiListSavedEndpoint::deleteNetwork, this, std::placeholders::_1, std::placeholders::_2));
+}
 
-void WiFiListSavedEndpoint::listNetworks(AsyncWebServerRequest* request) {
+void WiFiListSavedEndpoint::listNetworks(AsyncWebServerRequest* request, route *) {
   _savedNetworks = getKnownWiFiNetworksNames(_pFsp);
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
@@ -644,7 +651,7 @@ void WiFiListSavedEndpoint::listNetworks(AsyncWebServerRequest* request) {
   request->send(response);
 }
 
-void WiFiListSavedEndpoint::deleteNetwork(AsyncWebServerRequest* request) {
+void WiFiListSavedEndpoint::deleteNetwork(AsyncWebServerRequest* request, route *r) {
   if(request->hasParam(FPSTR(StringId))) {
     AsyncWebParameter *idp = request->getParam(FPSTR(StringId));
     Serial.printf_P(PSTR(" deleteNetwork id %s\n"), idp->value().c_str());
@@ -656,7 +663,7 @@ void WiFiListSavedEndpoint::deleteNetwork(AsyncWebServerRequest* request) {
           WiFi.disconnect();
         });
       }
-      listNetworks(request);
+      listNetworks(request, r);
     } else {
       String err = F("Invalid id ");
       err += idp->value();

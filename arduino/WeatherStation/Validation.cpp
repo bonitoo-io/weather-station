@@ -5,14 +5,14 @@
 
 static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message = nullptr);
 
-ValidateParamsEndpoint::ValidateParamsEndpoint(AsyncWebServer* server, const  String &uri):
+ValidateParamsEndpoint::ValidateParamsEndpoint(const  char *uri):
+  _uri(uri),
   _status(ValidationStatus::Idle) {
-  AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(uri,
-                    std::bind(&ValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2),
-                    DEFAULT_BUFFER_SIZE);
-  updateHandler->setMethod(HTTP_POST);
-  server->addHandler(updateHandler);
-  server->on(uri, HTTP_GET, std::bind(&ValidateParamsEndpoint::checkStatus, this, std::placeholders::_1));
+}
+
+void ValidateParamsEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(_uri, std::bind(&ValidateParamsEndpoint::checkStatus, this, std::placeholders::_1, std::placeholders::_2));
+    pRegistrator->registerPostHandler(_uri, std::bind(&ValidateParamsEndpoint::validateParams, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 static void writeResponseData(JsonObject &root,  ValidationStatus code, const char *message) {
@@ -22,7 +22,7 @@ static void writeResponseData(JsonObject &root,  ValidationStatus code, const ch
   }
 }
 
-void ValidateParamsEndpoint::validateParams(AsyncWebServerRequest* request, JsonVariant& json) {
+void ValidateParamsEndpoint::validateParams(AsyncWebServerRequest* request, JsonVariant& json, route *) {
     if (!json.is<JsonObject>()) {
         request->send(400);
         return;
@@ -61,7 +61,7 @@ void ValidateParamsEndpoint::loop() {
   }
 }
 
-void  ValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request) {
+void  ValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request, route *) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject jsonObject = response->getRoot().to<JsonObject>();
   if (_status < ValidationStatus::Finished) {
@@ -84,9 +84,10 @@ void  ValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request) {
 }
 
 
-RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(AsyncWebServer* server, AdvancedSettings *pAdvSetting):
-  ValidateParamsEndpoint(server, F(REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH)),
+RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(AdvancedSettings *pAdvSetting):
+  ValidateParamsEndpoint(REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH),
   _pAdvSetting(pAdvSetting) {}
+
 
 void RegionalSettingsValidateEndpoint::saveParams(JsonVariant& json) {
  if(_pSettings) {
@@ -111,8 +112,8 @@ void RegionalSettingsValidateEndpoint::runValidation() {
   _pSettings = nullptr;
 }
 
-AdvancedSettingsValidateEndpoint::AdvancedSettingsValidateEndpoint(AsyncWebServer* server, RegionalSettings *pRegSettings):
-  ValidateParamsEndpoint(server, F(ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH)),
+AdvancedSettingsValidateEndpoint::AdvancedSettingsValidateEndpoint(RegionalSettings *pRegSettings):
+  ValidateParamsEndpoint(ADVANCED_SETTINGS_VALIDATE_ENDPOINT_PATH),
   _pRegSettings(pRegSettings) {}
 
 void AdvancedSettingsValidateEndpoint::saveParams(JsonVariant& json) {

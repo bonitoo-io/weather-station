@@ -64,7 +64,7 @@ class AdvancedSettings : public Settings {
 
 class AdvancedSettingsEndpoint : public SettingsEndpoint {
   public:
-    AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings);
+    AdvancedSettingsEndpoint(FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings);
   protected:
     RegionalSettings *_pRegionalSettings;
 };

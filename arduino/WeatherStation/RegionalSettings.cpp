@@ -64,8 +64,8 @@ int RegionalSettings::load(JsonObject& root) {
   return 0;
 }
 
-RegionalSettingsEndpoint::RegionalSettingsEndpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, RegionalSettings *pSettings):
-    SettingsEndpoint(pServer, F(REGIONAL_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
+RegionalSettingsEndpoint::RegionalSettingsEndpoint(FSPersistence *pPersistence, RegionalSettings *pSettings):
+    SettingsEndpoint(REGIONAL_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [this](Settings */*pSettings*/, JsonObject /*jsonObject*/) { //fetchManipulator
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       RegionalSettings *regSettings = (RegionalSettings *)pSettings;

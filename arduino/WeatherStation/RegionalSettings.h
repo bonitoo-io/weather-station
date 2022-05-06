@@ -57,7 +57,7 @@ public:
 
 class RegionalSettingsEndpoint : public SettingsEndpoint {
   public:
-    RegionalSettingsEndpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, RegionalSettings *pSettings);
+    RegionalSettingsEndpoint(FSPersistence *pPersistence, RegionalSettings *pSettings);
 };
 
 

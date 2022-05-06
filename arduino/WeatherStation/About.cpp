@@ -4,17 +4,22 @@
 #include "Sensor.h"
 #include "Version.h"
 
-AboutInfoEndpoint::AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings,
+AboutInfoEndpoint::AboutInfoEndpoint(InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings,
   WiFiSettings *wifiSettings, RegionalSettings *pRegionalSettings, FS* fs):
   _influxDBHelper(influxDBHelper),
   _influxDBSettings(influxDBSettings),
   _wifiSettings(wifiSettings),
   _pRegionalSettings(pRegionalSettings),
   _fs(fs) {
-  server->on(F(ABOUT_ENDPOINT_PATH), HTTP_GET, std::bind(&AboutInfoEndpoint::aboutHandler, this, std::placeholders::_1));
 }
 
-void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
+
+void AboutInfoEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(ABOUT_ENDPOINT_PATH, std::bind(&AboutInfoEndpoint::aboutHandler, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+
+void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request, route *) {
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
   root[F("version")] = getLongVersion();
@@ -56,19 +61,30 @@ void AboutInfoEndpoint::aboutHandler(AsyncWebServerRequest* request) {
   request->send(response);
 }
 
-AboutServiceEndpoint::AboutServiceEndpoint(AsyncWebServer* server, FSPersistence* persistence):
+AboutServiceEndpoint::AboutServiceEndpoint(FSPersistence* persistence):
   _persistence(persistence) {
-  server->on(F(SYSTEM_RESTART_ENDPOINT_PATH), HTTP_POST, std::bind(&AboutServiceEndpoint::restartHandler, this, std::placeholders::_1));
-  server->on(F(SYSTEM_FACTORY_RESET_ENDPOINT_PATH), HTTP_POST, std::bind(&AboutServiceEndpoint::factoryResetHandler, this, std::placeholders::_1));
 }
 
-void AboutServiceEndpoint::restartHandler(AsyncWebServerRequest* request) {
+void AboutServiceEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerPostHandler(SYSTEM_RESTART_ENDPOINT_PATH, std::bind(&AboutServiceEndpoint::restartHandler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    pRegistrator->registerPostHandler(SYSTEM_FACTORY_RESET_ENDPOINT_PATH, std::bind(&AboutServiceEndpoint::factoryResetHandler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
+
+void AboutServiceEndpoint::restartHandler(AsyncWebServerRequest* request, JsonVariant& , route *) {
   request->onDisconnect(AboutServiceEndpoint::restartNow);
   request->send(200);
 }
 
+void AboutServiceEndpoint::restartNow() {
+  Serial.println(F("Restart request"));
+  WiFi.disconnect(true);
+  delay(500);
+  ESP.restart();
+}
 
-void AboutServiceEndpoint::factoryResetHandler(AsyncWebServerRequest* request) {
+
+void AboutServiceEndpoint::factoryResetHandler(AsyncWebServerRequest* request, JsonVariant& , route *) {
   request->onDisconnect(std::bind(&AboutServiceEndpoint::factoryReset, this));
   request->send(200);
 }

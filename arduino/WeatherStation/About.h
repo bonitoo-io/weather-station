@@ -19,38 +19,36 @@ enum class AppState {
   InfluxDBConfigNeeded
 };
 
-class AboutInfoEndpoint {
+class AboutInfoEndpoint : public Endpoint {
  public:
-  AboutInfoEndpoint(AsyncWebServer *server, InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings,
+  AboutInfoEndpoint(InfluxDBHelper *influxDBHelper, InfluxDBSettings *influxDBSettings,
     WiFiSettings *wifiSettings, RegionalSettings *pRegionalSettings, FS* fs);
-
+  virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
+  virtual ~AboutInfoEndpoint() {}
  private:
   InfluxDBHelper *_influxDBHelper;
   InfluxDBSettings *_influxDBSettings;
   WiFiSettings *_wifiSettings;
   RegionalSettings *_pRegionalSettings;
   FS* _fs;
-  void aboutHandler(AsyncWebServerRequest* request);
+  void aboutHandler(AsyncWebServerRequest* request, route *);
 };
 
 #define SYSTEM_RESTART_ENDPOINT_PATH "/api/restart"
 #define SYSTEM_FACTORY_RESET_ENDPOINT_PATH "/api/factoryReset"
 
-class AboutServiceEndpoint {
+class AboutServiceEndpoint : public Endpoint {
  public:
-  AboutServiceEndpoint(AsyncWebServer* server, FSPersistence* persistence);
+  AboutServiceEndpoint(FSPersistence* persistence);
+  virtual ~AboutServiceEndpoint() {}
   void factoryReset();
+  
+  virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
 
-  static void restartNow() {
-    Serial.println(F("Restart request"));
-    WiFi.disconnect(true);
-    delay(500);
-    ESP.restart();
-  }
-
+  static void restartNow();
  private:
-  void restartHandler(AsyncWebServerRequest* request);
-  void factoryResetHandler(AsyncWebServerRequest* request);
+  void restartHandler(AsyncWebServerRequest* request, JsonVariant& json, route *);
+  void factoryResetHandler(AsyncWebServerRequest* request, JsonVariant& json, route *);
  private:
   FSPersistence* _persistence;
 };

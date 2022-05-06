@@ -224,7 +224,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
 
   onRestartConfirmed = () => {
     this.setState({ processing: true });
-    fetch(RESTART_ENDPOINT, { method: 'POST' })
+    fetch(RESTART_ENDPOINT, { method: 'POST', body: '{}', headers: {'Content-Type': 'application/json'} })
       .then(response => {
         if (response.status === 200) {
           this.props.enqueueSnackbar("Device is restarting", { variant: 'info' });
@@ -271,7 +271,7 @@ class StatusPage extends Component<StatusPageProps, StatusPageState> {
 
   onFactoryResetConfirmed = () => {
     this.setState({ processing: true });
-    fetch(FACTORY_RESET_ENDPOINT, { method: 'POST' })
+    fetch(FACTORY_RESET_ENDPOINT, { method: 'POST', body: '{}', headers: {'Content-Type': 'application/json'} })
       .then(response => {
         if (response.status === 200) {
           this.props.enqueueSnackbar("Factory reset in progress.", { variant: 'info' });
