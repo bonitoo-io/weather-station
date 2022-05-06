@@ -2,23 +2,23 @@
 #include "IPUtils.h"
 #include "FSPersistance.h"
 
-SettingsEndpoint::SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence, Settings *pSettings,
+SettingsEndpoint::SettingsEndpoint(const char *pEndpointPath, FSPersistence *pPersistence, Settings *pSettings,
     DataManipulator fetchManipulator, DataManipulator updateManipulator, bool persist):
+    _pEndpointPath(pEndpointPath),
     _pSettings(pSettings),
     _pPersistence(pPersistence),
     _fetchManipulator(fetchManipulator),
     _updateManipulator(updateManipulator),
     _persist(persist)
      {
-    AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(endpointPath,
-                std::bind(&SettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2),
-                DEFAULT_BUFFER_SIZE);
-    updateHandler->setMethod(HTTP_POST);
-    pServer->addHandler(updateHandler);
-    pServer->on(endpointPath, HTTP_GET, std::bind(&SettingsEndpoint::fetchSettings, this, std::placeholders::_1));
 }
 
-void SettingsEndpoint::fetchSettings(AsyncWebServerRequest* request) {
+void SettingsEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
+    pRegistrator->registerGetHandler(_pEndpointPath, std::bind(&SettingsEndpoint::fetchSettings, this, std::placeholders::_1, std::placeholders::_2));
+    pRegistrator->registerPostHandler(_pEndpointPath, std::bind(&SettingsEndpoint::updateSettings, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
+void SettingsEndpoint::fetchSettings(AsyncWebServerRequest* request, route *) {
     AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
     JsonObject jsonObject = response->getRoot().to<JsonObject>();
     _pSettings->save(jsonObject);
@@ -30,7 +30,7 @@ void SettingsEndpoint::fetchSettings(AsyncWebServerRequest* request) {
     request->send(response);
 }
 
-void SettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVariant& json) {
+void SettingsEndpoint::updateSettings(AsyncWebServerRequest* request, JsonVariant& json, route *) {
     if (!json.is<JsonObject>()) {
         request->send(400);
         return;

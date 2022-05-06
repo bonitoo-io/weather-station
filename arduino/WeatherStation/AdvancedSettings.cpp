@@ -139,8 +139,8 @@ void AdvancedSettings::setHumOffset( float humOffset) {
   pSensor->resetHumFilter();
 }
 
-AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings):
-    SettingsEndpoint(pServer, F(ADVANCED_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
+AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings):
+    SettingsEndpoint(ADVANCED_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [this](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
       if(advSettings->openWeatherAPIKey.length()>4) {

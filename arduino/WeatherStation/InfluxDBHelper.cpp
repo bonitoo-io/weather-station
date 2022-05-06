@@ -303,8 +303,8 @@ int InfluxDBSettings::load(JsonObject& root) {
 
 // ****************** InfluxDBSettingsEndpoint ***************************
 
-InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings):
-    SettingsEndpoint(pServer, F(INFLUXDB_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings,
+InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(FSPersistence *pPersistence, InfluxDBSettings *pSettings):
+    SettingsEndpoint(INFLUXDB_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
       if(idbSettings->authorizationToken.length()>4) {
@@ -322,8 +322,8 @@ InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPer
 
 // ****************** InfluxDBValidateParamsEndpoint ***************************
 
-InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(AsyncWebServer *pServer, InfluxDBHelper *pHelper):
-  ValidateParamsEndpoint(pServer, F(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH)),
+InfluxDBValidateParamsEndpoint::InfluxDBValidateParamsEndpoint(InfluxDBHelper *pHelper):
+  ValidateParamsEndpoint(VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH),
   _validationSettings(nullptr),
   _pHelper(pHelper) { }
 

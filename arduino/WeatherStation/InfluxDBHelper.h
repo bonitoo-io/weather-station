@@ -61,7 +61,7 @@ private:
 
 class InfluxDBSettingsEndpoint : public SettingsEndpoint {
 public:
-    InfluxDBSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, InfluxDBSettings *pSettings);
+    InfluxDBSettingsEndpoint(FSPersistence *pPersistence, InfluxDBSettings *pSettings);
 };
 
 #define VALIDATE_INFLUXDB_PARAMS_ENDPOINT_PATH "/api/validateInfluxDBParams"
@@ -69,7 +69,7 @@ public:
 
 class InfluxDBValidateParamsEndpoint : public ValidateParamsEndpoint {
 public:
-    InfluxDBValidateParamsEndpoint(AsyncWebServer *pServer, InfluxDBHelper *pHelper);
+    InfluxDBValidateParamsEndpoint(InfluxDBHelper *pHelper);
     virtual ~InfluxDBValidateParamsEndpoint() { delete _validationSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;

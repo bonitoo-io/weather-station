@@ -37,8 +37,8 @@ int DisplaySettings::load(JsonObject& root) {
 }
 
 
-DisplaySettingsEndpoint::DisplaySettingsEndpoint(AsyncWebServer* pServer, FSPersistence *pPersistence, DisplaySettings *pSettings, RegionalSettings *pRegionalSettings):
-    SettingsEndpoint(pServer, F(DISPLAY_SETTINGS_ENDPOINT_PATH), pPersistence, pSettings, [this](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
+DisplaySettingsEndpoint::DisplaySettingsEndpoint(FSPersistence *pPersistence, DisplaySettings *pSettings, RegionalSettings *pRegionalSettings):
+    SettingsEndpoint(DISPLAY_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings, [this](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
       jsonObject[F("use24Hours")] = _pRegionalSettings->use24Hours;
     }),  _pRegionalSettings(pRegionalSettings) {
 }

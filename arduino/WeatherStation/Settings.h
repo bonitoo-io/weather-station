@@ -6,6 +6,7 @@
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
 #include <functional>
+#include "Endpoint.h"
 
 #define DEFAULT_BUFFER_SIZE 1024
 #define FS_CONFIG_DIRECTORY "/config"
@@ -29,15 +30,17 @@ class FSPersistence;
 
 typedef std::function<void(Settings *pSettings, JsonObject JsonObject)> DataManipulator;
 
-class SettingsEndpoint {
+class SettingsEndpoint :public Endpoint {
 public:
-    SettingsEndpoint(AsyncWebServer* pServer, const  String &endpointPath, FSPersistence *pPersistence,
+    SettingsEndpoint(const char *pEndpointPath, FSPersistence *pPersistence,
         Settings *pSettings, DataManipulator fetchManipulator = nullptr, DataManipulator updateManipulator = nullptr, bool persist = true);
+    virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
     virtual ~SettingsEndpoint() {};
 protected:
-    virtual void fetchSettings(AsyncWebServerRequest* request);
-    virtual void updateSettings(AsyncWebServerRequest* request, JsonVariant& json);
+    virtual void fetchSettings(AsyncWebServerRequest* request, route *);
+    virtual void updateSettings(AsyncWebServerRequest* request, JsonVariant& json, route *);
 protected:
+    const  char  *_pEndpointPath;
     Settings *_pSettings;
     FSPersistence *_pPersistence;
     DataManipulator _fetchManipulator;

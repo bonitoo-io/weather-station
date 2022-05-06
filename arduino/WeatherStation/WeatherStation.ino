@@ -367,8 +367,6 @@ void loop() {
           WS_DEBUG_RAM("After release");
           station.stopServer();
           WS_DEBUG_RAM("After stop server");
-          delay(1000);
-          WS_DEBUG_RAM("After delay");
           ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
           ServicesTracker.save();
           WS_DEBUG_RAM("Before GH update");

@@ -44,7 +44,7 @@ private:
 
 class WiFiSettingsEndpoint : public SettingsEndpoint {
 public:
-    WiFiSettingsEndpoint(AsyncWebServer* pServer,FSPersistence *pPersistence, Settings *pSettings);
+    WiFiSettingsEndpoint(FSPersistence *pPersistence, Settings *pSettings);
 };
 
 #endif //WS_WIFI_SETTINGS_H

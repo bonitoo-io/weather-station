@@ -158,12 +158,14 @@ public:
 #define CONNECT_TO_SAVED_ENDPOINT_PATH "/api/connectSaved"
 #define CONNECT_STATUS_ENDPOINT_PATH "/api/connectStatus"
 
-class WiFiConnectionHelperEndpoint {
+class WiFiConnectionHelperEndpoint : public Endpoint {
 public:
-  WiFiConnectionHelperEndpoint(AsyncWebServer* server, WiFiManager *pWiFiManager);
+  WiFiConnectionHelperEndpoint(WiFiManager *pWiFiManager);
+  virtual ~WiFiConnectionHelperEndpoint() {}
+  virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
 private:
-  void connectToSaved(AsyncWebServerRequest* request, JsonVariant& json);
-  void connectingStatus(AsyncWebServerRequest* request);
+  void connectToSaved(AsyncWebServerRequest* request, JsonVariant& json, route *);
+  void connectingStatus(AsyncWebServerRequest* request, route *);
 private:
   WiFiManager *_pWiFiManager;
 };
@@ -171,13 +173,14 @@ private:
 #define SCAN_NETWORKS_ENDPOINT_PATH "/api/scanNetworks"
 #define LIST_NETWORKS_ENDPOINT_PATH "/api/listNetworks"
 
-class WiFiScannerEndpoint {
+class WiFiScannerEndpoint : public Endpoint {
  public:
-  WiFiScannerEndpoint(AsyncWebServer* server);
-
+  WiFiScannerEndpoint();
+  virtual ~WiFiScannerEndpoint() {}
+  virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
  private:
-  void scanNetworks(AsyncWebServerRequest* request);
-  void listNetworks(AsyncWebServerRequest* request);
+  void scanNetworks(AsyncWebServerRequest* request, route *);
+  void listNetworks(AsyncWebServerRequest* request, route *);
 
   static uint8_t convertEncryptionType(uint8_t encryptionType);
 };
@@ -185,22 +188,25 @@ class WiFiScannerEndpoint {
 
 #define WIFI_STATUS_ENDPOINT_PATH "/api/wifiStatus"
 
-class WiFiStatusEndpoint {
+class WiFiStatusEndpoint : public Endpoint {
   public:
-    WiFiStatusEndpoint(AsyncWebServer* server);
+    WiFiStatusEndpoint();
+    virtual ~WiFiStatusEndpoint() {}
+    virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
   private:
-    void wifiStatusHandler(AsyncWebServerRequest* request);
+    void wifiStatusHandler(AsyncWebServerRequest* request, route *);
 };
 
 #define WIFI_LIST_ENDPOINT_PATH "/api/savedNetworks"
 
-class WiFiListSavedEndpoint {
+class WiFiListSavedEndpoint : public Endpoint {
  public:
-  WiFiListSavedEndpoint(AsyncWebServer* server, FSPersistence *pFsp);
-
+  WiFiListSavedEndpoint(FSPersistence *pFsp);
+  virtual ~WiFiListSavedEndpoint() {}
+  virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
  private:
-  void deleteNetwork(AsyncWebServerRequest* request);
-  void listNetworks(AsyncWebServerRequest* request);
+  void deleteNetwork(AsyncWebServerRequest* request, route *);
+  void listNetworks(AsyncWebServerRequest* request, route *);
 private:
   FSPersistence *_pFsp;
   std::vector<String> _savedNetworks;
