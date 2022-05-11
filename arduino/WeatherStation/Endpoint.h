@@ -10,8 +10,10 @@ struct static_params {
   size_t len;
 };
 
-struct route {
+class route {
+public:
   static_params *params = nullptr;      
+  virtual ~route() { delete params; }
 };
 
 //auto cmpLambda = [](const char *a, const char *b){ return strcmp(a,b)<0; };
@@ -27,11 +29,13 @@ typedef std::map<const char *, route *, comparator> routeMap;
 typedef std::function<void(AsyncWebServerRequest *request, route *r)> GetRequestHandler;
 typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json, route *r)> PostRequestHandler;
 
-struct get_route: route {
+class get_route: public route {
+public:  
   GetRequestHandler handler;
 };
 
-struct post_route: route {
+class post_route: public route {
+public:
   PostRequestHandler handler;
 };
 

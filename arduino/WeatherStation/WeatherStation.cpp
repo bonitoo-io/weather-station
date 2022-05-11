@@ -77,9 +77,7 @@ static route *indexRoute = nullptr;
 
 void cleanMap(routeMap &map) {
   for(const auto& [key, val] : map) {
-    if(val->params) {
-      delete val->params;
-    }
+
     delete val;
   }
   map.clear();
@@ -98,6 +96,9 @@ void WeatherStation::registerStaticHandler(const char *uri, const char *contentT
   r->params->content = content;
   r->params->len = len;
   r->handler = (GetRequestHandler) std::bind(&WeatherStation::respondStatic, this, std::placeholders::_1, std::placeholders::_2);
+  if(getRoutes[uri]) {
+    Serial.printf_P(PSTR("Error: double registered static uri '%s'\n"), uri);
+  }
   getRoutes[uri] = r;
   if(!strcmp_P(uri,PSTR("/index.html"))) {
     indexRoute = r;
@@ -107,18 +108,27 @@ void WeatherStation::registerStaticHandler(const char *uri, const char *contentT
 void WeatherStation::registerGetHandler(const char *uri, GetRequestHandler handler) {
   get_route *r = new get_route;
   r->handler = handler;
+  if(getRoutes[uri]) {
+    Serial.printf_P(PSTR("Error: double registered GET uri '%s'\n"), uri);
+  }
   getRoutes[uri] = r;
 }
 
 void WeatherStation::registerDeleteHandler(const char *uri, GetRequestHandler handler) {
   get_route *r = new get_route;
   r->handler = handler;
+  if(deleteRoutes[uri]) {
+    Serial.printf_P(PSTR("Error: double registered DELETE uri '%s'\n"), uri);
+  }
   deleteRoutes[uri] = r;
 }
 
 void WeatherStation::registerPostHandler(const char *uri, PostRequestHandler handler) {
   post_route *r = new post_route;
   r->handler = handler;
+  if(postRoutes[uri]) {
+    Serial.printf_P(PSTR("  Error: double registered POST uri '%s'\n"), uri);
+  }
   postRoutes[uri] = r;
 }
 
@@ -206,9 +216,11 @@ void WeatherStation::notFound (AsyncWebServerRequest* request) {
 void WeatherStation::registerStatics() {
   _server->on("/*", HTTP_GET, std::bind(&WeatherStation::getRequestHandler, this, std::placeholders::_1));
   _server->on("/*", HTTP_DELETE, std::bind(&WeatherStation::deleteRequestHandler, this, std::placeholders::_1));
+
   AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/*", 
     std::bind(&WeatherStation::postRequestHandler, this, std::placeholders::_1, std::placeholders::_2), DEFAULT_BUFFER_SIZE);
   handler->setMethod(HTTP_POST);
+
   _server->addHandler(handler);
 
   _server->onNotFound(std::bind(&WeatherStation::notFound, this, std::placeholders::_1));
@@ -262,7 +274,7 @@ void WeatherStation::startServer() {
     if(code) {
       Serial.printf_P(PSTR(" Server start error: %d\n"), code);
       delete _server;
-       _server = nullptr;
+      _server = nullptr;
       return;
     }
     _server->setFilter(std::bind(&WeatherStation::globalFilterHandler,
