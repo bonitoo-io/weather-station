@@ -159,11 +159,11 @@ void setup() {
   RegionalSettings *pRegionalSettings = station.getRegionalSettings();
   pRegionalSettings->setHandler([pRegionalSettings](){
     if(((pRegionalSettings->updatedParts & RegionalSettingsParts::DetectAutomatically) && pRegionalSettings->detectAutomatically)
-      || (pRegionalSettings->updatedParts &  RegionalSettingsParts::UtcOffset)
-      || (pRegionalSettings->updatedParts &  RegionalSettingsParts::City)) {
+      || (pRegionalSettings->updatedParts & RegionalSettingsParts::UtcOffset)
+      || (pRegionalSettings->updatedParts & RegionalSettingsParts::City)) {
       bForceUpdate = true;  
     }
-    if(pRegionalSettings->updatedParts &  RegionalSettingsParts::Language) {
+    if(pRegionalSettings->updatedParts & RegionalSettingsParts::Language) {
       setLanguage( pRegionalSettings->language.c_str());
     }
   });

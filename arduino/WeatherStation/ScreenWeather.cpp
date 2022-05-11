@@ -13,11 +13,9 @@ tCurrentWeather currentWeather;
 #define MAX_FORECASTS 3
 tForecast forecasts[MAX_FORECASTS];
 
-
 int16_t getCurrentWeatherTemperature() {
   return currentWeather.temp;
 }
-
 
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapCurrent currentWeatherClient;
@@ -28,12 +26,13 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
 
   // Try 3 times
   for(uint8_t i=0;i<3;i++) {
-    if (!currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location)) { //if location fails, use GPS coordinates
-      Serial.println( F("Weather with GPS"));
-      currentWeatherClient.updateCurrentByLoc(&_currentWeather, APIKey, pRegionalSettings->latitude, pRegionalSettings->longitude);
-    }
-    if (!isnan(_currentWeather.temp))
+    if (currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location))
       break;
+    
+    Serial.println( F("Weather with GPS"));
+    if ( currentWeatherClient.updateCurrentByLoc(&_currentWeather, APIKey, pRegionalSettings->latitude, pRegionalSettings->longitude)) //if location fails, use GPS coordinates
+      break;
+
     Serial.println(F("Weather error"));
     delay(500);
   }
@@ -66,12 +65,11 @@ bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
 
   // Try 3 times
   for(uint8_t i=0;i<3;i++) {
-    if (forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS) == 0) { //if location fails, use GPS coordinates
-      Serial.println( F("Forecast with GPS"));
-      forecastClient.updateForecastsByLoc(_forecasts, APIKey, pRegionalSettings->latitude, pRegionalSettings->longitude, MAX_FORECASTS);
-    }
+    if (forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS) > 0)
+      break;
 
-    if (!isnan(_forecasts[0].temp))
+    Serial.println( F("Forecast with GPS"));
+    if ( forecastClient.updateForecastsByLoc(_forecasts, APIKey, pRegionalSettings->latitude, pRegionalSettings->longitude, MAX_FORECASTS) > 0) //if location fails, use GPS coordinates
       break;
     
     Serial.println(F("Forecast error"));
