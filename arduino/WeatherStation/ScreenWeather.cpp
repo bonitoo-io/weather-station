@@ -27,15 +27,18 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   _currentWeather.temp = NAN;
 
   // Try 3 times
-  for(int i=0;i<3;i++) {
-    Serial.printf_P(PSTR("Downloading current weather, attempt: %d\n"),i+1);
-    currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location);
-    if (!isnan(_currentWeather.temp)) {
-      break;
+  for(uint8_t i=0;i<3;i++) {
+    if (!currentWeatherClient.updateCurrent(&_currentWeather, APIKey, pRegionalSettings->location)) { //if location fails, use GPS coordinates
+      Serial.println( F("Weather with GPS"));
+      currentWeatherClient.updateCurrentByLoc(&_currentWeather, APIKey, pRegionalSettings->latitude, pRegionalSettings->longitude);
     }
+    if (!isnan(_currentWeather.temp))
+      break;
+    Serial.println(F("Weather error"));
     delay(500);
   }
   if (isnan(_currentWeather.temp)) {
+    Serial.println(F("Failed to get weather"));
     currentWeather.temp =  NO_VALUE_INT;
     return false;
   }
@@ -48,9 +51,9 @@ bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& API
   currentWeather.iconMeteoCon = _currentWeather.iconMeteoCon;
   currentWeather.sunrise = _currentWeather.sunrise;
   currentWeather.sunset = _currentWeather.sunset;
+  Serial.println(F("Weather OK"));
   return true;
 }
-
 
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) {
   OpenWeatherMapForecast forecastClient;
@@ -62,27 +65,33 @@ bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey) 
   _forecasts[0].temp = NAN;
 
   // Try 3 times
-  for(int i=0;i<3;i++) {
-    Serial.printf_P(PSTR("Downloading weather forecast, attempt: %d\n"),i+1);
-    forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS);
-    if (!isnan(_forecasts[0].temp)) {
-      break;
+  for(uint8_t i=0;i<3;i++) {
+    if (forecastClient.updateForecasts(_forecasts, APIKey, pRegionalSettings->location, MAX_FORECASTS) == 0) { //if location fails, use GPS coordinates
+      Serial.println( F("Forecast with GPS"));
+      forecastClient.updateForecastsByLoc(_forecasts, APIKey, pRegionalSettings->latitude, pRegionalSettings->longitude, MAX_FORECASTS);
     }
+
+    if (!isnan(_forecasts[0].temp))
+      break;
+    
+    Serial.println(F("Forecast error"));
     delay(500);
   }
 
   if (isnan(_forecasts[0].temp)) {
+    Serial.println(F("Failed to get forecast"));
     forecasts[0].temp = NO_VALUE_INT;
     return false;
   }
 
-  for (unsigned int i = 0; i < MAX_FORECASTS; i++) {
+  for (uint8_t i = 0; i < MAX_FORECASTS; i++) {
     forecasts[i].observationTime = _forecasts[i].observationTime;
     forecasts[i].temp = Sensor::float2Int( _forecasts[i].temp);
     forecasts[i].iconMeteoCon = _forecasts[i].iconMeteoCon;
     forecasts[i].windDeg = round( _forecasts[i].windDeg);
     forecasts[i].windSpeed = round( _forecasts[i].windSpeed);
   }
+  Serial.println(F("Forecast OK"));
   return true;
 }
 
@@ -178,7 +187,7 @@ void drawWindForecastDetails(OLEDDisplay *display, int x, int y, int dayIndex) {
   float f;
 
   // Draw marks for hours
-  for (unsigned int i=0; i<8; i++) {
+  for (uint8_t i=0; i<8; i++) {
     f = ((i * 45) + 270) * 0.0175;  //angle to radians
     if ( abs((int)((i * 45) + 270) - (int)(forecasts[dayIndex].windDeg+90)) > 40)
       display->drawLine(clockSize*cos(f)+clockCenterX, clockSize*sin(f)+clockCenterY, (clockSize-2+(i%2==0?0:1))*cos(f)+clockCenterX, (clockSize-1+(i%2==0?0:1))*sin(f)+clockCenterY);
