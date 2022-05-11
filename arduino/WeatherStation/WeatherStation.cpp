@@ -184,7 +184,7 @@ void WeatherStation::respondStatic(AsyncWebServerRequest* request, route *r) {
     request->send(304);
   } else {
     bool cont = true;
-    if(ESP.getMaxFreeBlockSize() < 2048) {
+    if(ESP.getMaxFreeBlockSize() < 4096) {
       Serial.println(F(" Low memory condition. Releasing influxdb client "));
       if(!_influxDBHelper->release()) {
           Serial.println(F(" Failed "));
