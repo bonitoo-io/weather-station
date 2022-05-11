@@ -28,10 +28,6 @@ class tIPListener: public JsonListener {
 
 void tIPListener::value(String value) {
   //Serial.println(String(F("key: ")) + _key + String(F(" value: ")) + value);
-  if ( _key == "ip") {
-    Serial.print( F("External IP: "));
-    Serial.println( value);
-  }
   if ( _key == String(F("city")))
     city = value;
   if ( _key == String(F("country")))
@@ -71,7 +67,7 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
   client.setInsecure();  //Ignore certificate
   JsonStreamingParser parser;
   parser.setListener(&ipListener);
-  Serial.println(F("Getting IP based regional info"));
+  Serial.println(F("Running IP Location"));
 
   http.begin(client, String(F("https://ipapi.co/json")));
   http.addHeader(F("Accept"), F("application/json"));
@@ -81,11 +77,12 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
     while (http.connected() && c) {
       uint8_t payload;
       c = client.read(&payload, sizeof(payload));
+      Serial.print((char)payload);
       parser.parse(payload);
     }
-
+    Serial.println();
   } else {
-    Serial.print(F(" error: "));
+    Serial.print(F("ipapi.co error: "));
     Serial.println( httpCode);
   }
   http.end();
@@ -161,7 +158,6 @@ int detectLocationFromIP(RegionalSettings *pRegionalSettings) {
 
   return changed?2:1;
 }
-
 
 bool nonLatin2Eng( const char* lang) {
   return findCountry(lang, nonLatinLang2Eng);
