@@ -69,7 +69,6 @@ void WeatherStation::end() {
   _wifiManager.end();
 }
 
-
 static routeMap getRoutes;
 static routeMap postRoutes;
 static routeMap deleteRoutes;
@@ -78,6 +77,9 @@ static route *indexRoute = nullptr;
 
 void cleanMap(routeMap &map) {
   for(const auto& [key, val] : map) {
+    if(val->params) {
+      delete val->params;
+    }
     delete val;
   }
   map.clear();
@@ -246,7 +248,9 @@ void WeatherStation::globalDisconnectHandler(AsyncWebServerRequest *request) {
   WS_DEBUG_RAM(" RAM after request");
   Serial.print(F("Sent "));
   Serial.println(request->url());
-  --_requestsInProgress;
+  if(_requestsInProgress > 0) { //this handler is sometimes called with empty request
+    --_requestsInProgress;
+  }
 }
 
 void WeatherStation::startServer() {
@@ -295,7 +299,6 @@ void WeatherStation::registerEndpoints() {
   _influxdbValidateEndpoint = new InfluxDBValidateParamsEndpoint(_influxDBHelper);
   _influxdbValidateEndpoint->registerEndpoints(this);
 
-
   _aboutInfoEndpoint = new AboutInfoEndpoint(_influxDBHelper, &_influxDBSettings, &_wifiSettings, &_regionalSettings, &LittleFS);
   _aboutInfoEndpoint->registerEndpoints(this);
   _aboutServiceEndpoint = new AboutServiceEndpoint(&_persistence);
@@ -321,32 +324,41 @@ void WeatherStation::registerEndpoints() {
      // end() and reset() is called in the ~AsyncWebServer
     delete _server;
     _server = nullptr;
+    
+    delete _pUploadFirmwareEndpoint;
+    _pUploadFirmwareEndpoint = nullptr;
+    
     delete _wifiScannerEndpoint;
     _wifiScannerEndpoint = nullptr;
     delete _wifiSettingsEndpoint;
     _wifiSettingsEndpoint = nullptr;
-    delete _influxDBSettingsEndpoint;
-    _influxDBSettingsEndpoint = nullptr;
     delete _wifiStatusEndpoint;
     _wifiStatusEndpoint = nullptr;
     delete _wifiConnectionHelperEndpoint;
     _wifiConnectionHelperEndpoint = nullptr;
+    delete _wiFiListSavedEndpoint;
+    _wiFiListSavedEndpoint = nullptr;
+    
     delete _aboutInfoEndpoint;
     _aboutInfoEndpoint = nullptr;
     delete _aboutServiceEndpoint;
     _aboutServiceEndpoint = nullptr;
+
+    delete _influxDBSettingsEndpoint;
+    _influxDBSettingsEndpoint = nullptr;
     delete _influxdbValidateEndpoint;
     _influxdbValidateEndpoint = nullptr;
-    delete _wiFiListSavedEndpoint;
-    _wiFiListSavedEndpoint = nullptr;
+
     delete _pRegionalSettingsEndpoint;
     _pRegionalSettingsEndpoint = nullptr;
-    delete _pUploadFirmwareEndpoint;
-    _pUploadFirmwareEndpoint = nullptr;
+    delete _pRegionalSettingsValidateEndpoint;
+    _pRegionalSettingsValidateEndpoint = nullptr;
+
     delete _pAdvancedSettingsEndpoint;
     _pAdvancedSettingsEndpoint = nullptr;
     delete _pAdvancedSettingsValidateEndpoint;
     _pAdvancedSettingsValidateEndpoint = nullptr;
+
     delete _pDisplaySettingsEndpoint;
     _pDisplaySettingsEndpoint = nullptr;
     cleanRoutes();

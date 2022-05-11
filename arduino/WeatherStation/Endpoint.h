@@ -11,7 +11,7 @@ struct static_params {
 };
 
 struct route {
-  static_params *params;      
+  static_params *params = nullptr;      
 };
 
 //auto cmpLambda = [](const char *a, const char *b){ return strcmp(a,b)<0; };
