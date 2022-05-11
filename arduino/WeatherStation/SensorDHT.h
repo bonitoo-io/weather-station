@@ -26,6 +26,7 @@ public:
   }
   ~InterruptLock() {
     interrupts();
+    yield();
   }
 };
 
