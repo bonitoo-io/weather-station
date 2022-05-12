@@ -68,9 +68,9 @@ RegionalSettingsEndpoint::RegionalSettingsEndpoint(FSPersistence *pPersistence, 
     SettingsEndpoint(REGIONAL_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [this](Settings */*pSettings*/, JsonObject /*jsonObject*/) { //fetchManipulator
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
-      RegionalSettings *regSettings = (RegionalSettings *)pSettings;
+      RegionalSettings *regSettings = static_cast<RegionalSettings *>(pSettings);
       regSettings->updatedParts = 0;
-      
+
       if(regSettings->detectAutomatically != jsonObject[F("detectAutomatically")]) {
          regSettings->updatedParts |= RegionalSettingsParts::DetectAutomatically;
       }
@@ -88,12 +88,12 @@ RegionalSettingsEndpoint::RegionalSettingsEndpoint(FSPersistence *pPersistence, 
           regSettings->updatedParts |= RegionalSettingsParts::UtcOffset;
         }
 
-        if(jsonObject[F("latitude")] != regSettings->latitude 
+        if(jsonObject[F("latitude")] != regSettings->latitude
           || jsonObject[F("longitude")] != regSettings->longitude) {
           regSettings->updatedParts |= RegionalSettingsParts::LocationCoords;
         }
 
-        if(jsonObject[F("useMetricUnits")] != regSettings->useMetricUnits 
+        if(jsonObject[F("useMetricUnits")] != regSettings->useMetricUnits
           || jsonObject[F("use24Hours")] != regSettings->use24Hours
           || jsonObject[F("useYMDFormat")] != regSettings->useYMDFormat) {
             regSettings->updatedParts |= RegionalSettingsParts::RegionParams;

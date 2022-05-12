@@ -275,7 +275,7 @@ InfluxDBSettings::InfluxDBSettings():
   org(INFLUXDB_DEFAULT_ORG),
   bucket(INFLUXDB_DEFAULT_BUCKET),
   writeInterval(INFLUXDB_DEFAULT_WRITE_INTERVAL) {
-  
+
   DECLARE_ENCRYPT_STR( tokenStr, INFLUXDB_DEFAULT_TOKEN);
   authorizationToken = GET_ENCRYPT_STR( tokenStr);
 }
@@ -306,14 +306,14 @@ int InfluxDBSettings::load(JsonObject& root) {
 InfluxDBSettingsEndpoint::InfluxDBSettingsEndpoint(FSPersistence *pPersistence, InfluxDBSettings *pSettings):
     SettingsEndpoint(INFLUXDB_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
-      InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
+      InfluxDBSettings *idbSettings = static_cast<InfluxDBSettings *>(pSettings);
       if(idbSettings->authorizationToken.length()>4) {
         jsonObject[FPSTR(Token)] = obfuscateToken(idbSettings->authorizationToken);
       }
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *authToken = jsonObject[FPSTR(Token)].as<const char *>();
       if(strstr(authToken, ReplaceMark)) {
-        InfluxDBSettings *idbSettings = (InfluxDBSettings *)pSettings;
+        InfluxDBSettings *idbSettings = static_cast<InfluxDBSettings *>(pSettings);
         jsonObject[FPSTR(Token)] = idbSettings->authorizationToken;
       }
     }) {

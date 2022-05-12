@@ -150,27 +150,27 @@ route *WeatherStation::findRoute(routeMap &map, AsyncWebServerRequest* request) 
 }
 
 void WeatherStation::getRequestHandler(AsyncWebServerRequest* request) {
-  get_route *r = (get_route *) findRoute(getRoutes, request);
-  if(r) { 
+  get_route *r = static_cast<get_route *>(findRoute(getRoutes, request));
+  if(r) {
     r->handler(request, r);
   }
 }
 
 void WeatherStation::deleteRequestHandler(AsyncWebServerRequest* request) {
-  get_route *r = (get_route *) findRoute(deleteRoutes, request);
-  if(r) { 
+  get_route *r = static_cast<get_route *>(findRoute(deleteRoutes, request));
+  if(r) {
     r->handler(request, r);
   }
 }
 
 void WeatherStation::postRequestHandler(AsyncWebServerRequest* request, JsonVariant &json) {
-  post_route *r = (post_route *) findRoute(postRoutes, request);
-  if(r) { 
+  post_route *r = static_cast<post_route *>(findRoute(postRoutes, request));
+  if(r) {
     r->handler(request, json, r);
   }
 }
 
-void WeatherStation::respondStatic(AsyncWebServerRequest* request, route *r) {  
+void WeatherStation::respondStatic(AsyncWebServerRequest* request, route *r) {
   if(r == indexRoute) {
     Serial.println(F(" Responding with index"));
   }
@@ -219,7 +219,7 @@ void WeatherStation::registerStatics() {
   _server->on("/*", HTTP_GET, std::bind(&WeatherStation::getRequestHandler, this, std::placeholders::_1));
   _server->on("/*", HTTP_DELETE, std::bind(&WeatherStation::deleteRequestHandler, this, std::placeholders::_1));
 
-  AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/*", 
+  AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/*",
     std::bind(&WeatherStation::postRequestHandler, this, std::placeholders::_1, std::placeholders::_2), DEFAULT_BUFFER_SIZE);
   handler->setMethod(HTTP_POST);
 
@@ -259,7 +259,7 @@ bool WeatherStation::globalFilterHandler(AsyncWebServerRequest *request) {
     --_requestsInProgress;
     return false;
   }
-  
+
   return true;
 }
 
@@ -343,10 +343,10 @@ void WeatherStation::registerEndpoints() {
      // end() and reset() is called in the ~AsyncWebServer
     delete _server;
     _server = nullptr;
-    
+
     delete _pUploadFirmwareEndpoint;
     _pUploadFirmwareEndpoint = nullptr;
-    
+
     delete _wifiScannerEndpoint;
     _wifiScannerEndpoint = nullptr;
     delete _wifiSettingsEndpoint;
@@ -357,7 +357,7 @@ void WeatherStation::registerEndpoints() {
     _wifiConnectionHelperEndpoint = nullptr;
     delete _wiFiListSavedEndpoint;
     _wiFiListSavedEndpoint = nullptr;
-    
+
     delete _aboutInfoEndpoint;
     _aboutInfoEndpoint = nullptr;
     delete _aboutServiceEndpoint;

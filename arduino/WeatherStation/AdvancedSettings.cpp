@@ -140,7 +140,7 @@ void AdvancedSettings::setHumOffset( float humOffset) {
 AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings):
     SettingsEndpoint(ADVANCED_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [this](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
-      AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
+      AdvancedSettings *advSettings = static_cast<AdvancedSettings *>(pSettings);
       if(advSettings->openWeatherAPIKey.length()>4) {
         jsonObject[FPSTR(OpenweatherApiKeyStr)] = obfuscateToken(advSettings->openWeatherAPIKey);
       }
@@ -152,7 +152,7 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, 
       jsonObject[F("humOffset")] = advSettings->getHumOffset();
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
       const char *key = jsonObject[FPSTR(OpenweatherApiKeyStr)].as<const char *>();
-      AdvancedSettings *advSettings = (AdvancedSettings *)pSettings;
+      AdvancedSettings *advSettings = static_cast<AdvancedSettings *>(pSettings);
       advSettings->updatedParts = 0;
 
       if(strstr(key, ReplaceMark)) {
@@ -161,7 +161,7 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, 
         advSettings->updatedParts |= AdvancedSettingsParts::OpenWeatherAPIKey;
       }
 
-      if(jsonObject[F("repo")] != advSettings->repo 
+      if(jsonObject[F("repo")] != advSettings->repo
         || jsonObject[F("owner")] != advSettings->owner
         || jsonObject[F("binFile")] != advSettings->binFile
         || jsonObject[F("md5File")] != advSettings->md5File
@@ -187,6 +187,6 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, 
       }
       Serial.printf_P(PSTR("Updated parts: %u\n"),advSettings->updatedParts);
 
-    }), 
+    }),
     _pRegionalSettings(pRegionalSettings) {
 }

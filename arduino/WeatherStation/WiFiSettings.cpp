@@ -85,10 +85,10 @@ int WiFiSettings::load(JsonObject& root) {
 WiFiSettingsEndpoint::WiFiSettingsEndpoint(FSPersistence *pPersistence, Settings *pSettings):
     SettingsEndpoint(WIFI_SETTINGS_ENDPOINT_PATH, pPersistence, pSettings,
     [](Settings *pSettings, JsonObject jsonObject) { //fetchManipulator
-      WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
+      WiFiSettings *wifiSettings = static_cast<WiFiSettings *>(pSettings);
       jsonObject[FPSTR(StringPassword)] = obfuscateToken(wifiSettings->password, 0);
     },[](Settings *pSettings, JsonObject jsonObject) { //updateManipulator
-      WiFiSettings *wifiSettings = (WiFiSettings *)pSettings;
+      WiFiSettings *wifiSettings = static_cast<WiFiSettings *>(pSettings);
       const char *ssid = jsonObject[FPSTR(StringSSID)].as<const char *>();
       wifiSettings->setFilePath(String(F(WIFI_CONFIG_DIRECTORY "/")) + ssid);
       const char *pass = jsonObject[FPSTR(StringPassword)].as<const char *>();
