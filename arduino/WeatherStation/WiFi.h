@@ -160,7 +160,7 @@ public:
 
 class WiFiConnectionHelperEndpoint : public Endpoint {
 public:
-  WiFiConnectionHelperEndpoint(WiFiManager *pWiFiManager);
+  explicit WiFiConnectionHelperEndpoint(WiFiManager *pWiFiManager);
   virtual ~WiFiConnectionHelperEndpoint() {}
   virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
 private:
@@ -201,7 +201,7 @@ class WiFiStatusEndpoint : public Endpoint {
 
 class WiFiListSavedEndpoint : public Endpoint {
  public:
-  WiFiListSavedEndpoint(FSPersistence *pFsp);
+  explicit WiFiListSavedEndpoint(FSPersistence *pFsp);
   virtual ~WiFiListSavedEndpoint() {}
   virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
  private:

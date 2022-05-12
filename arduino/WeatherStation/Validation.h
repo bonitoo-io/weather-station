@@ -52,7 +52,7 @@ private:
 
 class AdvancedSettingsValidateEndpoint : public ValidateParamsEndpoint {
 public:
-    AdvancedSettingsValidateEndpoint( RegionalSettings *pRegSetting);
+    explicit AdvancedSettingsValidateEndpoint( RegionalSettings *pRegSetting);
     virtual ~AdvancedSettingsValidateEndpoint() { delete _pSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;

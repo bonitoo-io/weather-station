@@ -7,7 +7,7 @@
 
 class FSPersistence {
 public:
-    FSPersistence(FS *fs);
+    explicit FSPersistence(FS *fs);
     bool readFromFS(Settings *s);
     bool writeToFS(Settings *s);
     bool begin();

@@ -12,8 +12,8 @@ typedef std::function<void(bool)> FWUploadFinishedCallback;
 
 class UploadFirmwareEndpoint {
  public:
-  UploadFirmwareEndpoint(AsyncWebServer* server);
-  void setCallbacks(FWUploadStartedCallback startedCallback, FWUploadFinishedCallback finishedCallback) { 
+  explicit UploadFirmwareEndpoint(AsyncWebServer* server);
+  void setCallbacks(FWUploadStartedCallback startedCallback, FWUploadFinishedCallback finishedCallback) {
     _startedCallback = startedCallback;
     _finishedCallback = finishedCallback;
    }

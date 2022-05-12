@@ -69,7 +69,7 @@ public:
 
 class InfluxDBValidateParamsEndpoint : public ValidateParamsEndpoint {
 public:
-    InfluxDBValidateParamsEndpoint(InfluxDBHelper *pHelper);
+    explicit InfluxDBValidateParamsEndpoint(InfluxDBHelper *pHelper);
     virtual ~InfluxDBValidateParamsEndpoint() { delete _validationSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;

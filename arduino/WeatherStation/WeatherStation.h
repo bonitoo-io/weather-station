@@ -19,7 +19,7 @@
 
 class WeatherStation : public EndpointRegistrator {
 public:
-    WeatherStation(InfluxDBHelper *influxDBHelper);
+    explicit WeatherStation(InfluxDBHelper *influxDBHelper);
     void begin();
     void loop();
     void end();
@@ -60,14 +60,14 @@ public:
     void registerStaticHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len);
     void globalDisconnectHandler(AsyncWebServerRequest *request);
     bool globalFilterHandler(AsyncWebServerRequest *request);
-    void setFWUploadCallbacks(FWUploadStartedCallback startedCallback, FWUploadFinishedCallback finishedCallback) { 
+    void setFWUploadCallbacks(FWUploadStartedCallback startedCallback, FWUploadFinishedCallback finishedCallback) {
         _fwUploadStartedCallback = startedCallback;
-        _fwUploadFinishedCallback = finishedCallback; 
+        _fwUploadFinishedCallback = finishedCallback;
     }
 public:
     virtual void registerGetHandler(const char *uri, GetRequestHandler handler) override;
     virtual void registerDeleteHandler(const char *uri, GetRequestHandler handler) override;
-    virtual void registerPostHandler(const char *uri, PostRequestHandler handler) override;   
+    virtual void registerPostHandler(const char *uri, PostRequestHandler handler) override;
 private:
     void getRequestHandler(AsyncWebServerRequest* request);
     void deleteRequestHandler(AsyncWebServerRequest* request);

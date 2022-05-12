@@ -8,7 +8,7 @@ class Migrator {
     String _error;
     FSPersistence *_pFsp;
   public:
-    Migrator(FSPersistence *pFsp):_pFsp(pFsp) {};
+    explicit Migrator(FSPersistence *pFsp):_pFsp(pFsp) {};
     bool run();
     String getError() const { return _error; }
   protected:

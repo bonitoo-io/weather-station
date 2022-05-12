@@ -39,10 +39,10 @@ class AboutInfoEndpoint : public Endpoint {
 
 class AboutServiceEndpoint : public Endpoint {
  public:
-  AboutServiceEndpoint(FSPersistence* persistence);
+  explicit AboutServiceEndpoint(FSPersistence* persistence);
   virtual ~AboutServiceEndpoint() {}
   void factoryReset();
-  
+
   virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
 
   static void restartNow();
