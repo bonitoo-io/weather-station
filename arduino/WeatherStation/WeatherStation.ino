@@ -152,6 +152,10 @@ void setup() {
     if(station.getAdvancedSettings()->updatedParts & AdvancedSettingsParts::OpenWeatherAPIKey) {
      wsState |= WSState::AppStateForceUpdate;
     }
+    if(station.getAdvancedSettings()->updatedParts & AdvancedSettingsParts::Offsets) {
+      // Must be done in the main loop
+      wsState |= WSState::AppStateSetOffsets;
+    }
   });
 
   RegionalSettings *pRegionalSettings = station.getRegionalSettings();
@@ -351,6 +355,11 @@ void loop() {
   }
   if(!(wsState & WSState::AppStateInitialised)) {
     initData();
+  }
+  if(wsState & WSState::AppStateSetOffsets) {
+    pSensor->resetTempFilter();
+    pSensor->resetHumFilter();
+    wsState ^= WSState::AppStateSetOffsets;
   }
   // Ticker function - executed once per minute
   if (((ui.getUiState()->frameState == FIXED) && ((millis() - timeSinceLastUpdate) >= 1000*60)) || wsState & WSState::AppStateForceUpdate) {

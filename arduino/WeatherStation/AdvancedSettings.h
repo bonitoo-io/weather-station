@@ -12,7 +12,8 @@ enum AdvancedSettingsParts {
   UpdateInterval = 1,
   OpenWeatherAPIKey = 2,
   NTPServers = 4,
-  UpdateSettings = 8
+  UpdateSettings = 8,
+  Offsets = 16,
 };
 
 class AdvancedSettings : public Settings {

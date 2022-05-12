@@ -115,7 +115,8 @@ enum WSState : uint8_t {
   AppStateDrawWifiProgress = 1<<2,
   AppStateForceUpdate = 1<<3,
   AppStateDownloadingUpdate = 1<<4,
-  AppStateUploadingUpdate = 1<<5
+  AppStateUploadingUpdate = 1<<5,
+  AppStateSetOffsets = 1<<6
 };
 
 extern volatile uint8_t wsState;

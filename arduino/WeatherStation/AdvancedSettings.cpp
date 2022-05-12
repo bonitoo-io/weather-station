@@ -131,12 +131,10 @@ float AdvancedSettings::getHumOffset() {
 
 void AdvancedSettings::setTempOffset( float tempOffset) {
   _eepromData.setTempOffsetRaw( station.getRegionalSettings()->useMetricUnits ? tempOffset * 9.0 / 5.0 : tempOffset); //convert from F to C if needed
-  pSensor->resetTempFilter();
 }
 
 void AdvancedSettings::setHumOffset( float humOffset) {
   _eepromData.setHumOffsetRaw(humOffset);
-  pSensor->resetHumFilter();
 }
 
 AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, AdvancedSettings *pSettings, RegionalSettings *pRegionalSettings):
@@ -180,8 +178,14 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, 
       if(jsonObject[F("updateDataInterval")] != advSettings->updateDataInterval) {
         advSettings->updatedParts |= AdvancedSettingsParts::UpdateInterval;
       }
+
+      float tempOffset = jsonObject[F("tempOffset")];
+      float humOffset = jsonObject[F("humOffset")];
+      if(tempOffset != advSettings->getTempOffset() || humOffset != advSettings->getHumOffset()) {
+         advSettings->updatedParts |= AdvancedSettingsParts::Offsets;
+         advSettings->updateEEPROMData(tempOffset, humOffset);
+      }
       Serial.printf_P(PSTR("Updated parts: %u\n"),advSettings->updatedParts);
-      advSettings->updateEEPROMData( jsonObject[F("tempOffset")], jsonObject[F("humOffset")]);
 
     }), 
     _pRegionalSettings(pRegionalSettings) {
