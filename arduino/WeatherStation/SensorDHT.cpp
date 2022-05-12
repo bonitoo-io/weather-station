@@ -21,6 +21,7 @@ float SensorDHT::driverGetHum( bool secondRead) {
 
 bool SensorDHT::_readSensor() {
   uint8_t data[5];
+  memset( &data, 0, sizeof(data));
 
   pinMode(PIN_DHT, INPUT_PULLUP); // Go into high impedance state
   delay(1);
