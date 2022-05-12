@@ -5,6 +5,8 @@
 #include "Migrator.h"
 #include "Tools.h"
 
+volatile uint8_t wsState = WSState::AppStateNotInitialised;
+
 WeatherStation::WeatherStation(InfluxDBHelper *influxDBHelper):
   _influxDBHelper(influxDBHelper),
   _persistence(&LittleFS),
@@ -77,7 +79,6 @@ static route *indexRoute = nullptr;
 
 void cleanMap(routeMap &map) {
   for(const auto& [key, val] : map) {
-
     delete val;
   }
   map.clear();
@@ -244,8 +245,13 @@ bool WeatherStation::globalFilterHandler(AsyncWebServerRequest *request) {
   ++_requestsInProgress;
   Serial.printf_P(PSTR("Serving %d on %s. %d req. total\n"), request->method(), request->url().c_str(), _requestsInProgress);
   WS_DEBUG_RAM(" RAM Before request");
-  if(_influxDBHelper->isWriting()) {
-    Serial.println(F(" blocking, writing in progress"));
+  if(_influxDBHelper->isWriting() || wsState & WSState::AppStateDownloadingUpdate || wsState & WSState::AppStateUploadingUpdate ) {
+    Serial.print(F(" blocking: "));
+    if(_influxDBHelper->isWriting()) {
+       Serial.println(F(" writing in progress"));
+    } else {
+      Serial.printf_P(PSTR("app in state: %d\n"), wsState);
+    }
     AsyncWebServerResponse *response = request->beginResponse(429);
     response->addHeader("Retry-After","1");
     request->send(response);
@@ -285,7 +291,7 @@ void WeatherStation::startServer() {
       std::placeholders::_1));
     WS_DEBUG_RAM("Before register endpoints");
     _pUploadFirmwareEndpoint = new UploadFirmwareEndpoint(_server);
-    _pUploadFirmwareEndpoint->setCallback(_fwUploadFinishedCallback);
+    _pUploadFirmwareEndpoint->setCallbacks(_fwUploadStartedCallback, _fwUploadFinishedCallback);
     WS_DEBUG_RAM("Before register static endpoints");
     registerStatics();
     WS_DEBUG_RAM("Before register API endpoints");

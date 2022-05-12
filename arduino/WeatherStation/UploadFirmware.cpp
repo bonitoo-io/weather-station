@@ -26,7 +26,9 @@ void UploadFirmwareEndpoint::handleUpload(AsyncWebServerRequest* request,
     if (Update.begin(request->contentLength())) {
       // success, let's make sure we end the update if the client hangs up
       Serial.println(F("Starting upload FW"));
-      request->onDisconnect(UploadFirmwareEndpoint::handleEarlyDisconnect);
+      request->onDisconnect([this]() {
+        handleEarlyDisconnect();
+      });
     } else {
       // failed to begin, send an error response
       Update.printError(Serial);
@@ -51,12 +53,16 @@ void UploadFirmwareEndpoint::handleUpload(AsyncWebServerRequest* request,
 
 void UploadFirmwareEndpoint::loop() {
   if(_notify) {
-    if(_callback) {
-      _callback();
-    } else {
-      AboutServiceEndpoint::restartNow();
+    if(_notify == 1 && _startedCallback) {
+      _startedCallback();
+    } else if(_notify > 1) {
+      if(_finishedCallback) {
+        _finishedCallback(_notify == 2);
+      } else {
+        AboutServiceEndpoint::restartNow();
+      }
     }
-    _notify = false;
+    _notify = 0;
   }
 }
 
@@ -66,7 +72,7 @@ void UploadFirmwareEndpoint::uploadComplete(AsyncWebServerRequest* request) {
     request->onDisconnect([this]() {
       // Must notify in main loop, not async callbalk
       Serial.println(F("Upload FW successfully completed"));
-      _notify = true;
+      _notify = 2;
     });
     AsyncWebServerResponse* response = request->beginResponse(200);
     request->send(response);
@@ -75,15 +81,21 @@ void UploadFirmwareEndpoint::uploadComplete(AsyncWebServerRequest* request) {
 
 void UploadFirmwareEndpoint::handleError(AsyncWebServerRequest* request, int code) {
   // if we have had an error already, do nothing
+  Serial.println(F("Upload FW failed"));
   if (request->_tempObject) {
     return;
   }
   // send the error code to the client and record the error code in the temp object
   request->_tempObject = new int(code);
   AsyncWebServerResponse* response = request->beginResponse(code);
+  request->onDisconnect([this]() {
+    _notify = 3;
+  });
   request->send(response);
 }
 
 void UploadFirmwareEndpoint::handleEarlyDisconnect() {
+  Serial.println(F("Upload FW failed"));
+  _notify = 3;
   Update.end();
 }

@@ -56,17 +56,15 @@ InfluxDBHelper influxdbHelper;
 WeatherStation station(&influxdbHelper);
 Updater updater;
 
+
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
 String wifiSSID;
-bool shouldSetupInfluxDb = false;
-bool shouldDrawWifiProgress = false;
 APInfo *pAPInfo = nullptr;
-bool initialized = false;
 String resetReason;
-bool bForceUpdate = false;
 unsigned long nextUIUpdate = 0;
 bool skipNightScreen = false;
+
 
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
@@ -79,7 +77,7 @@ void drawNight(OLEDDisplay *display);
 uint8_t isNightMode( DisplaySettings *pDisplaySettings);
 
 void initData() {
-  if(!initialized && WiFi.isConnected() && !pAPInfo) {
+  if(!(wsState & WSState::AppStateInitialised) && WiFi.isConnected() && !pAPInfo) {
     WS_DEBUG_RAM("InitData");
     updater.init(station.getAdvancedSettings(), VERSION);
 
@@ -94,7 +92,7 @@ void initData() {
     //Load all data
     updateData(&display, true);
 
-    initialized = true;
+    wsState |= WSState::AppStateInitialised;
   }
 }
 
@@ -144,7 +142,7 @@ void setup() {
   station.getWifiManager()->setAPEventHandler(wifiAPEventHandler);
 
   station.getInfluxDBSettings()->setHandler([](){
-    shouldSetupInfluxDb =  true;
+    wsState |= WSState::AppStateSetupInfluxDB;
   });
 
   station.getAdvancedSettings()->setHandler([](){
@@ -152,7 +150,7 @@ void setup() {
       updater.init(station.getAdvancedSettings(), VERSION);
     }
     if(station.getAdvancedSettings()->updatedParts & AdvancedSettingsParts::OpenWeatherAPIKey) {
-      bForceUpdate = true;
+     wsState |= WSState::AppStateForceUpdate;
     }
   });
 
@@ -161,7 +159,7 @@ void setup() {
     if(((pRegionalSettings->updatedParts & RegionalSettingsParts::DetectAutomatically) && pRegionalSettings->detectAutomatically)
       || (pRegionalSettings->updatedParts & RegionalSettingsParts::UtcOffset)
       || (pRegionalSettings->updatedParts & RegionalSettingsParts::City)) {
-      bForceUpdate = true;  
+      wsState |= WSState::AppStateForceUpdate;  
     }
     if(pRegionalSettings->updatedParts & RegionalSettingsParts::Language) {
       setLanguage( pRegionalSettings->language.c_str());
@@ -173,7 +171,7 @@ void setup() {
   });
 
   updater.setUpdateCallbacks(updateStartHandler,updateProgressHandler,updateFinishedHandler);
-  station.setFWUploadFinishedCallback(fwUploadFinishedHandler);
+  station.setFWUploadCallbacks(fwUploadStartedHandler, fwUploadFinishedHandler);
   station.begin();
   Sensor::setupSensor();  //wait for loading of tempOffset and humOffset first
   WS_DEBUG_RAM("Setup 2");
@@ -185,6 +183,12 @@ void setup() {
 void updateData(OLEDDisplay *display, bool firstStart) {
   WS_DEBUG_RAM("UpdateData");
   skipNightScreen = false; //restore night screen mode if skipped
+  int i = 3;
+  while(wsState & WSState::AppStateUploadingUpdate && i> 0) {
+    Serial.println(F("FW upload in progess, waiting 5s"));
+    --i;
+    delay(5000);
+  }
 
   if (!isNightMode(station.getDisplaySettings())) {
     digitalWrite( PIN_LED, LOW);
@@ -218,7 +222,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     int res = detectLocationFromIP(station.getRegionalSettings());
     if(!res) {
       ServicesTracker.updateServiceState(SyncServices::ServiceLocationDetection, ServiceState::SyncFailed);
-      if(bForceUpdate) {
+      if(wsState & WSState::AppStateForceUpdate) {
         //If location detection failed in forced update (probable reason was that automatic detection was turned on)
         safeRestart();
       }
@@ -337,19 +341,19 @@ void updateData(OLEDDisplay *display, bool firstStart) {
 void loop() {
   station.loop();
   // Needs to be done asynchronously
-  if(shouldDrawWifiProgress) {
+  if(wsState & WSState::AppStateDrawWifiProgress) {
     drawWifiProgress(&display, VERSION, wifiSSID.c_str());
   }
-  if(shouldSetupInfluxDb) {
+  if(wsState & WSState::AppStateSetupInfluxDB) {
     influxdbHelper.begin(station.getInfluxDBSettings());
     influxdbHelper.update( true, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location,station.getRegionalSettings()->useMetricUnits);
-    shouldSetupInfluxDb = false;
+    wsState ^= WSState::AppStateSetupInfluxDB;
   }
-  if(!initialized) {
+  if(!(wsState & WSState::AppStateInitialised)) {
     initData();
   }
   // Ticker function - executed once per minute
-  if (((ui.getUiState()->frameState == FIXED) && ((millis() - timeSinceLastUpdate) >= 1000*60)) || bForceUpdate) {
+  if (((ui.getUiState()->frameState == FIXED) && ((millis() - timeSinceLastUpdate) >= 1000*60)) || wsState & WSState::AppStateForceUpdate) {
     WS_DEBUG_RAM("Loop 1");
     timeSinceLastUpdate = millis();
     lastUpdateMins++;
@@ -405,17 +409,17 @@ void loop() {
 
 
       //Update data?
-      if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || bForceUpdate) {
+      if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || wsState & WSState::AppStateForceUpdate) {
         if (!isNightMode(station.getDisplaySettings())) {
           digitalWrite( PIN_LED, LOW);
         }
-        if(bForceUpdate) {
+        if(wsState & WSState::AppStateForceUpdate) {
           // Delay update to let server connection settle
           delay(1000);
         }
         updateData(&display,false);
         digitalWrite( PIN_LED, HIGH);
-        bForceUpdate = false;
+        wsState ^= WSState::AppStateForceUpdate;
       }
 
       if(influxdbHelper.wasReleased()) {
@@ -488,7 +492,7 @@ void loop() {
     drawAPInfo(&display, pAPInfo);
   }
 
-  if (initialized && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
+  if (wsState & WSState::AppStateInitialised && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
     ESP.wdtFeed();
     int remainingTimeBudget = DEFAULT_DELAY;
     if (skipNightScreen || !isNightMode(station.getDisplaySettings())) {
@@ -514,8 +518,8 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
   // WiFi interrupt events, don't do anything complex, just update state variables
  switch(event) {
     case WifiConnectionEvent::ConnectingStarted:
-      if(!shouldDrawWifiProgress) {
-        shouldDrawWifiProgress = true;
+      if(!(wsState & WSState::AppStateDrawWifiProgress)) {
+        wsState |= WSState::AppStateDrawWifiProgress;
         startWifiProgress(&display, VERSION, ssid);
         //TODO: better solution for passing current wifi
         wifiSSID = ssid;
@@ -525,7 +529,7 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
       wifiSSID = ssid;
       break;
     case WifiConnectionEvent::ConnectingSuccess:
-      shouldDrawWifiProgress = false;
+       wsState ^= WSState::AppStateDrawWifiProgress;
       station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       //station.startServer();
       break;
@@ -537,8 +541,8 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
 void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
   switch(event) {
     case WifiAPEvent::APStarted:
-      if(shouldDrawWifiProgress) {
-        shouldDrawWifiProgress = false;
+      if(wsState & WSState::AppStateDrawWifiProgress) {
+        wsState ^= WSState::AppStateDrawWifiProgress;
         station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       }
       drawAPInfo(&display, info);
@@ -562,6 +566,7 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
 
 void updateStartHandler(const char *newVersion) {
   drawFWUpdateInfo(&display, getStr(s_Update_found) + newVersion, getStr(s_Update_start_in));
+  wsState |= WSState::AppStateDownloadingUpdate;
   delay(1000);
 }
 
@@ -571,10 +576,11 @@ void updateProgressHandler(const char *newVersion, int progress) {
 
 // Finished automatic download firmware
 void updateFinishedHandler(bool success, const char *err) {
+  wsState ^= WSState::AppStateDownloadingUpdate;
   if(success) {
     drawFWUpdateInfo(&display, getStr(s_Update_successful), getStr(s_Update_restart_in));
     delay(1000);
-    fwUploadFinishedHandler();
+    fwUploadFinishedHandler(true);
   } else {
     drawFWUpdateInfo(&display, getStr(s_Update_failed),  err);
     delay(3000);
@@ -582,10 +588,18 @@ void updateFinishedHandler(bool success, const char *err) {
 }
 
 // Finished upload firmware via web
-void fwUploadFinishedHandler() {
-  drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
-  Serial.println(F("restarting"));
-  safeRestart();
+void fwUploadFinishedHandler(bool success) {
+  wsState ^= WSState::AppStateUploadingUpdate;
+  if(success) {
+    drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
+    Serial.println(F("restarting"));
+    safeRestart();
+  }
+}
+
+// Started upload firmware via web
+void fwUploadStartedHandler() {
+   wsState |= WSState::AppStateUploadingUpdate;
 }
 
 void safeRestart() {

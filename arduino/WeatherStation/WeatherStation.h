@@ -60,7 +60,10 @@ public:
     void registerStaticHandler(const char *uri, const char *contentType, const uint8_t* content, size_t len);
     void globalDisconnectHandler(AsyncWebServerRequest *request);
     bool globalFilterHandler(AsyncWebServerRequest *request);
-    void setFWUploadFinishedCallback(FWUploadFinishedCallback callback) { _fwUploadFinishedCallback = callback; }
+    void setFWUploadCallbacks(FWUploadStartedCallback startedCallback, FWUploadFinishedCallback finishedCallback) { 
+        _fwUploadStartedCallback = startedCallback;
+        _fwUploadFinishedCallback = finishedCallback; 
+    }
 public:
     virtual void registerGetHandler(const char *uri, GetRequestHandler handler) override;
     virtual void registerDeleteHandler(const char *uri, GetRequestHandler handler) override;
@@ -97,11 +100,24 @@ private:
     RegionalSettingsValidateEndpoint *_pRegionalSettingsValidateEndpoint = nullptr;
     UploadFirmwareEndpoint *_pUploadFirmwareEndpoint = nullptr;
     FWUploadFinishedCallback _fwUploadFinishedCallback = nullptr;
+    FWUploadStartedCallback _fwUploadStartedCallback = nullptr;
     AdvancedSettingsEndpoint *_pAdvancedSettingsEndpoint = nullptr;
     AdvancedSettingsValidateEndpoint *_pAdvancedSettingsValidateEndpoint = nullptr;
     DisplaySettingsEndpoint *_pDisplaySettingsEndpoint = nullptr;
 };
 
 extern WeatherStation station;
+
+enum WSState : uint8_t {
+  AppStateNotInitialised = 0,
+  AppStateInitialised = 1,
+  AppStateSetupInfluxDB = 1<<1,
+  AppStateDrawWifiProgress = 1<<2,
+  AppStateForceUpdate = 1<<3,
+  AppStateDownloadingUpdate = 1<<4,
+  AppStateUploadingUpdate = 1<<5
+};
+
+extern volatile uint8_t wsState;
 
 #endif //WEATHER_STATION_H
