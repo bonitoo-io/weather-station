@@ -164,7 +164,7 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, 
       }
 
       if(jsonObject[F("repo")] != advSettings->repo 
-        || jsonObject[F("owner")] != advSettings->repo
+        || jsonObject[F("owner")] != advSettings->owner
         || jsonObject[F("binFile")] != advSettings->binFile
         || jsonObject[F("md5File")] != advSettings->md5File
         || jsonObject[F("updateTime")] != advSettings->updateTime
