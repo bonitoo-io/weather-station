@@ -84,32 +84,35 @@ void  ValidateParamsEndpoint::checkStatus(AsyncWebServerRequest* request, route 
 }
 
 
-RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(AdvancedSettings *pAdvSetting):
+RegionalSettingsValidateEndpoint::RegionalSettingsValidateEndpoint(RegionalSettings *pCurrSettings, AdvancedSettings *pAdvSetting):
   ValidateParamsEndpoint(REGIONAL_SETTINGS_VALIDATE_ENDPOINT_PATH),
+  _pCurrSettings(pCurrSettings),
   _pAdvSetting(pAdvSetting) {}
 
 
 void RegionalSettingsValidateEndpoint::saveParams(JsonVariant& json) {
- if(_pSettings) {
-    delete _pSettings;
+ if(_pNewSettings) {
+    delete _pNewSettings;
   }
   JsonObject jsonObject = json.as<JsonObject>();
-  _pSettings = new RegionalSettings;
-  _pSettings->load(jsonObject);
+  _pNewSettings = new RegionalSettings;
+  _pNewSettings->load(jsonObject);
 }
 
 void RegionalSettingsValidateEndpoint::runValidation() {
-  OpenWeatherMapCurrentData data;
-  OpenWeatherMapCurrent client;
-  Serial.printf_P(PSTR(" Running regional validation: location: %s, lang %s, metrics: %d\n"),_pSettings->location.c_str(),_pSettings->language.c_str(), _pSettings->useMetricUnits);
-  client.setLanguage(_pSettings->language);
-  client.setMetric(_pSettings->useMetricUnits);
-  client.updateCurrent(&data, _pAdvSetting->openWeatherAPIKey, _pSettings->location);
-  if(!data.cityName.length()) {
-    _error = F("City not found");
+  if(_pCurrSettings->location != _pNewSettings->location) {
+    OpenWeatherMapCurrentData data;
+    OpenWeatherMapCurrent client;
+    Serial.printf_P(PSTR(" Running regional validation: location: %s, lang %s, metrics: %d\n"),_pNewSettings->location.c_str(),_pNewSettings->language.c_str(), _pNewSettings->useMetricUnits);
+    client.setLanguage(_pNewSettings->language);
+    client.setMetric(_pNewSettings->useMetricUnits);
+    client.updateCurrent(&data, _pAdvSetting->openWeatherAPIKey, _pNewSettings->location);
+    if(!data.cityName.length()) {
+      _error = F("City not found");
+    }
   }
-  delete _pSettings;
-  _pSettings = nullptr;
+  delete _pNewSettings;
+  _pNewSettings = nullptr;
 }
 
 AdvancedSettingsValidateEndpoint::AdvancedSettingsValidateEndpoint(RegionalSettings *pRegSettings):
@@ -136,7 +139,7 @@ void AdvancedSettingsValidateEndpoint::runValidation() {
     if(!data.cityName.length()) {
       _error = F("Invalid API key");
     }
-    delete _pSettings;
-    _pSettings = nullptr;
   }
+  delete _pSettings;
+  _pSettings = nullptr;
 }

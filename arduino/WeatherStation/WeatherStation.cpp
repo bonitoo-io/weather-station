@@ -325,7 +325,7 @@ void WeatherStation::registerEndpoints() {
 
   _pRegionalSettingsEndpoint = new RegionalSettingsEndpoint(&_persistence, &_regionalSettings);
   _pRegionalSettingsEndpoint->registerEndpoints(this);
-  _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(&_advancedSettings);
+  _pRegionalSettingsValidateEndpoint = new RegionalSettingsValidateEndpoint(&_regionalSettings, &_advancedSettings);
   _pRegionalSettingsValidateEndpoint->registerEndpoints(this);
 
   _pAdvancedSettingsEndpoint = new AdvancedSettingsEndpoint(&_persistence, &_advancedSettings, &_regionalSettings);

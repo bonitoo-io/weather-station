@@ -39,14 +39,15 @@ protected:
 
 class RegionalSettingsValidateEndpoint : public ValidateParamsEndpoint {
 public:
-    RegionalSettingsValidateEndpoint(AdvancedSettings *pAdvSetting);
-    virtual ~RegionalSettingsValidateEndpoint() { delete _pSettings; }
+    RegionalSettingsValidateEndpoint(RegionalSettings *pCurrSettings, AdvancedSettings *pAdvSetting);
+    virtual ~RegionalSettingsValidateEndpoint() { delete _pNewSettings; }
 protected:
   virtual void saveParams(JsonVariant& json) override;
   virtual void runValidation() override;
 private:
   AdvancedSettings *_pAdvSetting;
-  RegionalSettings *_pSettings = nullptr;
+  RegionalSettings *_pCurrSettings;
+  RegionalSettings *_pNewSettings = nullptr;
 };
 
 class AdvancedSettingsValidateEndpoint : public ValidateParamsEndpoint {
