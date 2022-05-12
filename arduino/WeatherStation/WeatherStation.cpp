@@ -10,7 +10,8 @@ volatile uint8_t wsState = WSState::AppStateNotInitialised;
 WeatherStation::WeatherStation(InfluxDBHelper *influxDBHelper):
   _influxDBHelper(influxDBHelper),
   _persistence(&LittleFS),
-  _wifiManager(&_persistence,&_wifiSettings)
+  _wifiManager(&_persistence,&_wifiSettings),
+  _requestsInProgress(0)
   {
 // Enable CORS for UI development
 #if 1

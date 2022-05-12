@@ -3,7 +3,7 @@
 #include <ESPWiFi.h>
 
 
-Updater::Updater() {
+Updater::Updater() : _settings(NULL) {
 
 }
 
