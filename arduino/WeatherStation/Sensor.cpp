@@ -10,6 +10,12 @@
 
 Sensor* pSensor = nullptr;
 
+Sensor::Sensor() : _tempFilt(NAN), _humFilt(NO_VALUE_INT), _timeNextUpdate(0) {
+  //clean data
+  for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
+    _tempHistory[i] = NO_VALUE_INT;
+}
+
 bool Sensor::setupSensor() {
   pSensor = new SensorSHT();
   if (pSensor->driverSetup()) {
@@ -61,9 +67,6 @@ bool Sensor::setup() {
 
   resetTempFilter( t); //prepare median filter data for temperature
   resetHumFilter( h); //prepare median filter data for humidity
-  //clean data
-  for (uint8_t i = 0; i < TEMP_HIST_SIZE; i++)
-    _tempHistory[i] = NO_VALUE_INT;
   return true;
 }
 

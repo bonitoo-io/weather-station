@@ -7,9 +7,10 @@
 template <typename T>
 class Median3Filter  {
 public:
+  explicit Median3Filter( T sample = 0) { init( sample);};
   void init( T sample = 0) {
     _samples[0]= _samples[1]= _samples[2]=sample;
-    Serial.println( "Filter init " + String(sample));
+    //Serial.println( "Filter init " + String(sample));
   }
 
   T medianFilter(T sample) {
@@ -48,6 +49,8 @@ private:
 
 class Sensor {
 public:
+  Sensor();
+  virtual ~Sensor() {};
   static bool setupSensor();
   bool setup();
   float getTempF( bool forceCached = false);
