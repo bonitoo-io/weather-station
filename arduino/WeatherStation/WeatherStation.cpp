@@ -97,7 +97,7 @@ void WeatherStation::registerStaticHandler(const char *uri, const char *contentT
   r->params->content = content;
   r->params->len = len;
   r->handler = (GetRequestHandler) std::bind(&WeatherStation::respondStatic, this, std::placeholders::_1, std::placeholders::_2);
-  if(getRoutes[uri]) {
+  if(getRoutes.find(uri) != getRoutes.end()) {
     Serial.printf_P(PSTR("Error: double registered static uri '%s'\n"), uri);
   }
   getRoutes[uri] = r;
@@ -109,7 +109,7 @@ void WeatherStation::registerStaticHandler(const char *uri, const char *contentT
 void WeatherStation::registerGetHandler(const char *uri, GetRequestHandler handler) {
   get_route *r = new get_route;
   r->handler = handler;
-  if(getRoutes[uri]) {
+  if(getRoutes.find(uri) != getRoutes.end()) {
     Serial.printf_P(PSTR("Error: double registered GET uri '%s'\n"), uri);
   }
   getRoutes[uri] = r;
@@ -118,7 +118,7 @@ void WeatherStation::registerGetHandler(const char *uri, GetRequestHandler handl
 void WeatherStation::registerDeleteHandler(const char *uri, GetRequestHandler handler) {
   get_route *r = new get_route;
   r->handler = handler;
-  if(deleteRoutes[uri]) {
+  if(deleteRoutes.find(uri) != deleteRoutes.end()) {
     Serial.printf_P(PSTR("Error: double registered DELETE uri '%s'\n"), uri);
   }
   deleteRoutes[uri] = r;
@@ -127,7 +127,7 @@ void WeatherStation::registerDeleteHandler(const char *uri, GetRequestHandler ha
 void WeatherStation::registerPostHandler(const char *uri, PostRequestHandler handler) {
   post_route *r = new post_route;
   r->handler = handler;
-  if(postRoutes[uri]) {
+  if(postRoutes.find(uri) != postRoutes.end()) {
     Serial.printf_P(PSTR("  Error: double registered POST uri '%s'\n"), uri);
   }
   postRoutes[uri] = r;
@@ -136,16 +136,17 @@ void WeatherStation::registerPostHandler(const char *uri, PostRequestHandler han
 
 route *WeatherStation::findRoute(routeMap &map, AsyncWebServerRequest* request) {
   const char *uri = request->url().c_str();
-  route *r =  map[uri];
-  if(!r) {
+  auto it =  map.find(uri);
+  if(it == map.end()) {
     Serial.printf_P(PSTR("%d on %s not found\n"), request->method(), uri);
     if(indexRoute) {
       respondStatic(request, indexRoute);
     } else {
       request->send(404);
     }
+    return nullptr;
   }
-  return r;
+  return it->second;
 }
 
 void WeatherStation::getRequestHandler(AsyncWebServerRequest* request) {

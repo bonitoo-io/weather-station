@@ -16,8 +16,6 @@ public:
   virtual ~route() { delete params; }
 };
 
-//auto cmpLambda = [](const char *a, const char *b){ return strcmp(a,b)<0; };
-//typedef std::map<const char *, route *, decltype(cmpLambda)> routeMap;
 struct comparator {
     bool operator()(const char * lhs, const char * rhs) const {
         return strcmp(lhs, rhs) < 0;
