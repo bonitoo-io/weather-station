@@ -122,102 +122,126 @@ String strWind( unsigned int w) {
   return String(w) + String(station.getRegionalSettings()->useMetricUnits? F("m/s") : F("mph"));
 }
 
-// Convert UTF8-string to extended ASCII
+const char *getDeviceID() {
+  if(!deviceID.length()) {
+    //Generate Device ID
+    deviceID = "WS-" + WiFi.macAddress();
+    for (uint8_t i = 17; i >= 5; i -= 3)
+      deviceID.remove(i, 1); //remove MAC separators
+  }
+  return deviceID.c_str();
+}
 
+// Convert UTF8-string to extended ASCII
 const char sTranslitFrom[] PROGMEM = "ŠŒŽšœžŸ¥µÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿřťčůňúďěŘŤČŮŇÚĎĚżąłśćęźńığışŻĄŁŚĆĘŹŃĞŞбвгдежзийклмнпрстуфхцчшщъьюяыэёоаБВГДЕЖЗИЙКЛМНПРСТУФХЦЧШЩЪЬЮЯЫЭЁОАΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩωόλάήΌΛΆΉ";
 const char sTranslitTo[] PROGMEM   = "SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyyrtcunudeRTCUNUDEzalsceznigisZALSCEZNGSbvgdejziyklmnprstufhccsswxyyweyoaBVGDEJZIYKLMNPRSTUFHCCSSWXYYWEYOAAaVvGgDdEeZzIiTtIiKkMmNnXxOoPpRrSssTtIiPpKkPpOoolaiOLAI";
 
-char replaceChar( char c1, char c2) {
+char replaceUtf8Char( char c1, char c2) {
   //Replace 2-bytes UTF8 characters
   for (unsigned int i=0; i < sizeof(sTranslitFrom) - 1; i+=2) { //try to find character in the translation table
     if ((c1 == pgm_read_byte( sTranslitFrom + i)) && (c2 == pgm_read_byte( sTranslitFrom + i + 1)))
       return pgm_read_byte( sTranslitTo+(i/2));
   }
-  //Serial.println( String(c1) + String(c2) + " -> ?");
-  return '?';
-}
-
-// Convert a single Character from UTF8 to Extended ASCII
-// Return "0" if a byte has to be ignored
-static uint8_t c1;  // Last character buffer
-char utf8ascii(uint8_t ascii) {
-  if (ascii < 128) {   // Standard ASCII-set 0..0x7F handling
-    c1 = 0;
-    return ascii;
-  }
-
-  // get previous input
-  uint8_t last = c1;   // get last char
-  c1 = ascii;         // remember actual character
-
-  switch (last) {     // conversion depending on first UTF8-character
-    case 0xC2: return ascii;  break;
-    case 0xC3: return ascii | 0xC0;  break;
-    case 0x82: if(ascii==0xAC) return(0x80);       // special case Euro-symbol
-  }
-
-  return '?';                                     // otherwise: return ?, if character is uknown
+  //Serial.println( String(c1) + String(c2) + " -> ? " + String(c1,HEX) + " " + String(c2, HEX));
+  return 0;
 }
 
 // convert String object from UTF8 String to Extended ASCII
 String utf8ascii(const String s) {
-  String r(F(""));
-  char c;
-  char c1 = 0;
-  for (unsigned int i=0; i < s.length(); i++) {
-    c = s.charAt(i);
-    if (c1 != 0) {  //already utf8 char?
-      r += replaceChar( c1, c);
-      c1 = 0;
+  String r;
+  r.reserve(s.length());  //reduce reallocations
+  char first = 0;
+  for (uint8_t i=0; i < s.length(); i++) {
+    char c = s.charAt(i);
+    if (first != 0) {  //already utf8 char?
+      char c1 = replaceUtf8Char( first, c);
+      if (c1 != 0) //found in the table?
+        c = c1;
+      else
+        switch (first) {     // conversion depending on first UTF8-character
+          case 0xC2:
+            break; //keep char as is it
+          case 0xC3:
+            c = (char)c | 0xC0;
+            break;
+          case 0x82:
+            if(c == 0xAC)
+              c = (char)0x80; // special case Euro-symbol
+            else
+              c = '?';
+            break;
+          default:
+            c = '?';
+        }
+      r += c;
+      first = 0; //clear first symbol
       continue;
     }
     if (( c & 0b11100000) == 0b11000000) {  //2-byte utf8 char?
-      c1 = c;
+      first = c; //save first character
       continue;
     }
-    r += utf8ascii( c);
+    if (c >= 128) //overwrite char above 128
+      c = '?';
+    r += c;
   }
   return r;
 }
 
-/*void testutf8() {
-  //Serial.println( sTranslitFrom);
-  if (sTranslitFrom.length() != (sTranslitTo.length()*2))
-    Serial.println("ERROR - utf8 translit table");
+/*
+/////////////////TEST////////////////////
+void dump( const String& s) {
+  Serial.print( "String: `" + s + "` -> ");
+  for (uint8_t i=0; i < s.length(); i++)
+    Serial.print( String((uint8_t)s.charAt(i), HEX) + " ");
+  Serial.println();
+}
 
-  Serial.println( sTranslitFrom.length());
-  for (int i=0; i < sTranslitFrom.length() - 1; i+=2) {
-    if (( sTranslitFrom.charAt(i) & 0b11100000) == 0b11000000) {
-      Serial.print( String(sTranslitFrom.charAt(i)) + String(sTranslitFrom.charAt(i+1)) + " ");
-      Serial.print( sTranslitFrom.charAt(i), BIN);
+void testutf8() {
+  Serial.println( sTranslitFrom);
+  Serial.println( sTranslitTo);
+  Serial.println("utf8 translit table size " + String(sizeof(sTranslitFrom) - 1) + " vs " + String(sizeof(sTranslitTo) - 1)); //remove null character at the end of the string
+
+  for (uint16_t i = 0; i < sizeof(sTranslitFrom) - 1; i += 2) {
+    Serial.print( String( i) + " " + String(i/2) + " ");
+    if (( String(sTranslitFrom).charAt(i) & 0b11100000) == 0b11000000) {
+      Serial.print( String(String(sTranslitFrom).charAt(i)) + String(String(sTranslitFrom).charAt(i+1)) + " ");
+      Serial.print( String(sTranslitFrom).charAt(i), HEX);
       Serial.print( " ");
-      Serial.println( sTranslitFrom.charAt(i+1), BIN);
+      Serial.print( String(sTranslitFrom).charAt(i+1), HEX);
+      Serial.print( " -> ");
+      Serial.println( String(sTranslitTo).charAt(i/2));
     }
   }
-  Serial.println( sTranslitTo);
-  Serial.println( sTranslitTo.length()*2);
 
+  if ((sizeof(sTranslitFrom) - 1) != ((sizeof(sTranslitTo) - 1)*2))
+    Serial.println("ERROR - utf8 translit table size " + String(sizeof(sTranslitFrom) - 1) + " vs " + String(sizeof(sTranslitTo) - 1)); //remove null character at the end of the string
+
+  Serial.println( utf8ascii(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
   Serial.println( utf8ascii("Příliš žluťoučký kůň úpěl ďábelské ódy."));
   Serial.println( utf8ascii("PŘÍLIŠ ŽLUŤOUČKÝ KŮŇ ÚPĚL ĎÁBELSKÉ ÓDY."));
-  Serial.println( utf8ascii("Vogt Nyx: „Büß du ja zwölf Qirsch, Kämpe"));
+  Serial.println( utf8ascii("Vogt Nyx: \"Büß du ja zwölf Qirsch, Kämpe"));
   Serial.println( utf8ascii("Pranzo d'acqua fa volti sghembi"));
   Serial.println( utf8ascii("Stróż pchnął kość w quiz gędźb vel fax myjń"));
   Serial.println( utf8ascii("Benjamín pidió una bebida de kiwi y fresa. Noé, sin vergüenza, la más exquisita champaña del menú "));
+
   Serial.println( utf8ascii("Pijamalı hasta yağız şoföre çabucak güvendi"));
   Serial.println( utf8ascii("Høj bly gom vandt fræk sexquiz på wc"));
-  Serial.println( utf8ascii("Любя, съешь щипцы, — вздохнёт мэр, — кайф жгуч."));
+  Serial.println( utf8ascii("Любя, съешь щипцы, - вздохнёт мэр, - кайф жгуч."));
   Serial.println( utf8ascii("Γκόλφω, βάδιζε μπροστά ξανθή ψυχή!"));
-}*/
+  dump("—");
+  dump("„");
+}
 
-const char *getDeviceID() {
-  if(!deviceID.length()) {
-    //Generate Device ID
-    deviceID = "WS-" + WiFi.macAddress();
-    deviceID.remove(17, 1); //remove MAC separators
-    deviceID.remove(14, 1);
-    deviceID.remove(11, 1);
-    deviceID.remove(8, 1);
-    deviceID.remove(5, 1);
-  }
-  return deviceID.c_str();
-};
+//  !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+// Prilis zlutoucky kun upel dabelske ody.
+// PRILIS ZLUTOUCKY KUN UPEL DABELSKE ODY.
+// Vogt Nyx: ???Bus du ja zwolf Qirsch, Kampe
+// Pranzo d'acqua fa volti sghembi
+// Stroz pchnal kosc w quiz gedzb vel fax myjn
+// Benjamin pidio una bebida de kiwi y fresa. Noe, sin verguenza, la mas exquisita champana del menu
+// Pijamali hasta yagiz sofore cabucak guvendi
+// Hoj bly gom vandt frak sexquiz pa wc
+// Lyby, swesx sipcw, ??? vzdohnyt mer, ??? kayf jguc.
+// Gkolpo, vadize mprosta xanti piki!
+*/

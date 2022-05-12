@@ -6,14 +6,10 @@ String strTimeSuffix(time_t timestamp);
 String strDate(time_t timestamp, bool shortDate);
 String strWind( unsigned int w);
 String utf8ascii(const String s);
+void testutf8();
 const char *getDeviceID();
 
 struct tConfig {
-//  unsigned int updateDataMin;
-//  String openweatherApiKey;
-//  String ntp;
-//  int8_t tempOffset;
-//  int8_t humOffset;
   String iotCenterUrl;
   unsigned int iotRefreshMin;
 };
