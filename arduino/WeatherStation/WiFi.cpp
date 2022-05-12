@@ -234,7 +234,6 @@ again:
         _pFsp->writeToFS(_pSettings);
         enterState(WiFiConnectingState::ConnectingSuccess);
         break;
-      break;
       case WiFiConnectingState::TestingConfigFailed:
         Serial.println(F("[WIFIM] Testing config failed."));
         _manageDelay = getKnownWiFiNetworksCount(_pFsp)?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
