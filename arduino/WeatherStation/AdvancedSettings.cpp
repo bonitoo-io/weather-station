@@ -17,6 +17,7 @@
 #define ADVANCED_DEFAULT_UPDATETIME 300 //HHMM
 #define ADVANCED_DEFAULT_CHECKBETA  false
 #define ADVANCED_DEFAULT_VERIFY_CERT  false
+#define ADVANCED_FLOAT_MIN_DIFF 0.001
 
 #include "custom_dev.h"
 
@@ -181,7 +182,7 @@ AdvancedSettingsEndpoint::AdvancedSettingsEndpoint(FSPersistence *pPersistence, 
 
       float tempOffset = jsonObject[F("tempOffset")];
       float humOffset = jsonObject[F("humOffset")];
-      if(tempOffset != advSettings->getTempOffset() || humOffset != advSettings->getHumOffset()) {
+      if(abs(tempOffset - advSettings->getTempOffset()) >= ADVANCED_FLOAT_MIN_DIFF || abs(humOffset - advSettings->getHumOffset())>= ADVANCED_FLOAT_MIN_DIFF) {
          advSettings->updatedParts |= AdvancedSettingsParts::Offsets;
          advSettings->updateEEPROMData(tempOffset, humOffset);
       }
