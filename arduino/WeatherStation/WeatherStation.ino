@@ -351,7 +351,7 @@ void loop() {
   if(wsState & WSState::AppStateSetupInfluxDB) {
     influxdbHelper.begin(station.getInfluxDBSettings());
     influxdbHelper.update( true, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location,station.getRegionalSettings()->useMetricUnits);
-    wsState ^= WSState::AppStateSetupInfluxDB;
+    wsState &= ~WSState::AppStateSetupInfluxDB;
   }
   if(!(wsState & WSState::AppStateInitialised)) {
     initData();
@@ -359,7 +359,7 @@ void loop() {
   if(wsState & WSState::AppStateSetOffsets) {
     pSensor->resetTempFilter();
     pSensor->resetHumFilter();
-    wsState ^= WSState::AppStateSetOffsets;
+    wsState &= ~WSState::AppStateSetOffsets;
   }
   // Ticker function - executed once per minute
   if (((ui.getUiState()->frameState == FIXED) && ((millis() - timeSinceLastUpdate) >= 1000*60)) || wsState & WSState::AppStateForceUpdate) {
@@ -428,7 +428,7 @@ void loop() {
         }
         updateData(&display,false);
         digitalWrite( PIN_LED, HIGH);
-        wsState ^= WSState::AppStateForceUpdate;
+        wsState &= ~WSState::AppStateForceUpdate;
       }
 
       if(influxdbHelper.wasReleased()) {
@@ -538,7 +538,7 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
       wifiSSID = ssid;
       break;
     case WifiConnectionEvent::ConnectingSuccess:
-       wsState ^= WSState::AppStateDrawWifiProgress;
+       wsState &= ~WSState::AppStateDrawWifiProgress;
       station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       //station.startServer();
       break;
@@ -551,7 +551,7 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
   switch(event) {
     case WifiAPEvent::APStarted:
       if(wsState & WSState::AppStateDrawWifiProgress) {
-        wsState ^= WSState::AppStateDrawWifiProgress;
+        wsState &= ~WSState::AppStateDrawWifiProgress;
         station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       }
       drawAPInfo(&display, info);
@@ -585,7 +585,7 @@ void updateProgressHandler(const char *newVersion, int progress) {
 
 // Finished automatic download firmware
 void updateFinishedHandler(bool success, const char *err) {
-  wsState ^= WSState::AppStateDownloadingUpdate;
+  wsState &= ~WSState::AppStateDownloadingUpdate;
   if(success) {
     drawFWUpdateInfo(&display, getStr(s_Update_successful), getStr(s_Update_restart_in));
     delay(1000);
@@ -598,7 +598,7 @@ void updateFinishedHandler(bool success, const char *err) {
 
 // Finished upload firmware via web
 void fwUploadFinishedHandler(bool success) {
-  wsState ^= WSState::AppStateUploadingUpdate;
+  wsState &= ~WSState::AppStateUploadingUpdate;
   if(success) {
     drawFWUpdateInfo(&display, "", getStr(s_Update_restarting));
     Serial.println(F("restarting"));
