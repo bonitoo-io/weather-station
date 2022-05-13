@@ -1,4 +1,13 @@
 # Changelog
+## 1.13
+## Fixes
+ - Improved Web server response
+ - Improved stability
+ - Improved memory footprint
+ - Optimized settings validations
+ - Faster switch from AP mode
+ - Added geo location fallback when Weather Forecast is not available for city
+
 ## 1.12
 ## Fixes
 - Fixed temp offset calculation in calibration
