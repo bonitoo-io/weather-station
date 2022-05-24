@@ -311,7 +311,7 @@ void WeatherStation::registerEndpoints() {
   _wifiStatusEndpoint->registerEndpoints(this);
   _wifiConnectionHelperEndpoint = new WiFiConnectionHelperEndpoint(&_wifiManager);
   _wifiConnectionHelperEndpoint->registerEndpoints(this);
-  _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(&_persistence);
+  _wiFiListSavedEndpoint = new WiFiListSavedEndpoint(_wifiManager.getWifiSettingsManager());
   _wiFiListSavedEndpoint->registerEndpoints(this);
 
   _influxDBSettingsEndpoint = new InfluxDBSettingsEndpoint(&_persistence, &_influxDBSettings);

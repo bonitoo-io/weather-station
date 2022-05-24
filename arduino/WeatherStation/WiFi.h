@@ -97,6 +97,7 @@ public:
     void connectToSavedNetwork(int index);
     int getDisconnectsCount() const { return _disconnectsCount; }
     void resetDisconnectsCount() { _disconnectsCount = 0; }
+    WiFiSettingsManager *getWifiSettingsManager() { return &wifiSettingsManager; }
  private:
   void reconfigureWiFiConnection();
   void manageSTA();
@@ -113,12 +114,11 @@ public:
   void notifyAPEvent(WifiAPEvent event);
   bool startSTA(WiFiSettings *pConfig, WiFiNetwork *pNetwork = nullptr);
   void enterState(WiFiConnectingState newState, bool reconFigure = false);
-  void loadSettings(const String &ssid);
   void cleanNetworks();
   void setPreviousNetwork(const char *network);
  private:
   bool _firstStart = true;
-  FSPersistence *_pFsp;
+  WiFiSettingsManager wifiSettingsManager;
   WiFiSettings *_pSettings;
   APInfo *_pApInfo = nullptr;
   WifiAPEvent *_asyncEventToFire = nullptr;
@@ -201,24 +201,21 @@ class WiFiStatusEndpoint : public Endpoint {
 
 class WiFiListSavedEndpoint : public Endpoint {
  public:
-  explicit WiFiListSavedEndpoint(FSPersistence *pFsp);
+  explicit WiFiListSavedEndpoint(WiFiSettingsManager *pWsm);
   virtual ~WiFiListSavedEndpoint() {}
   virtual void registerEndpoints(EndpointRegistrator *pRegistrator) override;
  private:
   void deleteNetwork(AsyncWebServerRequest* request, route *);
   void listNetworks(AsyncWebServerRequest* request, route *);
 private:
-  FSPersistence *_pFsp;
+  WiFiSettingsManager *_pWsm;
   std::vector<String> _savedNetworks;
 };
 
 // helpers
-std::vector<String> getKnownWiFiNetworksNames(FSPersistence *pFS);
-int getKnownWiFiNetworksCount(FSPersistence *pFS);
 std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved);
 void startScan();
 int8_t checkScanResult() ;
-void removeNetwork(FSPersistence *pFsp, const String &ssid);
 void sendError(AsyncWebServerRequest* request, const String &err);
 
 #endif //WS_WIFI_H

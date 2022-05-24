@@ -10,7 +10,7 @@ static char *copyChars(const char *str) {
 }
 
 WiFiManager::WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings):
-  _pFsp(pFsp),
+  wifiSettingsManager(pFsp),
   _pSettings(pSettings) {
   // We want the device to come up in opmode=0 (WIFI_OFF), when erasing the flash, this is not the default.
   // If needed, we save opmode=0 before disabling persistence so the device boots with WiFi disabled in the future.
@@ -100,12 +100,6 @@ void WiFiManager::end() {
 }
 
 
-void WiFiManager::loadSettings(const String &ssid) {
-  _pSettings->setFilePath(F(WIFI_CONFIG_DIRECTORY "/") + ssid);
-  _pFsp->readFromFS(_pSettings);
-  //_pSettings.notify();
-}
-
 void WiFiManager::enterState(WiFiConnectingState newState, bool reconFigure) {
   _state = newState;
   if(reconFigure) {
@@ -121,13 +115,13 @@ void WiFiManager::manageSTA() {
         {
           if(_previousNetwork) {
             Serial.printf_P(PSTR("[WIFIM] Connecting to last connected: %s\n"),_previousNetwork);
-            loadSettings(_previousNetwork);
+            wifiSettingsManager.loadSettings(_pSettings, _previousNetwork);
             setPreviousNetwork(nullptr);
             startSTA(_pSettings);
             return;
           }
 
-          int c = getKnownWiFiNetworksCount(_pFsp);
+          int c = wifiSettingsManager.savedWiFiNetworksCount();
           Serial.printf_P(PSTR("[WIFIM] Found %d save networks\n"),c);
           _firstStart = c == 0;
           if(!c) {
@@ -160,7 +154,7 @@ void WiFiManager::manageSTA() {
         enterState(WiFiConnectingState::NotConnected);
         break;;
       case WiFiConnectingState::ScanFinished:
-        _savedNetworks = getKnownWiFiNetworksNames(_pFsp);
+        _savedNetworks = wifiSettingsManager.listSavedWiFiNetworks();
         _foundNetworks = getConnectableNetworks(_savedNetworks);
         _wifiNetworkIndex = 0;
         enterState(WiFiConnectingState::ConnectingToKnown, true);
@@ -168,7 +162,7 @@ void WiFiManager::manageSTA() {
       case WiFiConnectingState::ConnectingToKnown:
         if(_wifiNetworkIndex < _foundNetworks.size()) {
           WiFiNetwork *wn = &_foundNetworks[_wifiNetworkIndex];
-          loadSettings(wn->ssid);
+          wifiSettingsManager.loadSettings(_pSettings, wn->ssid);
           startSTA(_pSettings, wn);
           _wifiNetworkIndex++;
         } else {
@@ -187,7 +181,7 @@ again:
               goto again;
             }
           }
-          loadSettings(_savedNetworks[_wifiNetworkIndex]);
+          wifiSettingsManager.loadSettings(_pSettings, _savedNetworks[_wifiNetworkIndex]);
           startSTA(_pSettings);
           _wifiNetworkIndex++;
         } else {
@@ -231,16 +225,16 @@ again:
         break;
       case WiFiConnectingState::SaveConfig:
         Serial.println(F("[WIFIM] Saving WiFi config"));
-        _pFsp->writeToFS(_pSettings);
+        wifiSettingsManager.saveSettings(_pSettings);
         enterState(WiFiConnectingState::ConnectingSuccess);
         break;
       case WiFiConnectingState::TestingConfigFailed:
         Serial.println(F("[WIFIM] Testing config failed."));
-        _manageDelay = getKnownWiFiNetworksCount(_pFsp)?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
+        _manageDelay = wifiSettingsManager.savedWiFiNetworksCount()?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
         break;
       case WiFiConnectingState::ConnectingToSaved:
-        loadSettings(_savedNetworks[_wifiNetworkIndex]);
+        wifiSettingsManager.loadSettings(_pSettings, _savedNetworks[_wifiNetworkIndex]);
         _lastDisconnectReason = 0;
         startSTA(_pSettings);
         _wifiNetworkIndex = 0;
@@ -379,7 +373,7 @@ void WiFiManager::onStationModeDisconnected(const WiFiEventStationModeDisconnect
       case WiFiConnectingState::Idle:
       case WiFiConnectingState::ConnectingSuccess:
       case WiFiConnectingState::ConnectingToSaved:
-        _manageDelay = getKnownWiFiNetworksCount(_pFsp)>0?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
+        _manageDelay = wifiSettingsManager.savedWiFiNetworksCount()>0?SCAN_NETWORK_DELAY:MANAGE_NETWORK_DELAY;
         enterState(WiFiConnectingState::NotConnected, true);
         break;
       default:
@@ -441,7 +435,7 @@ void WiFiManager::onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStati
 
 void WiFiManager::connectToSavedNetwork(int index) {
   //refresh saved networks
-  _savedNetworks = getKnownWiFiNetworksNames(_pFsp);
+  _savedNetworks = wifiSettingsManager.listSavedWiFiNetworks();
   Serial.printf_P(PSTR("[WIFIM]  Connect to saved %s\n"),_savedNetworks[index].c_str());
   _wifiNetworkIndex = index;
   // connecting to another network requires disconnect
@@ -625,25 +619,25 @@ void WiFiStatusEndpoint::wifiStatusHandler(AsyncWebServerRequest* request, route
 
 // **************************** WiFiListSavedEndpoint *********************************
 
-WiFiListSavedEndpoint::WiFiListSavedEndpoint(FSPersistence *pFsp):
-_pFsp(pFsp) {
+WiFiListSavedEndpoint::WiFiListSavedEndpoint(WiFiSettingsManager *pWsm):
+_pWsm(pWsm) {
 };
 
 void WiFiListSavedEndpoint::registerEndpoints(EndpointRegistrator *pRegistrator) {
-    pRegistrator->registerGetHandler(WIFI_LIST_ENDPOINT_PATH, std::bind(&WiFiListSavedEndpoint::listNetworks, this, std::placeholders::_1, std::placeholders::_2));
-    pRegistrator->registerDeleteHandler(WIFI_LIST_ENDPOINT_PATH, std::bind(&WiFiListSavedEndpoint::deleteNetwork, this, std::placeholders::_1, std::placeholders::_2));
+  pRegistrator->registerGetHandler(WIFI_LIST_ENDPOINT_PATH, std::bind(&WiFiListSavedEndpoint::listNetworks, this, std::placeholders::_1, std::placeholders::_2));
+  pRegistrator->registerDeleteHandler(WIFI_LIST_ENDPOINT_PATH, std::bind(&WiFiListSavedEndpoint::deleteNetwork, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void WiFiListSavedEndpoint::listNetworks(AsyncWebServerRequest* request, route *) {
-  _savedNetworks = getKnownWiFiNetworksNames(_pFsp);
+  _savedNetworks = _pWsm->listSavedWiFiNetworks();
   AsyncJsonResponse* response = new AsyncJsonResponse(false, DEFAULT_BUFFER_SIZE);
   JsonObject root = response->getRoot();
   JsonArray networks = root.createNestedArray(F("networks"));
   for (size_t i = 0; i < _savedNetworks.size(); i++) {
-      JsonObject network = networks.createNestedObject();
-      network[FPSTR(StringId)] = i+1;
-      network[FPSTR(StringSSID)] = _savedNetworks[i];
-      network[F("connected")] = _savedNetworks[i] == WiFi.SSID();
+    JsonObject network = networks.createNestedObject();
+    network[FPSTR(StringId)] = i+1;
+    network[FPSTR(StringSSID)] = _savedNetworks[i];
+    network[F("connected")] = _savedNetworks[i] == WiFi.SSID();
   }
   response->addHeader(F("Cache-Control"),F("No-Store"));
   response->setLength();
@@ -656,7 +650,7 @@ void WiFiListSavedEndpoint::deleteNetwork(AsyncWebServerRequest* request, route 
     Serial.printf_P(PSTR(" deleteNetwork id %s\n"), idp->value().c_str());
     int id = idp->value().toInt();
     if(id > 0 ) {
-      removeNetwork(_pFsp, _savedNetworks[id-1]);
+      _pWsm->removeSettings(_savedNetworks[id-1]);
       if(WiFi.SSID() == _savedNetworks[id-1]) {
         request->onDisconnect([](){
           WiFi.disconnect();
@@ -683,14 +677,6 @@ void sendError(AsyncWebServerRequest* request, const String &err) {
   request->send(response);
 }
 
-std::vector<String> getKnownWiFiNetworksNames(FSPersistence *pFS) {
-  return pFS->listConfigs(F(WIFI_CONFIG_DIRECTORY), true);
-}
-
-int getKnownWiFiNetworksCount(FSPersistence *pFS) {
-  std::vector<String> files = pFS->listConfigs(F(WIFI_CONFIG_DIRECTORY), true);
-  return files.size();
-}
 
 void startScan()
 {
@@ -763,8 +749,4 @@ std::vector<WiFiNetwork> getConnectableNetworks(std::vector<String> saved)
         found.push_back(wn);
     }
     return found;
-}
-
-void removeNetwork(FSPersistence *pFsp, const String &ssid) {
-  pFsp->removeConfig(F(WIFI_CONFIG_DIRECTORY "/") + ssid);
 }

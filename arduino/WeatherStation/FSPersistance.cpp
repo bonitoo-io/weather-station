@@ -64,8 +64,12 @@ void FSPersistence::removeConfigs() {
   }, FS_CONFIG_DIRECTORY);
 }
 
-bool FSPersistence::removeConfig(const String &getFilePath) {
-  return _fs->remove(getFilePath);
+bool FSPersistence::removeConfig(const String &filePath) {
+  return _fs->remove(filePath);
+}
+
+bool FSPersistence::existsConfig(const String &filePath) {
+  return _fs->exists(filePath);
 }
 
 std::vector<String> FSPersistence::listConfigs(const String &root, bool fileNameOnly) {
