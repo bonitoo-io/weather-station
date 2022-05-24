@@ -1,4 +1,8 @@
 # Changelog
+## 1.14
+### Fixes
+ - Improved wifi settings persistance to allow WiFi network name with slash char
+
 ## 1.13
 ## Fixes
  - Improved Web server response
