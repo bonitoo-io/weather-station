@@ -59,8 +59,6 @@ Updater updater;
 
 unsigned long timeSinceLastUpdate = 0;
 unsigned int lastUpdateMins = 0;
-String wifiSSID;
-APInfo *pAPInfo = nullptr;
 String resetReason;
 unsigned long nextUIUpdate = 0;
 bool skipNightScreen = false;
@@ -77,7 +75,7 @@ void drawNight(OLEDDisplay *display);
 uint8_t isNightMode( DisplaySettings *pDisplaySettings);
 
 void initData() {
-  if(!(wsState & WSState::AppStateInitialised) && WiFi.isConnected() && !pAPInfo) {
+  if(!(wsState & WSState::AppStateInitialised) && WiFi.isConnected() && !(wsState & WSState::AppStateAPRunning)) {
     WS_DEBUG_RAM("InitData");
     updater.init(station.getAdvancedSettings(), VERSION);
 
@@ -346,7 +344,7 @@ void loop() {
   station.loop();
   // Needs to be done asynchronously
   if(wsState & WSState::AppStateDrawWifiProgress) {
-    drawWifiProgress(&display, VERSION, wifiSSID.c_str());
+    drawWifiProgress(&display, VERSION, station.getWifiManager()->getCurrentWiFiNetworkSSID().c_str());
   }
   if(wsState & WSState::AppStateSetupInfluxDB) {
     influxdbHelper.begin(station.getInfluxDBSettings());
@@ -479,13 +477,13 @@ void loop() {
       if (skipNightScreen)
         nextUIUpdate = 0; //reset counter to show immediately standard screens
       Serial.println( F("Button BOOT"));
-      if(!pAPInfo) {
+      if(!(wsState & WSState::AppStateAPRunning)) {
         ui.nextFrame();   //jump to the next frame
       } else {
-        drawAPInfo(&display, pAPInfo);
+        drawAPInfo(&display, station.getWifiManager()->getAPInfo());
       }
     }
-    if ((loops > 4) || pAPInfo) {
+    if ((loops > 4) || (wsState & WSState::AppStateAPRunning)) {
       showConfiguration(&display, (200 - loops) / 10, VERSION, timeSinceLastUpdate + (station.getAdvancedSettings()->updateDataInterval - ((lastUpdateMins % station.getAdvancedSettings()->updateDataInterval)) * 60 * 1000), getDeviceID(), &influxdbHelper);  //Show configuration after 0.5s
     }
 
@@ -497,11 +495,11 @@ void loop() {
 
     delay(100);
   }
-  if (pAPInfo) {
-    drawAPInfo(&display, pAPInfo);
+  if (wsState & WSState::AppStateAPRunning) {
+    drawAPInfo(&display, station.getWifiManager()->getAPInfo());
   }
 
-  if (wsState & WSState::AppStateInitialised && !pAPInfo && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
+  if (wsState & WSState::AppStateInitialised && !(wsState & WSState::AppStateAPRunning) && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
     ESP.wdtFeed();
     int remainingTimeBudget = DEFAULT_DELAY;
     if (skipNightScreen || !isNightMode(station.getDisplaySettings())) {
@@ -530,12 +528,9 @@ void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {
       if(!(wsState & WSState::AppStateDrawWifiProgress)) {
         wsState |= WSState::AppStateDrawWifiProgress;
         startWifiProgress(&display, VERSION, ssid);
-        //TODO: better solution for passing current wifi
-        wifiSSID = ssid;
       }
       break;
     case WifiConnectionEvent::ConnectingUpdate:
-      wifiSSID = ssid;
       break;
     case WifiConnectionEvent::ConnectingSuccess:
        wsState &= ~WSState::AppStateDrawWifiProgress;
@@ -555,15 +550,14 @@ void wifiAPEventHandler(WifiAPEvent event, APInfo *info){
         station.getWifiManager()->setWiFiConnectionEventHandler(nullptr);
       }
       drawAPInfo(&display, info);
-      pAPInfo = info;
+      wsState |= WSState::AppStateAPRunning;
       station.startServer();
       break;
     case WifiAPEvent::ClientConnected:
       drawAPInfo(&display, info);
-      pAPInfo = info;
       break;
     case WifiAPEvent::APStopped:
-      pAPInfo = nullptr;
+      wsState &= ~WSState::AppStateAPRunning;
       break;
     case WifiAPEvent::ClientDisconnected:
       if(info) {

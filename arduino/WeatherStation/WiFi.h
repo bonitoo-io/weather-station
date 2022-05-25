@@ -77,27 +77,29 @@ typedef std::function<void(WifiConnectionEvent event, const char *ssid)> WiFiCon
 
 
 class WiFiManager {
-public:
-    WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings);
+ public:
+  WiFiManager(FSPersistence *pFsp, WiFiSettings *pSettings);
 
-    void begin();
-    void loop();
-    void end();
-    void setAPEventHandler(APEventHandler handler) {
-        _apEventHandler = handler;
-    }
-     void setWiFiConnectionEventHandler(WiFiConnectionEventHandler handler) {
-        _wifiEventHandler = handler;
-    }
-    int getLastDisconnectReason() const { return _lastDisconnectReason; }
-    bool isConnectingToWiFi() const { return _connectingToWifi; }
-    bool isConnectTestSuccessful() const { return _connectTestSuccess; }
-    // callback from status endpoint
-    void statusResponseSent();
-    void connectToSavedNetwork(int index);
-    int getDisconnectsCount() const { return _disconnectsCount; }
-    void resetDisconnectsCount() { _disconnectsCount = 0; }
-    WiFiSettingsManager *getWifiSettingsManager() { return &wifiSettingsManager; }
+  void begin();
+  void loop();
+  void end();
+  void setAPEventHandler(APEventHandler handler) {
+      _apEventHandler = handler;
+  }
+    void setWiFiConnectionEventHandler(WiFiConnectionEventHandler handler) {
+      _wifiEventHandler = handler;
+  }
+  int getLastDisconnectReason() const { return _lastDisconnectReason; }
+  bool isConnectingToWiFi() const { return _connectingToWifi; }
+  bool isConnectTestSuccessful() const { return _connectTestSuccess; }
+  // callback from status endpoint
+  void statusResponseSent();
+  void connectToSavedNetwork(int index);
+  int getDisconnectsCount() const { return _disconnectsCount; }
+  void resetDisconnectsCount() { _disconnectsCount = 0; }
+  WiFiSettingsManager *getWifiSettingsManager() { return &wifiSettingsManager; }
+  String &getCurrentWiFiNetworkSSID() { return  _pSettings->ssid; }
+  APInfo *getAPInfo() { return _pApInfo; }
  private:
   void reconfigureWiFiConnection();
   void manageSTA();

@@ -116,7 +116,8 @@ enum WSState : uint8_t {
   AppStateForceUpdate = 1<<3,
   AppStateDownloadingUpdate = 1<<4,
   AppStateUploadingUpdate = 1<<5,
-  AppStateSetOffsets = 1<<6
+  AppStateSetOffsets = 1<<6,
+  AppStateAPRunning = 1<<7
 };
 
 extern volatile uint8_t wsState;
