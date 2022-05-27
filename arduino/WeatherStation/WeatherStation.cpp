@@ -5,7 +5,7 @@
 #include "Migrator.h"
 #include "Tools.h"
 
-volatile uint8_t wsState = WSState::AppStateNotInitialised;
+volatile uint16_t wsState = WSState::AppStateNotInitialised;
 
 WeatherStation::WeatherStation(InfluxDBHelper *influxDBHelper):
   _influxDBHelper(influxDBHelper),

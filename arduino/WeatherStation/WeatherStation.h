@@ -108,7 +108,7 @@ private:
 
 extern WeatherStation station;
 
-enum WSState : uint8_t {
+enum WSState : uint16_t {
   AppStateNotInitialised = 0,
   AppStateInitialised = 1,
   AppStateSetupInfluxDB = 1<<1,
@@ -117,9 +117,10 @@ enum WSState : uint8_t {
   AppStateDownloadingUpdate = 1<<4,
   AppStateUploadingUpdate = 1<<5,
   AppStateSetOffsets = 1<<6,
-  AppStateAPRunning = 1<<7
+  AppStateAPRunning = 1<<7,
+  AppStateNightMode = 1<<8
 };
 
-extern volatile uint8_t wsState;
+extern volatile uint16_t wsState;
 
 #endif //WEATHER_STATION_H

@@ -192,7 +192,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     delay(5000);
   }
 
-  if (!isNightMode(station.getDisplaySettings())) {
+  if (!(wsState & WSState::AppStateNightMode)) {
     digitalWrite( PIN_LED, LOW);
   }
 
@@ -360,122 +360,134 @@ void loop() {
     wsState &= ~WSState::AppStateSetOffsets;
   }
   // Ticker function - executed once per minute
-  if (((ui.getUiState()->frameState == FIXED) && ((millis() - timeSinceLastUpdate) >= 1000*60)) || wsState & WSState::AppStateForceUpdate) {
-    WS_DEBUG_RAM("Loop 1");
-    timeSinceLastUpdate = millis();
-    lastUpdateMins++;
-    ServicesTracker.reset();
+  if (((millis() - timeSinceLastUpdate) >= 1000*60) || wsState & WSState::AppStateForceUpdate) {
+    if(ui.getUiState()->frameState == FIXED || (wsState & WSState::AppStateNightMode)) {
+      WS_DEBUG_RAM("Loop 1");
+      if(!(wsState & WSState::AppStateNightMode) && isNightMode(station.getDisplaySettings())) {
+        wsState |= WSState::AppStateNightMode;
+        skipNightScreen = false;
+      } else if((wsState & WSState::AppStateNightMode) && !isNightMode(station.getDisplaySettings())) {
+        wsState &= ~WSState::AppStateNightMode;
+      }
 
-    if(WiFi.isConnected()) {
-      if(station.getAdvancedSettings()->updateTime < 2400) {
-        //TODO: change to an alarm like functionality
-        time_t tnow = time(nullptr);
-        struct tm timeinfo;
-        localtime_r(&tnow, &timeinfo);
-        uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
-        if (curtm == station.getAdvancedSettings()->updateTime ) {
-          influxdbHelper.release();
-          WS_DEBUG_RAM("After release");
-          station.stopServer();
-          WS_DEBUG_RAM("After stop server");
-          ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
-          ServicesTracker.save();
-          WS_DEBUG_RAM("Before GH update");
-          if(updater.checkUpdate()) {
-             ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
-          } else {
-            ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
+      timeSinceLastUpdate = millis();
+      lastUpdateMins++;
+      ServicesTracker.reset();
+
+      if(WiFi.isConnected()) {
+        if(station.getAdvancedSettings()->updateTime < 2400) {
+          //TODO: change to an alarm like functionality
+          time_t tnow = time(nullptr);
+          struct tm timeinfo;
+          localtime_r(&tnow, &timeinfo);
+          uint16_t curtm = timeinfo.tm_hour*100+timeinfo.tm_min;
+          if (curtm == station.getAdvancedSettings()->updateTime ) {
+            influxdbHelper.release();
+            WS_DEBUG_RAM("After release");
+            station.stopServer();
+            WS_DEBUG_RAM("After stop server");
+            ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncStarted);
+            ServicesTracker.save();
+            WS_DEBUG_RAM("Before GH update");
+            if(updater.checkUpdate()) {
+              ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncOk);
+            } else {
+              ServicesTracker.updateServiceState(SyncServices::ServiceFWUpdate, ServiceState::SyncFailed);
+            }
+            WS_DEBUG_RAM("After GH update");
+            station.startServer();
+            WS_DEBUG_RAM("After start server");
+            influxdbHelper.begin(station.getInfluxDBSettings());
+            influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
           }
-          WS_DEBUG_RAM("After GH update");
-          station.startServer();
-          WS_DEBUG_RAM("After start server");
+        }
+
+        //Sync IoT Center configuration
+        if (lastUpdateMins % conf.iotRefreshMin == 0 && conf.iotCenterUrl.length()) {
+          if (!(wsState & WSState::AppStateNightMode)) {
+            digitalWrite( PIN_LED, LOW);
+          }
+          // TODO: better solution for updating Settings from IoT center
+          auto influxDBSettings = station.getInfluxDBSettings();
+          ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
+          ServicesTracker.save();
+          if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings, conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
+            ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
+            station.getPersistence()->writeToFS(influxDBSettings);
+            influxDBSettings->notify();
+          } else {
+            ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
+          }
+          ServicesTracker.save();
+          digitalWrite( PIN_LED, HIGH);
+        }
+
+
+        //Update data?
+        if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || wsState & WSState::AppStateForceUpdate) {
+          if (!(wsState & WSState::AppStateNightMode)) {
+            digitalWrite( PIN_LED, LOW);
+          }
+          if(wsState & WSState::AppStateForceUpdate) {
+            // Delay update to let server connection settle
+            delay(1000);
+          }
+          updateData(&display,false);
+          digitalWrite( PIN_LED, HIGH);
+          wsState &= ~WSState::AppStateForceUpdate;
+        }
+
+        if(influxdbHelper.wasReleased()) {
           influxdbHelper.begin(station.getInfluxDBSettings());
           influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
         }
+
+
+        //Write into InfluxDB
+        if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
+          if (!(wsState & WSState::AppStateNightMode)) {
+            digitalWrite( PIN_LED, LOW);
+          }
+          pSensor->saveTempHist();  //Save temperature for the chart
+          ESP.wdtFeed();
+          int i=3;
+          while(station.isRequestInProgress() &&  i > 0 ) { 
+            Serial.println(F(" HTTP req in progress, delaying write"));
+            delay(500); 
+            --i;
+          }
+          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
+          ServicesTracker.save();
+          //always save in celsius
+          unsigned long start = millis();
+          if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTempF()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
+            ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
+          } else {
+            ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
+          }
+          ServicesTracker.save();
+          Serial.print(F("InfluxDB write "));
+          Serial.println(String(millis() - start) + String(F("ms")));
+          digitalWrite( PIN_LED, HIGH);
+          WS_DEBUG_RAM("After write");
+        }
       }
-
-      //Sync IoT Center configuration
-      if (lastUpdateMins % conf.iotRefreshMin == 0 && conf.iotCenterUrl.length()) {
-        if (!isNightMode(station.getDisplaySettings())) {
-          digitalWrite( PIN_LED, LOW);
-        }
-        // TODO: better solution for updating Settings from IoT center
-        auto influxDBSettings = station.getInfluxDBSettings();
-        ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncStarted);
-        ServicesTracker.save();
-        if(loadIoTCenter(false, conf.iotCenterUrl, getDeviceID(), influxDBSettings, conf.iotRefreshMin, station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
-          ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncOk);
-          station.getPersistence()->writeToFS(influxDBSettings);
-          influxDBSettings->notify();
-        } else {
-          ServicesTracker.updateServiceState(SyncServices::ServiceIoTCenter, ServiceState::SyncFailed);
-        }
-        ServicesTracker.save();
-        digitalWrite( PIN_LED, HIGH);
+      if(!station.isServerStarted()) {
+        station.startServer();
       }
-
-
-      //Update data?
-      if (lastUpdateMins % station.getAdvancedSettings()->updateDataInterval == 0 || wsState & WSState::AppStateForceUpdate) {
-        if (!isNightMode(station.getDisplaySettings())) {
-          digitalWrite( PIN_LED, LOW);
-        }
-        if(wsState & WSState::AppStateForceUpdate) {
-          // Delay update to let server connection settle
-          delay(1000);
-        }
-        updateData(&display,false);
-        digitalWrite( PIN_LED, HIGH);
-        wsState &= ~WSState::AppStateForceUpdate;
-      }
-
-      if(influxdbHelper.wasReleased()) {
-        influxdbHelper.begin(station.getInfluxDBSettings());
-        influxdbHelper.update( false, getDeviceID(),  WiFi.SSID(), VERSION, station.getRegionalSettings()->location, station.getRegionalSettings()->useMetricUnits);
-      }
-
-
-      //Write into InfluxDB
-      if (lastUpdateMins % station.getInfluxDBSettings()->writeInterval == 0) {
-        if (!isNightMode(station.getDisplaySettings())) {
-          digitalWrite( PIN_LED, LOW);
-        }
-        pSensor->saveTempHist();  //Save temperature for the chart
-        ESP.wdtFeed();
-        int i=3;
-        while(station.isRequestInProgress() &&  i > 0 ) { 
-          Serial.println(F(" HTTP req in progress, delaying write"));
-          delay(500); 
-          --i;
-        }
-        ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
-        ServicesTracker.save();
-        //always save in celsius
-        unsigned long start = millis();
-        if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTempF()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
-          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
-        } else {
-          ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
-        }
-        ServicesTracker.save();
-        Serial.print(F("InfluxDB write "));
-        Serial.println(String(millis() - start) + String(F("ms")));
-        digitalWrite( PIN_LED, HIGH);
-        WS_DEBUG_RAM("After write");
-      }
-    }
-    if(!station.isServerStarted()) {
-       station.startServer();
-    }
-  }
+    } 
+  } 
 
   //Handle BOOT button
   unsigned int loops = 0;
   while (digitalRead(PIN_BUTTON) == LOW) {  //Pushed boot button?
     if (loops == 0) {
-      skipNightScreen ^= 1; //flip skip night screen status
-      if (skipNightScreen)
-        nextUIUpdate = 0; //reset counter to show immediately standard screens
+      if(wsState & WSState::AppStateNightMode) {
+        skipNightScreen ^= 1; //flip skip night screen status
+        if (skipNightScreen) {
+          nextUIUpdate = 0; //reset counter to show immediately standard screens
+        }
+      }
       Serial.println( F("Button BOOT"));
       if(!(wsState & WSState::AppStateAPRunning)) {
         ui.nextFrame();   //jump to the next frame
@@ -502,19 +514,24 @@ void loop() {
   if (wsState & WSState::AppStateInitialised && !(wsState & WSState::AppStateAPRunning) && (!nextUIUpdate || (int(nextUIUpdate - millis()) <= 0))) {
     ESP.wdtFeed();
     int remainingTimeBudget = DEFAULT_DELAY;
-    if (skipNightScreen || !isNightMode(station.getDisplaySettings())) {
+    if (skipNightScreen || !(wsState & WSState::AppStateNightMode)) {
       remainingTimeBudget = ui.update();
       nextUIUpdate = millis() + remainingTimeBudget;
     } else {
       drawNight(&display);
-      nextUIUpdate = millis() + ((uint16_t)isNightMode(station.getDisplaySettings()) * 1000);
-      //Serial.println( "Night screen: " + String(isNightMode(station.getDisplaySettings())) + " millis: " + String(millis()) + " next: " + String(nextUIUpdate));
+      nextUIUpdate = millis() + getRemainingSecsTillMinute()*1000;
     }
     // reached basic bussiness loop end
     ServicesTracker.clearResetCount();
     delay(max(min(remainingTimeBudget, DEFAULT_DELAY),0));
   } else
     delay(DEFAULT_DELAY);
+}
+
+uint8_t getRemainingSecsTillMinute() {
+  time_t now = time(nullptr);
+  struct tm *timeInfo = localtime(&now);
+  return (60 - timeInfo->tm_sec) + 1;
 }
 
 bool isInfluxDBError() {
