@@ -1,4 +1,9 @@
 # Changelog
+## 1.15
+### Fixes
+ - Fixed updating data in the night mode
+ - Improved writing stability when weak WiFi connection 
+ 
 ## 1.14
 ### Fixes
  - Improved wifi settings persistance to allow WiFi network name with slash char
