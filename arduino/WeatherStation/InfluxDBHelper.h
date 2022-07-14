@@ -33,6 +33,9 @@ class InfluxDBHelper {
   String errorMsg() {
     return _client?_client->getLastErrorMessage():"";
   }
+  int8_t statusCode() {
+     return _client?_client->getLastStatusCode():0; 
+  }
   void begin( InfluxDBSettings *settings);
   void update( bool firstStart, const String &deviceID,  const String &wifi, const String &version, const String &location, bool metric);
   void registerResetInfo(const String &resetReason);

@@ -67,7 +67,7 @@ bool skipNightScreen = false;
 void updateData(OLEDDisplay *display, bool firstStart);
 bool loadIoTCenter( bool firstStart, const String& iot_url, const char *deviceID, InfluxDBSettings *influxdbSettings, unsigned int& iotRefreshMin, float& latitude, float& longitude);
 int detectLocationFromIP(RegionalSettings *pRegionalSettings);
-bool updateClock( bool firstStart, int utc_offset, const String &ntp);
+bool updateClock(int utc_offset, const String &ntp);
 bool updateAstronomy(bool firstStart, const float lat, const float lon);
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey);
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
@@ -200,7 +200,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
     if (influxdbHelper.getWriteSuccess() == 0) { //without any successfull write?
       Serial.println(F("Failed all writes to InfluxDB, restarting!"));
       //TODO: store status to identify reason of restart
-      
+      safeRestart();
     }
     Serial.print(F("InfluxDB successful writes: "));
     Serial.println( influxdbHelper.getWriteSuccess());
@@ -243,13 +243,7 @@ void updateData(OLEDDisplay *display, bool firstStart) {
   }
 
   drawUpdateProgress(display, 10, getStr(s_Updating_time));
-  ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncStarted);
-  ServicesTracker.save();
-  if(updateClock( firstStart, station.getRegionalSettings()->utcOffset, station.getAdvancedSettings()->ntpServers)) {
-    ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncOk);
-  } else {
-    ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncFailed);
-  }
+  updateTime();
 
 
   drawUpdateProgress(display, 20, getStr(s_Checking_update));
@@ -456,20 +450,33 @@ void loop() {
             delay(500); 
             --i;
           }
+
+          if(time(nullptr) < 1000000000ul) { 
+            Serial.println(F("Time is not synced, trying update"));
+            updateTime();
+          }
           ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncStarted);
           ServicesTracker.save();
           //always save in celsius
           unsigned long start = millis();
-          if(influxdbHelper.write( Sensor::tempF2C( pSensor->getTempF()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude)) {
+          bool writeStatus = influxdbHelper.write( Sensor::tempF2C( pSensor->getTempF()), pSensor->getHum(), station.getRegionalSettings()->latitude, station.getRegionalSettings()->longitude);
+          if(writeStatus) {
             ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncOk);
           } else {
             ServicesTracker.updateServiceState(SyncServices::ServiceDBWriteData, ServiceState::SyncFailed);
           }
           ServicesTracker.save();
           Serial.print(F("InfluxDB write "));
-          Serial.println(String(millis() - start) + String(F("ms")));
+          uint32_t writeTime = millis() - start;
+          Serial.println(String(writeTime) + String(F("ms")));
           digitalWrite( PIN_LED, HIGH);
           WS_DEBUG_RAM("After write");
+          if(!writeStatus && influxdbHelper.statusCode() == HTTPC_ERROR_READ_TIMEOUT) {
+            Serial.println(F("Restarting influxdb client"));
+            influxdbHelper.release();
+            influxdbHelper.begin(station.getInfluxDBSettings());
+            WS_DEBUG_RAM("After influxdb client restart");
+          }
         }
       }
       if(!station.isServerStarted()) {
@@ -536,6 +543,16 @@ uint8_t getRemainingSecsTillMinute() {
 
 bool isInfluxDBError() {
   return influxdbHelper.isError();
+}
+
+void updateTime() {
+  ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncStarted);
+  ServicesTracker.save();
+  if(updateClock( station.getRegionalSettings()->utcOffset, station.getAdvancedSettings()->ntpServers)) {
+    ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncOk);
+  } else {
+    ServicesTracker.updateServiceState(SyncServices::ServiceClock, ServiceState::SyncFailed);
+  }
 }
 
 void wifiConnectionEventHandler(WifiConnectionEvent event, const char *ssid) {

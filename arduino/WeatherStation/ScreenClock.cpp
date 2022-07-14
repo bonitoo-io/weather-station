@@ -4,7 +4,7 @@
 #include "WeatherStationFonts.h"
 #include "WeatherStationImages.h"
 
-bool updateClock( bool firstStart, int utc_offset, const String &ntp) {
+bool updateClock( int utc_offset, const String &ntp) {
   //Convert ntp comma separated list to array
   char ntpbuff[50];
   char *ntparr[3];
@@ -15,7 +15,7 @@ bool updateClock( bool firstStart, int utc_offset, const String &ntp) {
 
   //Set TZ and NTP
   configTime( utc_offset, 0, ntparr[0], ntparr[1], ntparr[2]);
-  if (firstStart) {
+  if (time(nullptr) < 1000000000ul) {
     // Wait till time is synced
     Serial.print(F("Syncing time"));
     int i = 0;
