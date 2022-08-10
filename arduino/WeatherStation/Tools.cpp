@@ -106,14 +106,14 @@ String strDate(time_t timestamp, bool shortDate) {
 
   if (station.getRegionalSettings()->useYMDFormat) {
     if (shortDate)
-      sprintf_P(buff, PSTR("%s %04d/%2d/%2d"), getDayName( timeInfo->tm_wday), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
+      sprintf_P(buff, PSTR("%s %04d/%2d/%2d"), getDayName( timeInfo->tm_wday).c_str(), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
     else
-      sprintf_P(buff, PSTR("%s, %s\n%04d/%02d/%02d"), getDayName( timeInfo->tm_wday), getMonthName( timeInfo->tm_mon), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
+      sprintf_P(buff, PSTR("%s, %s\n%04d/%02d/%02d"), getDayName( timeInfo->tm_wday).c_str(), getMonthName( timeInfo->tm_mon).c_str(), timeInfo->tm_year + 1900, timeInfo->tm_mon+1, timeInfo->tm_mday);
   } else {
     if (shortDate)
-      sprintf_P(buff, PSTR("%s %2d.%2d.%04d"), getDayName( timeInfo->tm_wday), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+      sprintf_P(buff, PSTR("%s %2d.%2d.%04d"), getDayName( timeInfo->tm_wday).c_str(), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
     else
-      sprintf_P(buff, PSTR("%s, %s\n%02d.%02d.%04d"), getDayName( timeInfo->tm_wday), getMonthName( timeInfo->tm_mon), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
+      sprintf_P(buff, PSTR("%s, %s\n%02d.%02d.%04d"), getDayName( timeInfo->tm_wday).c_str(), getMonthName( timeInfo->tm_mon).c_str(), timeInfo->tm_mday, timeInfo->tm_mon+1, timeInfo->tm_year + 1900);
   }
   return String(buff);
 }
