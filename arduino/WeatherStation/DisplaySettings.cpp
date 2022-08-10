@@ -14,6 +14,7 @@ void DisplaySettings::print(const __FlashStringHelper *title) {
     Serial.print(F(", screens: "));Serial.print(screens);
     Serial.print(F(", nightModeBegin: "));Serial.print(nightModeBegin);
     Serial.print(F(", nightModeEnd: "));Serial.print(nightModeEnd);
+    Serial.print(F(", nightModeBigFont: "));Serial.print(nightModeBigFont);
     Serial.println();
 }
 
@@ -22,6 +23,7 @@ int DisplaySettings::save(JsonObject& root) {
     root[F("screens")] = screens;
     root[F("nightModeBegin")] = nightModeBegin;
     root[F("nightModeEnd")] = nightModeEnd;
+    root[F("nightModeBigFont")] = nightModeBigFont;
 
     print(F("Save Display settings"));
     return 0;
@@ -32,6 +34,7 @@ int DisplaySettings::load(JsonObject& root) {
   screens = root[F("screens")].as<const char *>();
   nightModeBegin = root[F("nightModeBegin")] | DISPLAY_DEFAUT_NIGHT_MODE_BEGIN ;
   nightModeEnd = root[F("nightModeEnd")] | DISPLAY_DEFAUT_NIGHT_MODE_END;
+  nightModeBigFont = root[F("nightModeBigFont")] | DISPLAY_DEFAUT_NIGHT_MODE_USE_BIG_FONT;
   print(F("Load Display settings"));
   return 0;
 }

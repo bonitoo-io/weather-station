@@ -3,12 +3,16 @@
 #include "WeatherStation.h"
 #include "WeatherStationFonts.h"
 
-void drawNight(OLEDDisplay *display) {
+void drawNight(OLEDDisplay *display, DisplaySettings *pDisplaySettings) {
   time_t now = time(nullptr);
   display->clear();
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString( random(85), random(36), strTime(now, true) + strTimeSuffix(now));
+  const uint8_t *font = pDisplaySettings->nightModeBigFont?ArialMT_Plain_24:ArialMT_Plain_10;
+  display->setFont(font);
+  String time = strTime(now, true) + strTimeSuffix(now);
+  uint16_t tw = display->getStringWidth(time);
+  uint8_t fs = pgm_read_byte(font+1);
+  display->drawString( random(128-tw), random(51-fs-1), time);
   display->display();
 }
 

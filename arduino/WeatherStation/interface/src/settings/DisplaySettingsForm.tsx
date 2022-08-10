@@ -142,7 +142,18 @@ class DisplaySettingsForm extends Component<DisplaySettingsFormProps> {
                 disabled = {nightModeDisabled}
               />
             </MuiPickersUtilsProvider>
-          
+            <BlockFormControlLabel
+                control={
+                  <Checkbox
+                  value="nightModeBigFont"
+                  checked={data.nightModeBigFont}
+                  onChange={handleValueChange("nightModeBigFont")}
+                />
+                }
+                label="Use larger font in the night mode"
+                labelPlacement="end"
+                disabled = {nightModeDisabled}
+              />
           <FormActions>
             <FormButton startIcon={<SaveIcon />} variant="contained" color="primary" type="submit">
               Save

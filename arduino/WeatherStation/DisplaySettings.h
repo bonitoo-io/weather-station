@@ -10,6 +10,7 @@
 #define DISPLAY_SETTINGS_ENDPOINT_PATH "/api/displaySettings"
 #define DISPLAY_DEFAUT_NIGHT_MODE_BEGIN 2200  //HHMM
 #define DISPLAY_DEFAUT_NIGHT_MODE_END 700  //HHMM
+#define DISPLAY_DEFAUT_NIGHT_MODE_USE_BIG_FONT false
 
 class DisplaySettings : public Settings {
   public:
@@ -21,6 +22,8 @@ class DisplaySettings : public Settings {
     uint16_t nightModeBegin;
     // End night mode
     uint16_t nightModeEnd;
+    // Use bigger font in night mode
+    bool nightModeBigFont;
   public:
     DisplaySettings();
     virtual ~DisplaySettings() {};

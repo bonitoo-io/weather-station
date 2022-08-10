@@ -64,4 +64,5 @@ export interface DisplaySettings {
   nightModeBegin: number;
   nightModeEnd: number;
   use24Hours: boolean;
+  nightModeBigFont: boolean;
 }

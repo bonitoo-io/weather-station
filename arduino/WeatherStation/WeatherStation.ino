@@ -71,7 +71,7 @@ bool updateClock(int utc_offset, const String &ntp);
 bool updateAstronomy(bool firstStart, const float lat, const float lon);
 bool updateCurrentWeather(RegionalSettings *pRegionalSettings, const String& APIKey);
 bool updateForecast( RegionalSettings *pRegionalSettings, const String& APIKey);
-void drawNight(OLEDDisplay *display);
+void drawNight(OLEDDisplay *display, DisplaySettings *pDisplaySettings);
 uint8_t isNightMode( DisplaySettings *pDisplaySettings);
 
 void initData() {
@@ -525,7 +525,7 @@ void loop() {
       remainingTimeBudget = ui.update();
       nextUIUpdate = millis() + remainingTimeBudget;
     } else {
-      drawNight(&display);
+      drawNight(&display, station.getDisplaySettings());
       nextUIUpdate = millis() + getRemainingSecsTillMinute()*1000;
     }
     // reached basic bussiness loop end
